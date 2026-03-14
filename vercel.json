@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "http://13.60.14.202:4000/$1"
+      "destination": "http://13.60.14.202:4000/api/$1"
     }
   ],
   "env": {
