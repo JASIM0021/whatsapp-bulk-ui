@@ -1,4 +1,3 @@
-import React from 'react';
 import { Contact, ContactSelection } from '@/types/contact';
 import { CheckCircle, XCircle, Phone } from 'lucide-react';
 

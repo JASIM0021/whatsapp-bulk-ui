@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Modal } from './ui/Modal';
 import { ProgressBar } from './ui/ProgressBar';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';

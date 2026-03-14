@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal } from './ui/Modal';
 import { CheckCircle } from 'lucide-react';
 import { API_ENDPOINTS } from '@/config/api';

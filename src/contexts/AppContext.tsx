@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { Contact, ContactSelection } from '@/types/contact';
 import { Message } from '@/types/message';
 

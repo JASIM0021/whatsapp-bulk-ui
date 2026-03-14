@@ -1,6 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Upload, FileSpreadsheet } from 'lucide-react';
-import { Button } from './ui/Button';
 
 interface FileUploadProps {
   onFileUpload: (file: File) => void;
