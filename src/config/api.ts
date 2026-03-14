@@ -1,5 +1,12 @@
-// Using standalone backend on port 4000
-export const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+// API Base URL Configuration
+// - Development: Uses VITE_BACKEND_URL or localhost
+// - Production: Uses relative URLs (proxied through Vercel serverless function)
+//               This avoids HTTPS -> HTTP mixed content issues
+const isDevelopment = import.meta.env.DEV;
+
+export const API_BASE_URL = isDevelopment
+  ? (import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000')
+  : ''; // Production uses relative URLs -> Vercel proxy -> backend
 
 export const API_ENDPOINTS = {
   whatsapp: {
