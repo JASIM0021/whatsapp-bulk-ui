@@ -4,7 +4,7 @@ import { ProgressBar } from './ui/ProgressBar';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import { SendProgress as SendProgressType } from '@/types/message';
 import { Button } from './ui/Button';
-import { API_ENDPOINTS } from '@/config/api';
+import { apiFetch, API_ENDPOINTS } from '@/config/api';
 
 interface SendProgressProps {
   isOpen: boolean;
@@ -32,25 +32,20 @@ export function SendProgress({
 
   // Use ref to prevent duplicate sends (React StrictMode issue)
   const hasSentRef = useRef(false);
-  const currentRequestRef = useRef<string>('');
 
   useEffect(() => {
     if (!isOpen || contacts.length === 0) {
       return;
     }
 
-    // Create a unique request ID
-    const requestId = `${Date.now()}-${contacts.length}`;
-
-    // If this request has already been made, skip it
-    if (hasSentRef.current && currentRequestRef.current === requestId) {
+    // Prevent duplicate sends (React StrictMode fires effects twice)
+    if (hasSentRef.current) {
       console.log('Skipping duplicate send request');
       return;
     }
 
-    // Mark as sent
+    // Mark as sent immediately
     hasSentRef.current = true;
-    currentRequestRef.current = requestId;
 
     // Reset state
     setProgress({
@@ -62,14 +57,11 @@ export function SendProgress({
     setIsComplete(false);
     setError(null);
 
-    console.log('Starting message send (Request ID:', requestId, ')');
+    console.log('Starting message send');
 
     // Start sending
-    fetch(API_ENDPOINTS.whatsapp.send, {
+    apiFetch(API_ENDPOINTS.whatsapp.send, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ contacts, message }),
     })
       .then((response) => {
@@ -139,7 +131,6 @@ export function SendProgress({
       // Reset the flag when modal closes
       if (!isOpen) {
         hasSentRef.current = false;
-        currentRequestRef.current = '';
       }
     };
   }, [isOpen, contacts, message, onComplete]);
@@ -148,7 +139,6 @@ export function SendProgress({
     if (isComplete) {
       // Reset the send flag when closing
       hasSentRef.current = false;
-      currentRequestRef.current = '';
       onClose();
     }
   };

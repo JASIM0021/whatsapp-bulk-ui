@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Modal } from './ui/Modal';
 import { CheckCircle } from 'lucide-react';
-import { API_ENDPOINTS } from '@/config/api';
+import { API_BASE_URL } from '@/config/api';
 
 interface QRCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConnected?: () => void;
+  token?: string | null;
 }
 
-export function QRCodeModal({ isOpen, onClose, onConnected }: QRCodeModalProps) {
+export function QRCodeModal({ isOpen, onClose, onConnected, token }: QRCodeModalProps) {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -22,8 +23,11 @@ export function QRCodeModal({ isOpen, onClose, onConnected }: QRCodeModalProps) 
       return;
     }
 
-    // Connect to SSE endpoint for QR code
-    const eventSource = new EventSource(API_ENDPOINTS.whatsapp.qr);
+    // Connect to SSE endpoint for QR code with token in query param
+    const qrUrl = token 
+      ? `${API_BASE_URL}/api/whatsapp/qr?token=${token}`
+      : `${API_BASE_URL}/api/whatsapp/qr`;
+    const eventSource = new EventSource(qrUrl);
 
     eventSource.onmessage = (event) => {
       try {
