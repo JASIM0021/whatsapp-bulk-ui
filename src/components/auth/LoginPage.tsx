@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageSquare, Mail, Lock, ArrowLeft, User } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 
@@ -61,7 +61,7 @@ export function LoginPage() {
     <div className="min-h-screen flex">
       <div className="hidden lg:flex flex-col justify-between w-1/2 bg-green-600 p-12 text-white">
         <div className="flex items-center gap-3">
-          <MessageSquare size={36} />
+          <img src="/icon-192.png" alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
           <span className="text-2xl font-bold">WhatsApp Bulk Sender</span>
         </div>
         <div>
@@ -92,9 +92,7 @@ export function LoginPage() {
           </Link>
 
           <div className="flex lg:hidden items-center gap-2 mb-8 justify-center">
-            <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center">
-              <MessageSquare className="text-white" size={22} />
-            </div>
+            <img src="/icon-192.png" alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
             <span className="text-xl font-bold text-gray-900">WhatsApp Bulk Sender</span>
           </div>
 

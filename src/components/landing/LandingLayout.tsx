@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MessageSquare, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -27,9 +27,7 @@ function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-shadow">
-              <MessageSquare className="text-white" size={18} />
-            </div>
+            <img src="/icon-192.png" alt="WhatsApp Bulk Messenger" className="w-9 h-9 rounded-xl object-contain" />
             <span className="text-lg font-bold text-gray-900 tracking-tight">
               Bulk<span className="text-green-600">Send</span>
             </span>
@@ -138,9 +136,7 @@ function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                <MessageSquare className="text-white" size={18} />
-              </div>
+              <img src="/icon-192.png" alt="WhatsApp Bulk Messenger" className="w-9 h-9 rounded-xl object-contain" />
               <span className="text-lg font-bold text-white tracking-tight">
                 Bulk<span className="text-green-400">Send</span>
               </span>

@@ -132,7 +132,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <MessageSquare className="text-green-600" size={32} />
+              <img src="/icon-192.png" alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">WhatsApp Bulk Messenger</h1>
                 <p className="text-sm text-gray-600">Send bulk messages efficiently</p>

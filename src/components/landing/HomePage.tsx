@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import {
-  MessageSquare,
   Upload,
   Users,
   Zap,
@@ -99,9 +98,7 @@ function Hero() {
           <div className="relative">
             <div className="bg-gray-800/60 backdrop-blur border border-gray-700/50 rounded-3xl p-5 shadow-2xl">
               <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-700/50">
-                <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                  <MessageSquare size={18} className="text-green-400" />
-                </div>
+                <img src="/icon-192.png" alt="Logo" className="w-10 h-10 rounded-full object-contain" />
                 <div>
                   <p className="text-sm font-semibold text-white">BulkSend</p>
                   <p className="text-xs text-green-400">Sending 1,247 messages...</p>
