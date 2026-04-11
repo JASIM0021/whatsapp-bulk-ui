@@ -162,6 +162,7 @@ function Footer() {
             <ul className="space-y-2.5">
               <li><Link to="/privacy" className="text-sm hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms" className="text-sm hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link to="/refund" className="text-sm hover:text-white transition-colors">Refund Policy</Link></li>
             </ul>
           </div>
 
@@ -185,6 +186,7 @@ function Footer() {
           <div className="flex gap-6">
             <Link to="/privacy" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Privacy</Link>
             <Link to="/terms" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Terms</Link>
+            <Link to="/refund" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Refund Policy</Link>
           </div>
         </div>
       </div>

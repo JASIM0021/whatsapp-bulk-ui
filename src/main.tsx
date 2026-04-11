@@ -11,6 +11,7 @@ import { HomePage } from './components/landing/HomePage'
 import { LoginPage } from './components/auth/LoginPage'
 import { PrivacyPolicy } from './pages/PrivacyPolicy'
 import { TermsConditions } from './pages/TermsConditions'
+import { RefundPolicy } from './pages/RefundPolicy'
 import { SubscriptionPage } from './pages/SubscriptionPage'
 import { AdminPanel } from './pages/AdminPanel'
 import { PaymentSuccess, PaymentFailure } from './pages/PaymentResult'
@@ -59,6 +60,7 @@ function AppRoutes() {
       <Route path="/" element={<LandingLayout><HomePage /></LandingLayout>} />
       <Route path="/privacy" element={<LandingLayout><PrivacyPolicy /></LandingLayout>} />
       <Route path="/terms" element={<LandingLayout><TermsConditions /></LandingLayout>} />
+      <Route path="/refund" element={<LandingLayout><RefundPolicy /></LandingLayout>} />
 
       {/* Login / Signup */}
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />

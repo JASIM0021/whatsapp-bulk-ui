@@ -119,7 +119,7 @@ export function TermsConditions() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">14. Contact Us</h2>
             <p className="text-gray-600 leading-relaxed">
-              If you have any questions about these Terms, please contact us at <a href="mailto:support@bulksend.app" className="text-green-600 hover:underline">support@bulksend.app</a>.
+              If you have any questions about these Terms, please contact us at <a href="mailto:contact@todayintech.in" className="text-green-600 hover:underline">contact@todayintech.in</a>.
             </p>
           </section>
         </div>
