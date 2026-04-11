@@ -294,9 +294,9 @@ function Pricing() {
     {
       name: 'Free Trial',
       price: 'Free',
-      period: '50 messages',
+      period: '5 messages',
       desc: 'Perfect for trying things out',
-      features: ['Send up to 50 messages total', 'Basic templates', 'CSV/Excel upload', 'WhatsApp QR connect', 'Community support'],
+      features: ['Send up to 5 messages total', 'Basic templates', 'CSV/Excel upload', 'WhatsApp QR connect', 'Community support'],
       cta: 'Get Started',
       highlight: false,
     },

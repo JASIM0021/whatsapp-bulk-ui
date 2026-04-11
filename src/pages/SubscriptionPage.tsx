@@ -47,9 +47,9 @@ const plans = [
     id: 'free',
     name: 'Free Trial',
     price: 0,
-    period: '50 messages',
+    period: '5 messages',
     features: [
-      'Send up to 50 messages total',
+      'Send up to 5 messages total',
       'Basic templates',
       'File upload (Excel/CSV)',
       'WhatsApp QR connect',

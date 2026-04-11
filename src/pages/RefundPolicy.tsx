@@ -35,7 +35,7 @@ export function RefundPolicy() {
             </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-600">
               <li>You request a refund within <strong>7 days</strong> of your initial paid subscription purchase.</li>
-              <li>You have not used more than <strong>50 messages</strong> on the paid plan since purchasing.</li>
+              <li>You have not used more than <strong>5 messages</strong> on the paid plan since purchasing.</li>
               <li>The request is for your <strong>first-time purchase</strong> only (not renewal or plan upgrade).</li>
               <li>A technical issue caused by BulkSend prevented you from using the Service.</li>
             </ul>

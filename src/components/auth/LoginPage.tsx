@@ -16,6 +16,7 @@ export function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +33,10 @@ export function LoginPage() {
       }
       if (password !== confirmPassword) {
         setError('Passwords do not match');
+        return;
+      }
+      if (!acceptedTerms) {
+        setError('Please accept the Terms & Conditions and Privacy Policy to continue.');
         return;
       }
     }
@@ -54,6 +59,7 @@ export function LoginPage() {
   const switchMode = (newMode: 'login' | 'signup') => {
     setMode(newMode);
     setError('');
+    setAcceptedTerms(false);
     window.history.replaceState(null, '', newMode === 'signup' ? '/signup' : '/login');
   };
 
@@ -198,6 +204,32 @@ export function LoginPage() {
                 </div>
               )}
 
+              {mode === 'signup' && (
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                  />
+                  <span className="text-xs text-gray-600 leading-relaxed">
+                    I have read and agree to the{' '}
+                    <Link to="/terms" target="_blank" className="text-green-600 hover:underline font-medium">
+                      Terms & Conditions
+                    </Link>
+                    ,{' '}
+                    <Link to="/privacy" target="_blank" className="text-green-600 hover:underline font-medium">
+                      Privacy Policy
+                    </Link>
+                    , and{' '}
+                    <Link to="/refund" target="_blank" className="text-green-600 hover:underline font-medium">
+                      Refund Policy
+                    </Link>
+                    .
+                  </span>
+                </label>
+              )}
+
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
                   {error}
@@ -206,7 +238,7 @@ export function LoginPage() {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || (mode === 'signup' && !acceptedTerms)}
                 className="w-full py-2.5 px-4 bg-green-600 text-white font-medium rounded-lg text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isLoading
