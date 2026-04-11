@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { parseFile } from '@/lib/fileParser';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
-import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown } from 'lucide-react';
+import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TourGuide } from '@/components/TourGuide';
 import './App.css';
@@ -185,6 +185,15 @@ function App() {
                     </span>
                   )}
                 </button>
+                {user?.role === 'admin' && (
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+                  >
+                    <Shield size={14} />
+                    Admin
+                  </button>
+                )}
                 <div className="flex items-center gap-2 text-sm text-gray-700">
                   <User size={16} className="text-gray-400" />
                   <span className="font-medium">{user?.name}</span>

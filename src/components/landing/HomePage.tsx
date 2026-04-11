@@ -55,7 +55,7 @@ function Hero() {
 
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
-              to="/login"
+              to="/signup"
               className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl shadow-xl shadow-green-600/25 hover:shadow-green-600/40 hover:from-green-500 hover:to-emerald-500 transition-all"
             >
               Start Sending Free
@@ -378,7 +378,7 @@ function Pricing() {
               </ul>
 
               <Link
-                to="/login"
+                to="/signup"
                 className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold transition-all ${
                   plan.highlight
                     ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40'
@@ -412,7 +412,7 @@ function CTA() {
           Join 2,000+ businesses already using BulkSend to grow their customer engagement on WhatsApp.
         </p>
         <Link
-          to="/login"
+          to="/signup"
           className="inline-flex items-center gap-2 px-8 py-4 text-base font-bold text-green-700 bg-white rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all"
         >
           Get Started Free

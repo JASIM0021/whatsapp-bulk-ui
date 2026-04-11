@@ -35,6 +35,12 @@ export const API_ENDPOINTS = {
     initiate: `${API_BASE_URL}/api/payment/initiate`,
     history: `${API_BASE_URL}/api/payment/history`,
   },
+  admin: {
+    stats: `${API_BASE_URL}/api/admin/stats`,
+    users: `${API_BASE_URL}/api/admin/users`,
+    user: (id: string) => `${API_BASE_URL}/api/admin/users/${id}`,
+    sendEmail: `${API_BASE_URL}/api/admin/email/promotional`,
+  },
   health: `${API_BASE_URL}/api/health`,
 };
 

@@ -12,6 +12,7 @@ import { LoginPage } from './components/auth/LoginPage'
 import { PrivacyPolicy } from './pages/PrivacyPolicy'
 import { TermsConditions } from './pages/TermsConditions'
 import { SubscriptionPage } from './pages/SubscriptionPage'
+import { AdminPanel } from './pages/AdminPanel'
 import { PaymentSuccess, PaymentFailure } from './pages/PaymentResult'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -59,8 +60,9 @@ function AppRoutes() {
       <Route path="/privacy" element={<LandingLayout><PrivacyPolicy /></LandingLayout>} />
       <Route path="/terms" element={<LandingLayout><TermsConditions /></LandingLayout>} />
 
-      {/* Login */}
+      {/* Login / Signup */}
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/signup" element={<PublicRoute><LoginPage /></PublicRoute>} />
 
       {/* Payment result pages (accessible without auth - user returns from PayU) */}
       <Route path="/payment/success" element={<PaymentSuccess />} />
@@ -69,6 +71,9 @@ function AppRoutes() {
       {/* Protected routes */}
       <Route path="/subscription" element={
         <ProtectedRoute><SubscriptionPage /></ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute><AdminPanel /></ProtectedRoute>
       } />
       <Route path="/app" element={
         <ProtectedRoute>
