@@ -45,26 +45,24 @@ export function ContactsTable({
   return (
     <div className="space-y-4">
       {/* Summary */}
-      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-        <div className="flex items-center gap-6">
-          <div>
-            <p className="text-sm text-gray-600">Total Contacts</p>
-            <p className="text-2xl font-bold text-gray-900">{contacts.length}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Valid</p>
-            <p className="text-2xl font-bold text-green-600">{validContacts.length}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Invalid</p>
-            <p className="text-2xl font-bold text-red-600">{invalidContacts.length}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Selected</p>
-            <p className="text-2xl font-bold text-primary-600">
-              {Object.keys(selection).length}
-            </p>
-          </div>
+      <div className="grid grid-cols-4 gap-2 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
+        <div className="text-center sm:text-left">
+          <p className="text-[10px] sm:text-sm text-gray-600">Total</p>
+          <p className="text-lg sm:text-2xl font-bold text-gray-900">{contacts.length}</p>
+        </div>
+        <div className="text-center sm:text-left">
+          <p className="text-[10px] sm:text-sm text-gray-600">Valid</p>
+          <p className="text-lg sm:text-2xl font-bold text-green-600">{validContacts.length}</p>
+        </div>
+        <div className="text-center sm:text-left">
+          <p className="text-[10px] sm:text-sm text-gray-600">Invalid</p>
+          <p className="text-lg sm:text-2xl font-bold text-red-600">{invalidContacts.length}</p>
+        </div>
+        <div className="text-center sm:text-left">
+          <p className="text-[10px] sm:text-sm text-gray-600">Selected</p>
+          <p className="text-lg sm:text-2xl font-bold text-primary-600">
+            {Object.keys(selection).length}
+          </p>
         </div>
       </div>
 

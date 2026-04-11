@@ -53,7 +53,7 @@ export function FileUpload({ onFileUpload, isLoading }: FileUploadProps) {
     <div className="space-y-4">
       {/* Upload area */}
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-4 sm:p-8 text-center transition-colors ${
           isDragging
             ? 'border-primary-500 bg-primary-50'
             : 'border-gray-300 hover:border-gray-400'

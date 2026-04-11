@@ -129,8 +129,9 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          {/* Desktop: single row with logo, connect, subscription, user */}
+          <div className="hidden md:flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img src="/icon-192.png" alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
               <div>
@@ -163,7 +164,6 @@ function App() {
                 )}
               </div>
 
-              {/* Subscription + User info + logout */}
               <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
                 <button
                   onClick={() => navigate('/subscription')}
@@ -208,19 +208,88 @@ function App() {
               </div>
             </div>
           </div>
+
+          {/* Mobile: stacked layout */}
+          <div className="md:hidden">
+            {/* Row 1: Logo + user icons */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <img src="/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain shrink-0" />
+                <h1 className="text-lg font-bold text-gray-900 truncate">Bulk Messenger</h1>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => navigate('/subscription')}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium ${
+                    !user?.subscription?.isActive
+                      ? 'bg-red-50 text-red-700'
+                      : user?.subscription?.plan === 'free'
+                      ? 'bg-amber-50 text-amber-700'
+                      : 'bg-green-50 text-green-700'
+                  }`}
+                >
+                  <Crown size={12} />
+                  <span className="capitalize">
+                    {user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'free'}
+                  </span>
+                </button>
+                {user?.role === 'admin' && (
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className="p-1.5 rounded-md bg-purple-50 text-purple-700"
+                  >
+                    <Shield size={14} />
+                  </button>
+                )}
+                <button
+                  onClick={handleLogout}
+                  title="Logout"
+                  className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Row 2: WhatsApp connect */}
+            <div className="mt-3 pt-3 border-t border-gray-100" data-tour="step-connect">
+              {isWhatsAppConnected ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-sm font-medium text-green-700">Connected</span>
+                  </div>
+                  <Button variant="secondary" size="sm" onClick={handleDisconnectWhatsApp}>
+                    Disconnect
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleConnectWhatsApp}
+                  disabled={connectionStatus === 'connecting'}
+                  className="w-full"
+                >
+                  <Smartphone className="mr-1.5" size={16} />
+                  {connectionStatus === 'connecting' ? 'Connecting...' : 'Connect WhatsApp'}
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
       {/* Subscription Banners */}
       {user?.subscription && !user.subscription.isActive && (
         <div className="bg-red-600 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-            <p className="text-sm font-medium">
-              Your subscription has expired. Upgrade now to continue sending messages.
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <p className="text-xs sm:text-sm font-medium">
+              Your subscription has expired. Upgrade now to continue.
             </p>
             <button
               onClick={() => navigate('/subscription')}
-              className="px-4 py-1.5 bg-white text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors shrink-0"
+              className="px-3 sm:px-4 py-1.5 bg-white text-red-600 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-50 transition-colors shrink-0"
             >
               Upgrade Now
             </button>
@@ -229,13 +298,13 @@ function App() {
       )}
       {user?.subscription?.isActive && user.subscription.plan === 'free' && (
         <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between">
-            <p className="text-sm font-medium">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <p className="text-xs sm:text-sm font-medium">
               Free trial — {user.subscription.daysLeft} day{user.subscription.daysLeft !== 1 ? 's' : ''} remaining. Upgrade for unlimited access.
             </p>
             <button
               onClick={() => navigate('/subscription')}
-              className="px-4 py-1.5 bg-white text-amber-700 rounded-lg text-sm font-medium hover:bg-amber-50 transition-colors shrink-0"
+              className="px-3 sm:px-4 py-1.5 bg-white text-amber-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-amber-50 transition-colors shrink-0"
             >
               View Plans
             </button>
@@ -244,18 +313,18 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="space-y-4 sm:space-y-8">
           {/* Step 1: Upload Contacts */}
-          <section data-tour="step-upload" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-primary-700 font-bold">1</span>
+          <section data-tour="step-upload" className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-primary-700 font-bold text-sm sm:text-base">1</span>
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Upload Contacts</h2>
-                  <p className="text-sm text-gray-600">Upload Excel or CSV file with contact information</p>
+                  <h2 className="text-base sm:text-xl font-semibold text-gray-900">Upload Contacts</h2>
+                  <p className="text-xs sm:text-sm text-gray-600">Upload Excel or CSV file with contact information</p>
                 </div>
               </div>
             </div>
@@ -264,22 +333,22 @@ function App() {
 
           {/* Step 2: Review & Select Contacts */}
           {contacts.length > 0 && (
-            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                    <span className="text-primary-700 font-bold">2</span>
+            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-primary-700 font-bold text-sm sm:text-base">2</span>
                   </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Review & Select Contacts</h2>
-                    <p className="text-sm text-gray-600">
+                  <div className="min-w-0">
+                    <h2 className="text-base sm:text-xl font-semibold text-gray-900">Review & Select</h2>
+                    <p className="text-xs sm:text-sm text-gray-600">
                       {selectedCount} contact{selectedCount !== 1 ? 's' : ''} selected
                     </p>
                   </div>
                 </div>
                 <Button variant="secondary" size="sm" onClick={handleClearContacts}>
-                  <Trash2 className="mr-2" size={16} />
-                  Clear All
+                  <Trash2 className="sm:mr-2" size={16} />
+                  <span className="hidden sm:inline">Clear All</span>
                 </Button>
               </div>
               <ContactsTable contacts={contacts} selection={selection} onSelectionChange={setSelection} />
@@ -288,23 +357,23 @@ function App() {
 
           {/* Step 3: Send Messages */}
           {selectedCount > 0 && (
-            <section data-tour="step-compose" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                    <span className="text-primary-700 font-bold">3</span>
+            <section data-tour="step-compose" className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-primary-700 font-bold text-sm sm:text-base">3</span>
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Compose & Send Messages</h2>
-                    <p className="text-sm text-gray-600">Create your message and send to selected contacts</p>
+                    <h2 className="text-base sm:text-xl font-semibold text-gray-900">Compose & Send</h2>
+                    <p className="text-xs sm:text-sm text-gray-600">Create your message and send to selected contacts</p>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg">
+              <div className="flex items-center justify-center p-6 sm:p-8 border-2 border-dashed border-gray-300 rounded-lg">
                 <div className="text-center">
-                  <MessageSquare className="mx-auto mb-4 text-gray-400" size={48} />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to send messages</h3>
-                  <p className="text-sm text-gray-600 mb-6">
+                  <MessageSquare className="mx-auto mb-3 sm:mb-4 text-gray-400" size={40} />
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Ready to send messages</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
                     {selectedCount} contact{selectedCount !== 1 ? 's' : ''} selected
                   </p>
                   <Button
@@ -318,7 +387,7 @@ function App() {
                     Compose Message
                   </Button>
                   {!isWhatsAppConnected && (
-                    <p className="text-sm text-red-600 mt-3">Please connect WhatsApp first</p>
+                    <p className="text-xs sm:text-sm text-red-600 mt-3">Please connect WhatsApp first</p>
                   )}
                 </div>
               </div>
@@ -327,10 +396,10 @@ function App() {
 
           {/* Empty State */}
           {contacts.length === 0 && (
-            <div className="text-center py-16">
-              <UploadIcon className="mx-auto mb-4 text-gray-400" size={64} />
-              <h3 className="text-xl font-medium text-gray-900 mb-2">No contacts uploaded</h3>
-              <p className="text-gray-600">Upload an Excel or CSV file to get started</p>
+            <div className="text-center py-10 sm:py-16">
+              <UploadIcon className="mx-auto mb-4 text-gray-400" size={48} />
+              <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">No contacts uploaded</h3>
+              <p className="text-sm text-gray-600">Upload an Excel or CSV file to get started</p>
             </div>
           )}
         </div>

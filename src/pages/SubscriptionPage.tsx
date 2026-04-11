@@ -306,7 +306,8 @@ export function SubscriptionPage() {
               <CreditCard className="w-5 h-5" />
               Payment History
             </h2>
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            {/* Desktop table */}
+            <div className="hidden sm:block bg-white rounded-2xl border border-gray-200 overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
@@ -340,6 +341,28 @@ export function SubscriptionPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-3">
+              {payments.map((p) => (
+                <div key={p.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="capitalize font-medium text-gray-900">{p.plan}</span>
+                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                      p.status === 'success' ? 'bg-green-100 text-green-800' :
+                      p.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {p.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-bold text-gray-900">₹{p.amount.toLocaleString()}</span>
+                    <span className="text-gray-500 text-xs">{new Date(p.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <p className="font-mono text-[10px] text-gray-400 truncate">{p.txnId}</p>
+                </div>
+              ))}
             </div>
           </div>
         )}

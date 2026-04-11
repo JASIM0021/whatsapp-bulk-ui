@@ -24,10 +24,6 @@ export interface SendProgress {
   total: number;
   sent: number;
   failed: number;
-  current?: string;
-  errors: Array<{
-    contactId: string;
-    phone: string;
-    error: string;
-  }>;
+  current?: { phone: string; name: string } | null;
+  errors: string[];
 }

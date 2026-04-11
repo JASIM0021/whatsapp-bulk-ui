@@ -105,7 +105,7 @@ export function SendProgress({
                     setIsComplete(true);
                     onComplete(data.data);
                   } else if (data.type === 'error') {
-                    setError(data.data.error);
+                    setError(typeof data.data === 'string' ? data.data : data.data?.error || 'Unknown error');
                     setIsComplete(true);
                   }
                 } catch (e) {
@@ -164,7 +164,7 @@ export function SendProgress({
             <Loader className="animate-spin text-blue-600" size={24} />
             <div>
               <p className="text-sm font-medium text-blue-900">
-                Sending to: {progress.current}
+                Sending to: {progress.current?.name || progress.current?.phone}
               </p>
               <p className="text-xs text-blue-700">
                 Please wait... Messages are being sent with delays
@@ -174,25 +174,25 @@ export function SendProgress({
         )}
 
         {/* Statistics */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center">
-            <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
-            <p className="text-2xl font-bold text-green-900">{progress.sent}</p>
-            <p className="text-sm text-green-700">Sent</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+            <CheckCircle className="text-green-600 mx-auto mb-1 sm:mb-2" size={24} />
+            <p className="text-xl sm:text-2xl font-bold text-green-900">{progress.sent}</p>
+            <p className="text-xs sm:text-sm text-green-700">Sent</p>
           </div>
 
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
-            <XCircle className="text-red-600 mx-auto mb-2" size={32} />
-            <p className="text-2xl font-bold text-red-900">{progress.failed}</p>
-            <p className="text-sm text-red-700">Failed</p>
+          <div className="p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+            <XCircle className="text-red-600 mx-auto mb-1 sm:mb-2" size={24} />
+            <p className="text-xl sm:text-2xl font-bold text-red-900">{progress.failed}</p>
+            <p className="text-xs sm:text-sm text-red-700">Failed</p>
           </div>
 
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-            <Loader className="text-gray-600 mx-auto mb-2" size={32} />
-            <p className="text-2xl font-bold text-gray-900">
+          <div className="p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+            <Loader className="text-gray-600 mx-auto mb-1 sm:mb-2" size={24} />
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">
               {progress.total - progress.sent - progress.failed}
             </p>
-            <p className="text-sm text-gray-700">Remaining</p>
+            <p className="text-xs sm:text-sm text-gray-700">Remaining</p>
           </div>
         </div>
 
@@ -208,8 +208,7 @@ export function SendProgress({
                   key={index}
                   className="p-3 bg-red-50 border border-red-200 rounded text-sm"
                 >
-                  <p className="font-medium text-red-900">{err.phone}</p>
-                  <p className="text-red-700 text-xs">{err.error}</p>
+                  <p className="font-medium text-red-900">{err}</p>
                 </div>
               ))}
             </div>
