@@ -9,7 +9,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://13.60.14.202:4000';
+const BACKEND_URL = process.env.VITE_BACKEND_URL || 'https://bulksenderapi.todayintech.in';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
