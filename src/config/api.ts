@@ -4,14 +4,20 @@
 //               SSE endpoints connect directly to backend (Vercel proxy doesn't support streaming)
 const isDevelopment = import.meta.env.DEV;
 
+// Trim any trailing slash from the backend URL to prevent double-slash paths
+// (e.g. "https://api.example.com/" + "/api/send" → "https://api.example.com//api/send"
+//  which triggers a Go 301 redirect that converts POST → GET → 405)
+const rawBackendUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
+
 export const API_BASE_URL = isDevelopment
-  ? (import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000')
+  ? (rawBackendUrl || 'http://localhost:4000')
   : ''; // Production uses relative URLs -> Vercel proxy -> backend
 
 // Direct backend URL for SSE endpoints (QR code stream, send progress)
 // Vercel's rewrite proxy buffers responses and does NOT support Server-Sent Events.
 // These endpoints MUST connect directly to the backend server.
-export const SSE_BASE_URL = import.meta.env.VITE_BACKEND_URL || API_BASE_URL;
+export const SSE_BASE_URL = rawBackendUrl || API_BASE_URL;
+
 
 export const API_ENDPOINTS = {
   whatsapp: {
