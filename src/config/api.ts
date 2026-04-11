@@ -47,6 +47,12 @@ export const API_ENDPOINTS = {
     user: (id: string) => `${API_BASE_URL}/api/admin/users/${id}`,
     sendEmail: `${API_BASE_URL}/api/admin/email/promotional`,
   },
+  contacts: {
+    list: `${API_BASE_URL}/api/contacts`,
+    save: `${API_BASE_URL}/api/contacts`,
+    delete: (id: string) => `${API_BASE_URL}/api/contacts/${id}`,
+    deleteAll: `${API_BASE_URL}/api/contacts`,
+  },
   health: `${API_BASE_URL}/api/health`,
 };
 

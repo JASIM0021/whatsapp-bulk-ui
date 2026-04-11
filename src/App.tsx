@@ -10,9 +10,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { parseFile } from '@/lib/fileParser';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
-import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield } from 'lucide-react';
+import { Contact } from '@/types/contact';
+import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TourGuide } from '@/components/TourGuide';
+import { ManualContactEntry } from '@/components/ManualContactEntry';
+import { SavedContactsDrawer } from '@/components/SavedContactsDrawer';
 import './App.css';
 
 function App() {
@@ -31,6 +34,7 @@ function App() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [showMessageComposer, setShowMessageComposer] = useState(false);
   const [showSendProgress, setShowSendProgress] = useState(false);
+  const [showSavedContacts, setShowSavedContacts] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<Message | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [showTour, setShowTour] = useState(false);
@@ -56,6 +60,22 @@ function App() {
     return () => clearInterval(interval);
   }, [isAuthenticated, isLoading, checkWhatsAppStatus]);
 
+  // Save contacts to the user's persistent contacts book (fire-and-forget)
+  const saveContactsToBook = useCallback(async (contactsToSave: Contact[]) => {
+    const valid = contactsToSave
+      .filter((c) => c.isValid)
+      .map((c) => ({ name: c.name || '', phone: c.formattedPhone || c.phone }));
+    if (valid.length === 0) return;
+    try {
+      await apiFetch(API_ENDPOINTS.contacts.save, {
+        method: 'POST',
+        body: JSON.stringify({ contacts: valid }),
+      });
+    } catch {
+      // Non-critical — silently ignore
+    }
+  }, []);
+
   const handleFileUpload = async (file: File) => {
     setIsFileUploading(true);
     try {
@@ -66,11 +86,41 @@ function App() {
         if (contact.isValid) autoSelection[contact.id] = true;
       });
       setSelection(autoSelection);
+      // Auto-save valid contacts to the contacts book
+      saveContactsToBook(parsedContacts);
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Failed to parse file');
     } finally {
       setIsFileUploading(false);
     }
+  };
+
+  const handleManualAdd = (newContacts: Contact[]) => {
+    // Merge new contacts with existing ones (avoid duplicate phone numbers in session)
+    const existingPhones = new Set(contacts.map((c) => c.formattedPhone || c.phone));
+    const unique = newContacts.filter((c) => !existingPhones.has(c.formattedPhone || c.phone));
+    const merged = [...contacts, ...unique];
+    setContacts(merged);
+    const autoSelection: Record<string, boolean> = { ...selection };
+    unique.forEach((contact) => {
+      if (contact.isValid) autoSelection[contact.id] = true;
+    });
+    setSelection(autoSelection);
+    // Save to contacts book
+    saveContactsToBook(newContacts);
+  };
+
+  const handleSavedContactsLoad = (loaded: Contact[]) => {
+    // Merge saved contacts into session without duplicating phone numbers
+    const existingPhones = new Set(contacts.map((c) => c.formattedPhone || c.phone));
+    const unique = loaded.filter((c) => !existingPhones.has(c.formattedPhone || c.phone));
+    const merged = [...contacts, ...unique];
+    setContacts(merged);
+    const autoSelection: Record<string, boolean> = { ...selection };
+    unique.forEach((contact) => {
+      if (contact.isValid) autoSelection[contact.id] = true;
+    });
+    setSelection(autoSelection);
   };
 
   const handleConnectWhatsApp = async () => {
@@ -180,9 +230,15 @@ function App() {
                     {user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'free'}
                   </span>
                   {user?.subscription?.isActive && (
-                    <span className={user.subscription.daysLeft <= 3 ? 'text-red-600' : ''}>
-                      ({user.subscription.daysLeft}d left)
-                    </span>
+                    user?.subscription?.plan === 'free' ? (
+                      <span className={user.subscription.messagesUsed >= user.subscription.messageLimit - 10 ? 'text-red-600' : ''}>
+                        ({user.subscription.messagesUsed}/{user.subscription.messageLimit} msgs)
+                      </span>
+                    ) : (
+                      <span className={user.subscription.daysLeft <= 3 ? 'text-red-600' : ''}>
+                        ({user.subscription.daysLeft}d left)
+                      </span>
+                    )
                   )}
                 </button>
                 {user?.role === 'admin' && (
@@ -300,7 +356,7 @@ function App() {
         <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <p className="text-xs sm:text-sm font-medium">
-              Free trial — {user.subscription.daysLeft} day{user.subscription.daysLeft !== 1 ? 's' : ''} remaining. Upgrade for unlimited access.
+              Free trial — {user.subscription.messageLimit - user.subscription.messagesUsed} of {user.subscription.messageLimit} messages remaining. Upgrade for unlimited access.
             </p>
             <button
               onClick={() => navigate('/subscription')}
@@ -324,11 +380,30 @@ function App() {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-xl font-semibold text-gray-900">Upload Contacts</h2>
-                  <p className="text-xs sm:text-sm text-gray-600">Upload Excel or CSV file with contact information</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Upload Excel/CSV or add manually</p>
                 </div>
               </div>
+              {/* My Contacts Book button */}
+              <button
+                onClick={() => setShowSavedContacts(true)}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors"
+              >
+                <BookUser size={16} />
+                <span className="hidden sm:inline">My Contacts</span>
+              </button>
             </div>
-            <FileUpload onFileUpload={handleFileUpload} isLoading={isFileUploading} />
+            <div className="space-y-4">
+              <FileUpload onFileUpload={handleFileUpload} isLoading={isFileUploading} />
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-3 bg-white text-xs text-gray-500 font-medium">OR</span>
+                </div>
+              </div>
+              <ManualContactEntry onAdd={handleManualAdd} />
+            </div>
           </section>
 
           {/* Step 2: Review & Select Contacts */}
@@ -432,6 +507,13 @@ function App() {
           message={currentMessage}
         />
       )}
+
+      {/* Saved Contacts Drawer */}
+      <SavedContactsDrawer
+        isOpen={showSavedContacts}
+        onClose={() => setShowSavedContacts(false)}
+        onLoad={handleSavedContactsLoad}
+      />
 
       {/* Tour Guide */}
       <TourGuide forceShow={showTour} />

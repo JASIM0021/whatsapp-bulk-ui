@@ -10,6 +10,8 @@ interface SubscriptionInfo {
   expiryDate: string;
   isActive: boolean;
   daysLeft: number;
+  messagesUsed: number;
+  messageLimit: number;
 }
 
 interface PayUFormData {
@@ -45,9 +47,9 @@ const plans = [
     id: 'free',
     name: 'Free Trial',
     price: 0,
-    period: '7 days',
+    period: '50 messages',
     features: [
-      'Send up to 50 messages/day',
+      'Send up to 50 messages total',
       'Basic templates',
       'File upload (Excel/CSV)',
       'WhatsApp QR connect',
@@ -209,8 +211,12 @@ export function SubscriptionPage() {
                 </h2>
                 <p className={`text-sm mt-1 ${subscription.isActive ? 'text-green-700' : 'text-red-700'}`}>
                   {subscription.isActive
-                    ? `Active — ${subscription.daysLeft} day${subscription.daysLeft !== 1 ? 's' : ''} remaining (expires ${subscription.expiryDate})`
-                    : `Expired — Please upgrade to continue using the app`}
+                    ? subscription.plan === 'free'
+                      ? `Active — ${subscription.messageLimit - subscription.messagesUsed} of ${subscription.messageLimit} messages remaining`
+                      : `Active — ${subscription.daysLeft} day${subscription.daysLeft !== 1 ? 's' : ''} remaining (expires ${subscription.expiryDate})`
+                    : subscription.plan === 'free'
+                      ? `Free trial exhausted (${subscription.messagesUsed}/${subscription.messageLimit} messages used). Upgrade to continue.`
+                      : `Expired — Please upgrade to continue using the app`}
                 </p>
               </div>
               <div className={`px-4 py-2 rounded-full text-sm font-medium ${subscription.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

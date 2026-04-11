@@ -7,6 +7,8 @@ interface SubscriptionInfo {
   expiryDate: string;
   isActive: boolean;
   daysLeft: number;
+  messagesUsed: number;
+  messageLimit: number;
 }
 
 interface UserInfo {

@@ -129,7 +129,7 @@ export function LoginPage() {
             <p className="text-gray-500 text-sm mb-6">
               {mode === 'login'
                 ? 'Sign in to your account to continue.'
-                : 'Start your free 7-day trial. No credit card required.'}
+                : 'Start with 50 free messages. No credit card required.'}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">

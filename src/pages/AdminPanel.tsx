@@ -49,6 +49,8 @@ interface AdminUser {
     expiryDate: string;
     isActive: boolean;
     daysLeft: number;
+    messagesUsed: number;
+    messageLimit: number;
   };
 }
 
@@ -464,7 +466,11 @@ function UsersTab() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600">
-                        {u.subscription?.isActive ? `${u.subscription.daysLeft}d` : '—'}
+                        {u.subscription?.isActive
+                          ? u.subscription.plan === 'free'
+                            ? `${u.subscription.messagesUsed}/${u.subscription.messageLimit} msgs`
+                            : `${u.subscription.daysLeft}d`
+                          : '—'}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500">
                         {new Date(u.createdAt).toLocaleDateString()}
