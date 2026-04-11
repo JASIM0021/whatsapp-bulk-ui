@@ -1,19 +1,25 @@
 // API Base URL Configuration
 // - Development: Uses VITE_BACKEND_URL or localhost
-// - Production: Uses relative URLs (proxied through Vercel serverless function)
+// - Production: Regular API calls use relative URLs (proxied through Vercel rewrite)
+//               SSE endpoints connect directly to backend (Vercel proxy doesn't support streaming)
 const isDevelopment = import.meta.env.DEV;
 
 export const API_BASE_URL = isDevelopment
   ? (import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000')
   : ''; // Production uses relative URLs -> Vercel proxy -> backend
 
+// Direct backend URL for SSE endpoints (QR code stream, send progress)
+// Vercel's rewrite proxy buffers responses and does NOT support Server-Sent Events.
+// These endpoints MUST connect directly to the backend server.
+export const SSE_BASE_URL = import.meta.env.VITE_BACKEND_URL || API_BASE_URL;
+
 export const API_ENDPOINTS = {
   whatsapp: {
     init: `${API_BASE_URL}/api/whatsapp/init`,
-    qr: `${API_BASE_URL}/api/whatsapp/qr`,
+    qr: `${SSE_BASE_URL}/api/whatsapp/qr`,           // SSE — direct to backend
     status: `${API_BASE_URL}/api/whatsapp/status`,
     disconnect: `${API_BASE_URL}/api/whatsapp/disconnect`,
-    send: `${API_BASE_URL}/api/whatsapp/send`,
+    send: `${SSE_BASE_URL}/api/whatsapp/send`,         // SSE — direct to backend
   },
   upload: {
     contacts: `${API_BASE_URL}/api/upload`,
