@@ -4,7 +4,7 @@ import { ProgressBar } from './ui/ProgressBar';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import { SendProgress as SendProgressType } from '@/types/message';
 import { Button } from './ui/Button';
-import { API_ENDPOINTS } from '@/config/api';
+import { apiFetch, API_ENDPOINTS } from '@/config/api';
 
 interface SendProgressProps {
   isOpen: boolean;
@@ -32,25 +32,20 @@ export function SendProgress({
 
   // Use ref to prevent duplicate sends (React StrictMode issue)
   const hasSentRef = useRef(false);
-  const currentRequestRef = useRef<string>('');
 
   useEffect(() => {
     if (!isOpen || contacts.length === 0) {
       return;
     }
 
-    // Create a unique request ID
-    const requestId = `${Date.now()}-${contacts.length}`;
-
-    // If this request has already been made, skip it
-    if (hasSentRef.current && currentRequestRef.current === requestId) {
+    // Prevent duplicate sends (React StrictMode fires effects twice)
+    if (hasSentRef.current) {
       console.log('Skipping duplicate send request');
       return;
     }
 
-    // Mark as sent
+    // Mark as sent immediately
     hasSentRef.current = true;
-    currentRequestRef.current = requestId;
 
     // Reset state
     setProgress({
@@ -62,14 +57,11 @@ export function SendProgress({
     setIsComplete(false);
     setError(null);
 
-    console.log('Starting message send (Request ID:', requestId, ')');
+    console.log('Starting message send');
 
     // Start sending
-    fetch(API_ENDPOINTS.whatsapp.send, {
+    apiFetch(API_ENDPOINTS.whatsapp.send, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ contacts, message }),
     })
       .then((response) => {
@@ -113,7 +105,7 @@ export function SendProgress({
                     setIsComplete(true);
                     onComplete(data.data);
                   } else if (data.type === 'error') {
-                    setError(data.data.error);
+                    setError(typeof data.data === 'string' ? data.data : data.data?.error || 'Unknown error');
                     setIsComplete(true);
                   }
                 } catch (e) {
@@ -139,7 +131,6 @@ export function SendProgress({
       // Reset the flag when modal closes
       if (!isOpen) {
         hasSentRef.current = false;
-        currentRequestRef.current = '';
       }
     };
   }, [isOpen, contacts, message, onComplete]);
@@ -148,7 +139,6 @@ export function SendProgress({
     if (isComplete) {
       // Reset the send flag when closing
       hasSentRef.current = false;
-      currentRequestRef.current = '';
       onClose();
     }
   };
@@ -174,7 +164,7 @@ export function SendProgress({
             <Loader className="animate-spin text-blue-600" size={24} />
             <div>
               <p className="text-sm font-medium text-blue-900">
-                Sending to: {progress.current}
+                Sending to: {progress.current?.name || progress.current?.phone}
               </p>
               <p className="text-xs text-blue-700">
                 Please wait... Messages are being sent with delays
@@ -184,25 +174,25 @@ export function SendProgress({
         )}
 
         {/* Statistics */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center">
-            <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
-            <p className="text-2xl font-bold text-green-900">{progress.sent}</p>
-            <p className="text-sm text-green-700">Sent</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+            <CheckCircle className="text-green-600 mx-auto mb-1 sm:mb-2" size={24} />
+            <p className="text-xl sm:text-2xl font-bold text-green-900">{progress.sent}</p>
+            <p className="text-xs sm:text-sm text-green-700">Sent</p>
           </div>
 
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
-            <XCircle className="text-red-600 mx-auto mb-2" size={32} />
-            <p className="text-2xl font-bold text-red-900">{progress.failed}</p>
-            <p className="text-sm text-red-700">Failed</p>
+          <div className="p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+            <XCircle className="text-red-600 mx-auto mb-1 sm:mb-2" size={24} />
+            <p className="text-xl sm:text-2xl font-bold text-red-900">{progress.failed}</p>
+            <p className="text-xs sm:text-sm text-red-700">Failed</p>
           </div>
 
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-            <Loader className="text-gray-600 mx-auto mb-2" size={32} />
-            <p className="text-2xl font-bold text-gray-900">
+          <div className="p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+            <Loader className="text-gray-600 mx-auto mb-1 sm:mb-2" size={24} />
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">
               {progress.total - progress.sent - progress.failed}
             </p>
-            <p className="text-sm text-gray-700">Remaining</p>
+            <p className="text-xs sm:text-sm text-gray-700">Remaining</p>
           </div>
         </div>
 
@@ -218,8 +208,7 @@ export function SendProgress({
                   key={index}
                   className="p-3 bg-red-50 border border-red-200 rounded text-sm"
                 >
-                  <p className="font-medium text-red-900">{err.phone}</p>
-                  <p className="text-red-700 text-xs">{err.error}</p>
+                  <p className="font-medium text-red-900">{err}</p>
                 </div>
               ))}
             </div>

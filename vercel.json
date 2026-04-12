@@ -2,10 +2,11 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "http://13.60.14.202:4000/api/$1"
+      "destination": "https://bulksenderapi.todayintech.in/api/$1"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
-  ],
-  "env": {
-    "BACKEND_URL": "http://13.60.14.202:4000"
-  }
+  ]
 }

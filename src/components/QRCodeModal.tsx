@@ -1,29 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Modal } from './ui/Modal';
 import { CheckCircle } from 'lucide-react';
-import { API_ENDPOINTS } from '@/config/api';
+import { SSE_BASE_URL } from '@/config/api';
 
 interface QRCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConnected?: () => void;
+  token?: string | null;
 }
 
-export function QRCodeModal({ isOpen, onClose, onConnected }: QRCodeModalProps) {
+export function QRCodeModal({ isOpen, onClose, onConnected, token }: QRCodeModalProps) {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setQrCode(null);
-      setIsAuthenticated(false);
-      setIsReady(false);
-      return;
+  const connectSSE = useCallback(() => {
+    // Clean up existing connection
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
 
-    // Connect to SSE endpoint for QR code
-    const eventSource = new EventSource(API_ENDPOINTS.whatsapp.qr);
+    // Connect to SSE endpoint DIRECTLY to backend (not through Vercel proxy)
+    // Vercel rewrites buffer responses and don't support SSE streaming
+    const qrUrl = token
+      ? `${SSE_BASE_URL}/api/whatsapp/qr?token=${token}`
+      : `${SSE_BASE_URL}/api/whatsapp/qr`;
+    const eventSource = new EventSource(qrUrl);
+    eventSourceRef.current = eventSource;
 
     eventSource.onmessage = (event) => {
       try {
@@ -33,6 +41,7 @@ export function QRCodeModal({ isOpen, onClose, onConnected }: QRCodeModalProps) 
           setQrCode(data.data);
           setIsAuthenticated(false);
           setIsReady(false);
+          setRetryCount(0); // Reset retry count on successful QR
         } else if (data.type === 'authenticated') {
           setIsAuthenticated(true);
         } else if (data.type === 'ready') {
@@ -44,21 +53,65 @@ export function QRCodeModal({ isOpen, onClose, onConnected }: QRCodeModalProps) 
             eventSource.close();
             onClose();
           }, 2000);
+        } else if (data.type === 'timeout') {
+          // QR expired — reconnect to get a fresh QR code
+          eventSource.close();
+          setQrCode(null);
+          // Reconnect after a short delay (backend is reinitializing)
+          retryTimerRef.current = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, 2000);
         }
       } catch (error) {
         console.error('Error parsing SSE data:', error);
       }
     };
 
-    eventSource.onerror = (error) => {
-      console.error('SSE error:', error);
+    eventSource.onerror = () => {
+      console.error('SSE connection error — will retry');
       eventSource.close();
+      // Auto-retry after 3 seconds (max 5 retries)
+      setRetryCount(prev => {
+        if (prev < 5) {
+          retryTimerRef.current = setTimeout(() => {
+            setRetryCount(prev + 1);
+          }, 3000);
+        }
+        return prev;
+      });
     };
+  }, [token, onConnected, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setQrCode(null);
+      setIsAuthenticated(false);
+      setIsReady(false);
+      setRetryCount(0);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+      return;
+    }
+
+    connectSSE();
 
     return () => {
-      eventSource.close();
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, connectSSE, retryCount]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Connect WhatsApp" maxWidth="md">
