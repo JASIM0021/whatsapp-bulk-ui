@@ -24,7 +24,7 @@ export function RefundPolicy() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">2. Free Trial</h2>
             <p className="text-gray-600 leading-relaxed">
-              BulkSend offers a free trial of 50 bulk messages to all new users at no cost. No credit card is required for the free trial, and no charges will be made until you choose to upgrade to a paid plan. We encourage all users to fully test the Service during the free trial before purchasing a subscription.
+              BulkSend offers a free trial of 5 bulk messages to all new users at no cost. No credit card is required for the free trial, and no charges will be made until you choose to upgrade to a paid plan. We encourage all users to fully test the Service during the free trial before purchasing a subscription.
             </p>
           </section>
 
