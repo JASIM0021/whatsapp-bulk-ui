@@ -28,6 +28,7 @@ import {
   FileText,
   Settings,
   History,
+  Tag,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -57,7 +58,7 @@ interface AdminUser {
   };
 }
 
-type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans';
+type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos';
 
 interface Invoice {
   id: string;
@@ -1003,6 +1004,286 @@ function PlansTab() {
   );
 }
 
+/* ─── Promos Tab ─── */
+interface PromoCodeData {
+  id: string;
+  code: string;
+  discountType: string;
+  discountValue: number;
+  maxUses: number;
+  timesUsed: number;
+  isActive: boolean;
+  applicablePlans: string[];
+  expiresAt?: string;
+  createdAt: string;
+}
+
+function PromosTab() {
+  const [promos, setPromos] = useState<PromoCodeData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    code: '',
+    discountType: 'percentage' as 'percentage' | 'fixed',
+    discountValue: '',
+    maxUses: '0',
+    applicablePlans: [] as string[],
+    expiresAt: '',
+  });
+  const [formError, setFormError] = useState('');
+
+  const fetchPromos = async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.promos);
+      const data = await res.json();
+      if (data.success) setPromos(data.data || []);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchPromos(); }, []);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+    const val = parseFloat(form.discountValue);
+    if (!form.code.trim()) { setFormError('Code is required'); return; }
+    if (isNaN(val) || val <= 0) { setFormError('Discount value must be > 0'); return; }
+    if (form.discountType === 'percentage' && val > 100) { setFormError('Percentage must be ≤ 100'); return; }
+    setSaving(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.promos, {
+        method: 'POST',
+        body: JSON.stringify({
+          code: form.code.trim().toUpperCase(),
+          discountType: form.discountType,
+          discountValue: val,
+          maxUses: parseInt(form.maxUses) || 0,
+          applicablePlans: form.applicablePlans,
+          expiresAt: form.expiresAt || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) { setFormError(data.error || 'Failed to create'); return; }
+      setShowCreate(false);
+      setForm({ code: '', discountType: 'percentage', discountValue: '', maxUses: '0', applicablePlans: [], expiresAt: '' });
+      fetchPromos();
+    } catch { setFormError('Failed to create promo code'); }
+    finally { setSaving(false); }
+  };
+
+  const toggleActive = async (promo: PromoCodeData) => {
+    try {
+      await apiFetch(API_ENDPOINTS.admin.promo(promo.id), {
+        method: 'PUT',
+        body: JSON.stringify({ isActive: !promo.isActive }),
+      });
+      fetchPromos();
+    } catch { /* ignore */ }
+  };
+
+  const handleDelete = async (promo: PromoCodeData) => {
+    if (!confirm(`Delete promo code "${promo.code}"?`)) return;
+    try {
+      await apiFetch(API_ENDPOINTS.admin.promo(promo.id), { method: 'DELETE' });
+      fetchPromos();
+    } catch { /* ignore */ }
+  };
+
+  const togglePlan = (plan: string) => {
+    setForm(prev => ({
+      ...prev,
+      applicablePlans: prev.applicablePlans.includes(plan)
+        ? prev.applicablePlans.filter(p => p !== plan)
+        : [...prev.applicablePlans, plan],
+    }));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900">Promo Codes</h2>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          <Tag size={15} />
+          New Promo
+        </button>
+      </div>
+
+      {/* Create modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Create Promo Code</h3>
+              <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleCreate} className="p-6 space-y-4">
+              {formError && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{formError}</p>}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                <input
+                  type="text"
+                  value={form.code}
+                  onChange={e => setForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                  placeholder="SUMMER20"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-500 outline-none uppercase"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Discount Type</label>
+                <div className="flex gap-2">
+                  {(['percentage', 'fixed'] as const).map(type => (
+                    <button type="button" key={type}
+                      onClick={() => setForm(p => ({ ...p, discountType: type }))}
+                      className={`flex-1 py-2 text-sm rounded-lg border font-medium transition-colors ${
+                        form.discountType === type
+                          ? 'bg-purple-600 text-white border-purple-600'
+                          : 'border-gray-300 text-gray-600 hover:border-purple-400'
+                      }`}
+                    >
+                      {type === 'percentage' ? '% Percentage' : '₹ Fixed Amount'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Discount Value ({form.discountType === 'percentage' ? '%' : '₹'})
+                </label>
+                <input
+                  type="number"
+                  value={form.discountValue}
+                  onChange={e => setForm(p => ({ ...p, discountValue: e.target.value }))}
+                  min="0.01" step="0.01"
+                  placeholder={form.discountType === 'percentage' ? '20' : '100'}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Max Uses (0 = unlimited)</label>
+                <input
+                  type="number"
+                  value={form.maxUses}
+                  onChange={e => setForm(p => ({ ...p, maxUses: e.target.value }))}
+                  min="0" step="1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Applicable Plans (empty = all)</label>
+                <div className="flex gap-2">
+                  {['monthly', 'yearly'].map(plan => (
+                    <button type="button" key={plan}
+                      onClick={() => togglePlan(plan)}
+                      className={`flex-1 py-2 text-sm rounded-lg border font-medium capitalize transition-colors ${
+                        form.applicablePlans.includes(plan)
+                          ? 'bg-sky-600 text-white border-sky-600'
+                          : 'border-gray-300 text-gray-600 hover:border-sky-400'
+                      }`}
+                    >
+                      {plan}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expires At (optional)</label>
+                <input
+                  type="date"
+                  value={form.expiresAt}
+                  onChange={e => setForm(p => ({ ...p, expiresAt: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setShowCreate(false)}
+                  className="flex-1 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50">
+                  Cancel
+                </button>
+                <button type="submit" disabled={saving}
+                  className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">
+                  {saving ? 'Creating...' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <RefreshCw size={24} className="animate-spin text-gray-400" />
+        </div>
+      ) : promos.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+          <Tag size={32} className="mx-auto text-gray-300 mb-3" />
+          <p className="text-sm text-gray-400">No promo codes yet. Create one to get started.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left py-3 px-4 font-medium text-gray-600">Code</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600">Discount</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600">Uses</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600">Plans</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600">Expires</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600">Active</th>
+                <th className="py-3 px-4" />
+              </tr>
+            </thead>
+            <tbody>
+              {promos.map(promo => (
+                <tr key={promo.id} className="border-b border-gray-100 last:border-0">
+                  <td className="py-3 px-4 font-mono font-semibold text-purple-700">{promo.code}</td>
+                  <td className="py-3 px-4">
+                    {promo.discountType === 'percentage'
+                      ? `${promo.discountValue}%`
+                      : `₹${promo.discountValue}`}
+                  </td>
+                  <td className="py-3 px-4 text-gray-600">
+                    {promo.timesUsed}{promo.maxUses > 0 ? `/${promo.maxUses}` : ''}
+                  </td>
+                  <td className="py-3 px-4 text-gray-500 text-xs">
+                    {promo.applicablePlans.length === 0 ? 'All' : promo.applicablePlans.join(', ')}
+                  </td>
+                  <td className="py-3 px-4 text-gray-500 text-xs">
+                    {promo.expiresAt || '—'}
+                  </td>
+                  <td className="py-3 px-4">
+                    <button
+                      onClick={() => toggleActive(promo)}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${promo.isActive ? 'bg-green-500' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${promo.isActive ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+                    </button>
+                  </td>
+                  <td className="py-3 px-4">
+                    <button
+                      onClick={() => handleDelete(promo)}
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── User Activity Modal ─── */
 function UserActivityModal({ open, user, onClose }: {
   open: boolean;
@@ -1128,6 +1409,7 @@ export function AdminPanel() {
     { id: 'users', label: 'Users', icon: Users },
     { id: 'invoices', label: 'Invoices', icon: FileText },
     { id: 'plans', label: 'Plans', icon: Settings },
+    { id: 'promos', label: 'Promos', icon: Tag },
     { id: 'email', label: 'Email', icon: Mail },
   ];
 
@@ -1181,6 +1463,7 @@ export function AdminPanel() {
         {tab === 'users' && <UsersTab />}
         {tab === 'invoices' && <InvoicesTab />}
         {tab === 'plans' && <PlansTab />}
+        {tab === 'promos' && <PromosTab />}
         {tab === 'email' && <EmailTab />}
       </div>
     </div>

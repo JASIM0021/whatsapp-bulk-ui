@@ -51,6 +51,7 @@ export const API_ENDPOINTS = {
     initiate: `${API_BASE_URL}/api/payment/initiate`,
     history: `${API_BASE_URL}/api/payment/history`,
     plans: `${API_BASE_URL}/api/subscription/plans`,
+    validatePromo: `${API_BASE_URL}/api/payment/validate-promo`,
   },
   admin: {
     stats: `${API_BASE_URL}/api/admin/stats`,
@@ -63,6 +64,8 @@ export const API_ENDPOINTS = {
     approveInvoice: (id: string) => `${API_BASE_URL}/api/admin/invoices/${id}/approve`,
     plans: `${API_BASE_URL}/api/admin/plans`,
     plan: (name: string) => `${API_BASE_URL}/api/admin/plans/${name}`,
+    promos: `${API_BASE_URL}/api/admin/promos`,
+    promo: (id: string) => `${API_BASE_URL}/api/admin/promos/${id}`,
   },
   contacts: {
     list: `${API_BASE_URL}/api/contacts`,
