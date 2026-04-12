@@ -25,6 +25,9 @@ import {
   CheckCircle2,
   Lock,
   User,
+  FileText,
+  Settings,
+  History,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -54,7 +57,48 @@ interface AdminUser {
   };
 }
 
-type Tab = 'dashboard' | 'users' | 'email';
+type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans';
+
+interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  plan: string;
+  originalAmount: number;
+  finalAmount: number;
+  txnId: string;
+  mihpayId: string;
+  paymentDate: string;
+  expiryDate: string;
+  status: string;
+  createdAt: string;
+  sentAt?: string;
+}
+
+interface PlanConfigData {
+  plan: string;
+  amount: number;
+  messageLimit: number;
+}
+
+interface ActivityData {
+  payments: Array<{
+    id: string;
+    txnId: string;
+    amount: number;
+    plan: string;
+    status: string;
+    createdAt: string;
+  }>;
+  subscription: {
+    messagesUsed: number;
+    messageLimit: number;
+    plan: string;
+    status: string;
+  };
+}
 
 /* ─── Stat Card ─── */
 function StatCard({ icon: Icon, label, value, color }: {
@@ -314,6 +358,7 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [activityUser, setActivityUser] = useState<AdminUser | null>(null);
   const limit = 15;
 
   const fetchUsers = useCallback(async () => {
@@ -478,6 +523,13 @@ function UsersTab() {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
                           <button
+                            onClick={() => setActivityUser(u)}
+                            title="View activity"
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-colors"
+                          >
+                            <History size={15} />
+                          </button>
+                          <button
                             onClick={() => setEditingUser(u)}
                             title="Edit user"
                             className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
@@ -547,6 +599,7 @@ function UsersTab() {
 
       <CreateUserModal open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreated={fetchUsers} />
       <EditUserModal open={!!editingUser} user={editingUser} onClose={() => setEditingUser(null)} onUpdated={fetchUsers} />
+      <UserActivityModal open={!!activityUser} user={activityUser} onClose={() => setActivityUser(null)} />
     </div>
   );
 }
@@ -657,6 +710,394 @@ function EmailTab() {
   );
 }
 
+/* ─── Invoices Tab ─── */
+function InvoicesTab() {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'sent'>('all');
+  const [editingAmount, setEditingAmount] = useState<Record<string, string>>({});
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const limit = 20;
+
+  const fetchInvoices = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      const res = await apiFetch(`${API_ENDPOINTS.admin.invoices}?${params}`);
+      const data = await res.json();
+      if (data.success) {
+        setInvoices(data.data.invoices || []);
+        setTotal(data.data.total || 0);
+      }
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, [page, statusFilter]);
+
+  useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
+
+  const handleSaveAmount = async (id: string) => {
+    const amount = parseFloat(editingAmount[id] || '0');
+    if (isNaN(amount) || amount <= 0) return;
+    try {
+      await apiFetch(API_ENDPOINTS.admin.invoice(id), {
+        method: 'PUT',
+        body: JSON.stringify({ finalAmount: amount }),
+      });
+      fetchInvoices();
+    } catch { /* ignore */ }
+    finally {
+      setEditingAmount(prev => { const n = { ...prev }; delete n[id]; return n; });
+    }
+  };
+
+  const handleApprove = async (inv: Invoice) => {
+    const amountStr = editingAmount[inv.id];
+    const amount = amountStr ? parseFloat(amountStr) : inv.finalAmount;
+    if (!confirm(`Send invoice #${inv.invoiceNumber} to ${inv.userEmail} for ₹${amount}?`)) return;
+    setApprovingId(inv.id);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.approveInvoice(inv.id), {
+        method: 'POST',
+        body: JSON.stringify({ amount: amountStr ? amount : 0 }),
+      });
+      const data = await res.json();
+      if (!data.success) { alert(data.error || 'Failed to approve'); return; }
+      fetchInvoices();
+    } catch { alert('Failed to send invoice'); }
+    finally {
+      setApprovingId(null);
+      setEditingAmount(prev => { const n = { ...prev }; delete n[inv.id]; return n; });
+    }
+  };
+
+  const totalPages = Math.ceil(total / limit);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900">Invoices ({total})</h2>
+        <div className="flex gap-2">
+          {(['all', 'pending', 'sent'] as const).map(s => (
+            <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                statusFilter === s ? 'bg-green-50 border-green-300 text-green-700' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+              }`}>
+              {s === 'all' ? 'All' : s === 'pending' ? 'Pending' : 'Sent'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Invoice #</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">User</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Plan</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Amount</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Payment Date</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {loading ? (
+                <tr><td colSpan={7} className="text-center py-12 text-gray-400">
+                  <RefreshCw size={20} className="animate-spin inline-block mr-2" />Loading...
+                </td></tr>
+              ) : invoices.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-12 text-gray-400">No invoices found</td></tr>
+              ) : invoices.map((inv) => {
+                const isPending = inv.status === 'pending';
+                const isEditing = editingAmount[inv.id] !== undefined;
+                return (
+                  <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-700">{inv.invoiceNumber}</td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-gray-900 text-sm">{inv.userName}</p>
+                      <p className="text-xs text-gray-500">{inv.userEmail}</p>
+                    </td>
+                    <td className="px-4 py-3 capitalize text-xs text-gray-600">{inv.plan}</td>
+                    <td className="px-4 py-3">
+                      {isPending && isEditing ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-400 text-xs">₹</span>
+                          <input type="number"
+                            value={editingAmount[inv.id]}
+                            onChange={e => setEditingAmount(prev => ({ ...prev, [inv.id]: e.target.value }))}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-green-500 focus:border-transparent outline-none"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium text-gray-900">₹{(inv.finalAmount || 0).toLocaleString()}</span>
+                          {isPending && (
+                            <button onClick={() => setEditingAmount(prev => ({ ...prev, [inv.id]: String(inv.finalAmount) }))}
+                              className="p-0.5 text-gray-400 hover:text-blue-600 transition-colors">
+                              <Pencil size={12} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500">
+                      {inv.paymentDate ? new Date(inv.paymentDate).toLocaleDateString() : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        inv.status === 'sent' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                      }`}>{inv.status}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {isPending && (
+                        <div className="flex items-center justify-end gap-1">
+                          {isEditing && (
+                            <button onClick={() => handleSaveAmount(inv.id)}
+                              className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors">
+                              Save
+                            </button>
+                          )}
+                          <button onClick={() => handleApprove(inv)}
+                            disabled={approvingId === inv.id}
+                            className="px-2 py-1 text-xs bg-green-50 text-green-600 rounded hover:bg-green-100 transition-colors disabled:opacity-50">
+                            {approvingId === inv.id ? 'Sending...' : 'Approve & Send'}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
+            <p className="text-xs text-gray-500">
+              Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
+            </p>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(p => p - 1)} disabled={page === 1}
+                className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <ChevronLeft size={16} />
+              </button>
+              <span className="px-3 py-1 text-xs font-medium text-gray-600">{page}/{totalPages}</span>
+              <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
+                className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Plans Tab ─── */
+function PlansTab() {
+  const [planConfigs, setPlanConfigs] = useState<PlanConfigData[]>([]);
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch(API_ENDPOINTS.admin.plans);
+        const data = await res.json();
+        if (data.success) {
+          setPlanConfigs(data.data || []);
+          const vals: Record<string, string> = {};
+          for (const p of (data.data || []) as PlanConfigData[]) {
+            vals[p.plan] = p.plan === 'free' ? String(p.messageLimit) : String(p.amount);
+          }
+          setEditValues(vals);
+        }
+      } catch { /* ignore */ }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  const handleSave = async (planName: string) => {
+    const val = parseFloat(editValues[planName] || '0');
+    if (isNaN(val) || val < 0) return;
+    setSaving(planName);
+    try {
+      const body = planName === 'free'
+        ? { messageLimit: Math.floor(val) }
+        : { amount: val };
+      const res = await apiFetch(API_ENDPOINTS.admin.plan(planName), {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSaved(planName);
+        setTimeout(() => setSaved(null), 2000);
+      } else {
+        alert(data.error || 'Failed to save');
+      }
+    } catch { alert('Failed to save plan config'); }
+    finally { setSaving(null); }
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <RefreshCw size={24} className="animate-spin text-gray-400" />
+    </div>
+  );
+
+  const planMeta: Record<string, { label: string; description: string; prefix?: string; suffix: string }> = {
+    monthly: { label: 'Pro Monthly', description: 'Monthly subscription price', prefix: '₹', suffix: '/month' },
+    yearly: { label: 'Pro Yearly', description: 'Yearly subscription price', prefix: '₹', suffix: '/year' },
+    free: { label: 'Free Trial', description: 'Message limit for free trial', suffix: ' messages' },
+  };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold text-gray-900">Plan Pricing</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
+        {['monthly', 'yearly', 'free'].map(planName => {
+          const meta = planMeta[planName];
+          if (!meta) return null;
+          const isSaved = saved === planName;
+          const isSaving = saving === planName;
+          return (
+            <div key={planName} className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="font-semibold text-gray-900 mb-1">{meta.label}</h3>
+              <p className="text-xs text-gray-500 mb-4">{meta.description}</p>
+              <div className="flex items-center gap-1 mb-3">
+                {meta.prefix && <span className="text-gray-500 text-sm">{meta.prefix}</span>}
+                <input
+                  type="number"
+                  value={editValues[planName] ?? ''}
+                  onChange={e => setEditValues(prev => ({ ...prev, [planName]: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  min="0"
+                  step="1"
+                />
+                <span className="text-gray-500 text-sm">{meta.suffix}</span>
+              </div>
+              <button onClick={() => handleSave(planName)} disabled={isSaving}
+                className={`w-full py-2 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${
+                  isSaved ? 'bg-green-500' : 'bg-green-600 hover:bg-green-700'
+                }`}>
+                {isSaved ? '✓ Saved!' : isSaving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {planConfigs.length === 0 && !loading && (
+        <p className="text-sm text-gray-400">No plan configs found — defaults are in use.</p>
+      )}
+    </div>
+  );
+}
+
+/* ─── User Activity Modal ─── */
+function UserActivityModal({ open, user, onClose }: {
+  open: boolean;
+  user: AdminUser | null;
+  onClose: () => void;
+}) {
+  const [activity, setActivity] = useState<ActivityData | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    setActivity(null);
+    setLoading(true);
+    apiFetch(API_ENDPOINTS.admin.userActivity(user.id))
+      .then(r => r.json())
+      .then(data => { if (data.success) setActivity(data.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [open, user]);
+
+  if (!open || !user) return null;
+
+  const totalPaid = activity?.payments
+    .filter(p => p.status === 'success')
+    .reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden max-h-[80vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">{user.name}'s Activity</h3>
+            <p className="text-xs text-gray-500">{user.email}</p>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="overflow-y-auto flex-1 p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw size={20} className="animate-spin text-gray-400" />
+            </div>
+          ) : activity ? (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-blue-50 rounded-xl p-4">
+                  <p className="text-xs text-blue-600 font-medium mb-1">Messages Used</p>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {activity.subscription.messagesUsed || 0}
+                    {(activity.subscription.messageLimit || 0) > 0 && (
+                      <span className="text-sm font-normal text-blue-600">/{activity.subscription.messageLimit}</span>
+                    )}
+                  </p>
+                </div>
+                <div className="bg-green-50 rounded-xl p-4">
+                  <p className="text-xs text-green-600 font-medium mb-1">Total Paid</p>
+                  <p className="text-2xl font-bold text-green-900">₹{totalPaid.toLocaleString()}</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Payment History</h4>
+                {activity.payments.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-4">No payments yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {activity.payments.map((p, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 capitalize">{p.plan} plan</p>
+                          <p className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-gray-900">₹{(p.amount || 0).toLocaleString()}</p>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            p.status === 'success' ? 'bg-green-100 text-green-700' :
+                            p.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>{p.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-12">Failed to load activity</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Admin Panel ─── */
 export function AdminPanel() {
   const { user } = useAuth();
@@ -685,6 +1126,8 @@ export function AdminPanel() {
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
+    { id: 'invoices', label: 'Invoices', icon: FileText },
+    { id: 'plans', label: 'Plans', icon: Settings },
     { id: 'email', label: 'Email', icon: Mail },
   ];
 
@@ -736,6 +1179,8 @@ export function AdminPanel() {
         {/* Content */}
         {tab === 'dashboard' && <DashboardTab stats={stats} loading={statsLoading} />}
         {tab === 'users' && <UsersTab />}
+        {tab === 'invoices' && <InvoicesTab />}
+        {tab === 'plans' && <PlansTab />}
         {tab === 'email' && <EmailTab />}
       </div>
     </div>

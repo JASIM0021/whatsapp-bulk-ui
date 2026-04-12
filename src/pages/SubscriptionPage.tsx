@@ -95,6 +95,10 @@ const plans = [
   },
 ];
 
+interface LivePricing {
+  [plan: string]: { amount: number; messageLimit: number };
+}
+
 export function SubscriptionPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -102,9 +106,15 @@ export function SubscriptionPage() {
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState<string | null>(null);
+  const [livePricing, setLivePricing] = useState<LivePricing | null>(null);
 
   useEffect(() => {
     fetchData();
+    // Fetch live pricing (public endpoint, no auth needed)
+    fetch(API_ENDPOINTS.subscription.plans)
+      .then(r => r.json())
+      .then(data => { if (data.success && data.data) setLivePricing(data.data); })
+      .catch(() => {});
   }, []);
 
   const fetchData = async () => {
@@ -234,6 +244,12 @@ export function SubscriptionPage() {
           {plans.map((plan) => {
             const Icon = plan.icon;
             const isCurrent = subscription?.plan === plan.id && subscription.isActive;
+            const livePrice = plan.id !== 'free' ? (livePricing?.[plan.id]?.amount ?? plan.price) : 0;
+            const freeMsgLimit = livePricing?.['free']?.messageLimit ?? 5;
+            const displayPrice = plan.id === 'free' ? 0 : livePrice;
+            const displayFeatures = plan.id === 'free'
+              ? [`Send up to ${freeMsgLimit} messages total`, ...plan.features.slice(1)]
+              : plan.features;
 
             return (
               <div
@@ -260,13 +276,14 @@ export function SubscriptionPage() {
                 <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
                 <div className="mt-2 mb-4">
                   <span className="text-4xl font-extrabold text-gray-900">
-                    {plan.price === 0 ? 'Free' : `₹${plan.price.toLocaleString()}`}
+                    {displayPrice === 0 ? 'Free' : `₹${displayPrice.toLocaleString()}`}
                   </span>
-                  {plan.price > 0 && <span className="text-gray-500 text-sm">{plan.period}</span>}
+                  {displayPrice > 0 && <span className="text-gray-500 text-sm">{plan.period}</span>}
+                  {plan.id === 'free' && <span className="text-gray-500 text-sm ml-1">{freeMsgLimit} messages</span>}
                 </div>
 
                 <ul className="flex-1 space-y-3 mb-6">
-                  {plan.features.map((f, i) => (
+                  {displayFeatures.map((f, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                       <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
                       {f}
