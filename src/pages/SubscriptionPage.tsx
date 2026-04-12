@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
-import { Check, Crown, Zap, Shield, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X } from 'lucide-react';
+import { Check, Crown, Zap, Shield, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X, Code, Copy, ChevronDown, ChevronUp, Trash2, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface SubscriptionInfo {
@@ -99,6 +99,16 @@ interface LivePricing {
   [plan: string]: { amount: number; messageLimit: number };
 }
 
+interface APIKeyInfo {
+  id: string;
+  name: string;
+  key?: string;       // only present on creation
+  keyPreview: string;
+  isActive: boolean;
+  lastUsedAt?: string;
+  createdAt: string;
+}
+
 interface ValidatePromoResponse {
   valid: boolean;
   code: string;
@@ -122,15 +132,79 @@ export function SubscriptionPage() {
   const [promoValidation, setPromoValidation] = useState<ValidatePromoResponse | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [apiKeys, setApiKeys] = useState<APIKeyInfo[]>([]);
+  const [apiKeysLoading, setApiKeysLoading] = useState(false);
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [newKeyValue, setNewKeyValue] = useState<string | null>(null);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [showCurlExample, setShowCurlExample] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
 
   useEffect(() => {
     fetchData();
+    fetchApiKeys();
     // Fetch live pricing (public endpoint, no auth needed)
     fetch(API_ENDPOINTS.subscription.plans)
       .then(r => r.json())
       .then(data => { if (data.success && data.data) setLivePricing(data.data); })
       .catch(() => {});
   }, []);
+
+  const fetchApiKeys = async () => {
+    setApiKeysLoading(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.apiKeys.list);
+      const data = await res.json();
+      if (data.success) setApiKeys(data.data || []);
+    } catch {
+      // ignore
+    } finally {
+      setApiKeysLoading(false);
+    }
+  };
+
+  const handleCreateKey = async () => {
+    setCreatingKey(true);
+    setNewKeyValue(null);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.apiKeys.create, {
+        method: 'POST',
+        body: JSON.stringify({ name: newKeyName.trim() || 'Default' }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Failed to generate key');
+        return;
+      }
+      setNewKeyValue(data.data.key);
+      setNewKeyName('');
+      setApiKeys(prev => [data.data, ...prev]);
+    } catch {
+      alert('Failed to generate key');
+    } finally {
+      setCreatingKey(false);
+    }
+  };
+
+  const handleRevokeKey = async (id: string) => {
+    if (!confirm('Revoke this API key? Any apps using it will stop working.')) return;
+    try {
+      const res = await apiFetch(API_ENDPOINTS.apiKeys.revoke(id), { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setApiKeys(prev => prev.map(k => k.id === id ? { ...k, isActive: false } : k));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKey(true);
+      setTimeout(() => setCopiedKey(false), 2000);
+    });
+  };
 
   const fetchData = async () => {
     try {
@@ -419,6 +493,134 @@ export function SubscriptionPage() {
               </div>
             );
           })}
+        </div>
+
+        {/* Developer API Section */}
+        <div className="mt-12">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Code className="w-5 h-5" />
+            Developer API Access
+          </h2>
+
+          {(!subscription?.isActive || subscription?.plan === 'free') ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">
+              <Code className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 font-medium">API access is available for Pro subscribers.</p>
+              <p className="text-sm text-gray-400 mt-1">Upgrade to Monthly or Yearly to enable developer API access.</p>
+            </div>
+          ) : (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
+              <p className="text-sm text-gray-600">
+                Use your API key to send WhatsApp messages directly from your own software — OTP delivery, promotional campaigns, and more.
+              </p>
+
+              {/* New key shown once */}
+              {newKeyValue && (
+                <div className="bg-amber-50 border border-amber-300 rounded-xl p-4">
+                  <p className="text-sm font-semibold text-amber-800 mb-2">Save this key — it won't be shown again</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm font-mono break-all">{newKeyValue}</code>
+                    <button
+                      onClick={() => copyToClipboard(newKeyValue)}
+                      className="shrink-0 px-3 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors"
+                    >
+                      <Copy className="w-4 h-4" />
+                      {copiedKey ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                  <button onClick={() => setNewKeyValue(null)} className="mt-2 text-xs text-amber-600 hover:text-amber-800 underline">Dismiss</button>
+                </div>
+              )}
+
+              {/* Generate key form */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  placeholder="Key label (e.g. Production)"
+                  value={newKeyName}
+                  onChange={e => setNewKeyName(e.target.value)}
+                  className="flex-1 max-w-xs text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                />
+                <button
+                  onClick={handleCreateKey}
+                  disabled={creatingKey}
+                  className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-lg disabled:opacity-60 transition-colors"
+                >
+                  {creatingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Generate New Key
+                </button>
+              </div>
+
+              {/* Keys table */}
+              {apiKeysLoading ? (
+                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Loading keys...
+                </div>
+              ) : apiKeys.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-2 px-3 font-medium text-gray-500">Key</th>
+                        <th className="text-left py-2 px-3 font-medium text-gray-500">Name</th>
+                        <th className="text-left py-2 px-3 font-medium text-gray-500">Created</th>
+                        <th className="text-left py-2 px-3 font-medium text-gray-500">Last Used</th>
+                        <th className="text-left py-2 px-3 font-medium text-gray-500">Status</th>
+                        <th className="py-2 px-3" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {apiKeys.map(k => (
+                        <tr key={k.id} className="border-b border-gray-100 last:border-0">
+                          <td className="py-2 px-3 font-mono text-xs text-gray-700">{k.keyPreview}</td>
+                          <td className="py-2 px-3 text-gray-700">{k.name}</td>
+                          <td className="py-2 px-3 text-gray-500">{new Date(k.createdAt).toLocaleDateString()}</td>
+                          <td className="py-2 px-3 text-gray-500">{k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : '—'}</td>
+                          <td className="py-2 px-3">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${k.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                              {k.isActive ? 'Active' : 'Revoked'}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3">
+                            {k.isActive && (
+                              <button
+                                onClick={() => handleRevokeKey(k.id)}
+                                className="text-red-400 hover:text-red-600 transition-colors"
+                                title="Revoke key"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">No API keys yet. Generate one above.</p>
+              )}
+
+              {/* Collapsible curl example */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setShowCurlExample(v => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
+                >
+                  <span>Example: Send a message via curl</span>
+                  {showCurlExample ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {showCurlExample && (
+                  <pre className="bg-gray-900 text-green-400 text-xs p-4 overflow-x-auto leading-relaxed">
+{`curl -X POST ${import.meta.env.VITE_BACKEND_URL}/api/v1/send \\
+  -H "X-API-Key: bsk_your_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{"phone":"919876543210","message":{"text":"Hello! Your OTP is 1234"}}'`}
+                  </pre>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Payment History */}

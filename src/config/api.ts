@@ -73,6 +73,11 @@ export const API_ENDPOINTS = {
     delete: (id: string) => `${API_BASE_URL}/api/contacts/${id}`,
     deleteAll: `${API_BASE_URL}/api/contacts`,
   },
+  apiKeys: {
+    list:   `${API_BASE_URL}/api/apikeys`,
+    create: `${API_BASE_URL}/api/apikeys`,
+    revoke: (id: string) => `${API_BASE_URL}/api/apikeys/${id}`,
+  },
   health: `${API_BASE_URL}/api/health`,
 };
 
