@@ -33,6 +33,8 @@ export const API_ENDPOINTS = {
   },
   auth: {
     register: `${API_BASE_URL}/api/auth/register`,
+    sendOtp: `${API_BASE_URL}/api/auth/send-otp`,
+    verifyOtp: `${API_BASE_URL}/api/auth/verify-otp`,
     login: `${API_BASE_URL}/api/auth/login`,
     me: `${API_BASE_URL}/api/auth/me`,
   },
