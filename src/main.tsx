@@ -13,6 +13,7 @@ import { PrivacyPolicy } from './pages/PrivacyPolicy'
 import { TermsConditions } from './pages/TermsConditions'
 import { RefundPolicy } from './pages/RefundPolicy'
 import { SubscriptionPage } from './pages/SubscriptionPage'
+import { DevDocsPage } from './pages/DevDocsPage'
 import { AdminPanel } from './pages/AdminPanel'
 import { PaymentSuccess, PaymentFailure } from './pages/PaymentResult'
 
@@ -61,6 +62,7 @@ function AppRoutes() {
       <Route path="/privacy" element={<LandingLayout><PrivacyPolicy /></LandingLayout>} />
       <Route path="/terms" element={<LandingLayout><TermsConditions /></LandingLayout>} />
       <Route path="/refund" element={<LandingLayout><RefundPolicy /></LandingLayout>} />
+      <Route path="/docs" element={<LandingLayout><DevDocsPage /></LandingLayout>} />
 
       {/* Login / Signup */}
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />

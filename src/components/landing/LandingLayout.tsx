@@ -10,6 +10,7 @@ function Navbar() {
     { to: '/', label: 'Home' },
     { to: '/#features', label: 'Features' },
     { to: '/#pricing', label: 'Pricing' },
+    { to: '/docs', label: 'API Docs' },
   ];
 
   const isActive = (to: string) => location.pathname === to;
@@ -153,6 +154,7 @@ function Footer() {
               <li><Link to="/#features" className="text-sm hover:text-white transition-colors">Features</Link></li>
               <li><Link to="/#pricing" className="text-sm hover:text-white transition-colors">Pricing</Link></li>
               <li><Link to="/#how-it-works" className="text-sm hover:text-white transition-colors">How It Works</Link></li>
+              <li><Link to="/docs" className="text-sm hover:text-white transition-colors">API Documentation</Link></li>
             </ul>
           </div>
 

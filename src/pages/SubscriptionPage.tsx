@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
-import { Check, Crown, Zap, Shield, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X, Code, Copy, ChevronDown, ChevronUp, Trash2, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Check, Crown, Zap, Shield, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X, Code, Copy, ChevronDown, ChevronUp, Trash2, Plus, ExternalLink } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 
 interface SubscriptionInfo {
   plan: string;
@@ -53,6 +53,7 @@ const plans = [
       'Basic templates',
       'File upload (Excel/CSV)',
       'WhatsApp QR connect',
+      'API access',
     ],
     icon: Shield,
     color: 'from-gray-500 to-gray-600',
@@ -70,6 +71,7 @@ const plans = [
       'Priority support',
       'Message scheduling',
       'Detailed analytics',
+      'API access',
     ],
     icon: Zap,
     color: 'from-sky-500 to-sky-600',
@@ -87,7 +89,7 @@ const plans = [
       'Priority support',
       'Early access to features',
       'Bulk import up to 10K',
-      'API access (coming soon)',
+      'API access',
     ],
     icon: Crown,
     color: 'from-amber-500 to-amber-600',
@@ -120,6 +122,183 @@ interface ValidatePromoResponse {
   message?: string;
 }
 
+// ─── Code example tabs ────────────────────────────────────────────────────────
+
+const BASE = typeof window !== 'undefined' ? window.location.origin : '';
+
+const CODE_TABS = [
+  { id: 'curl',       label: 'cURL' },
+  { id: 'node-fetch', label: 'Node.js' },
+  { id: 'axios',      label: 'Axios' },
+  { id: 'python',     label: 'Python' },
+  { id: 'php',        label: 'PHP' },
+  { id: 'go',         label: 'Go' },
+  { id: 'ruby',       label: 'Ruby' },
+];
+
+const CODE_SNIPPETS: Record<string, string> = {
+  curl: `curl -X POST ${BASE}/api/v1/send \\
+  -H "X-API-Key: bsk_your_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{"phone":"919876543210","message":{"text":"Hello! Your OTP is 1234"}}'`,
+
+  'node-fetch': `const res = await fetch('${BASE}/api/v1/send', {
+  method: 'POST',
+  headers: {
+    'X-API-Key': 'bsk_your_key_here',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    phone: '919876543210',
+    message: { text: 'Hello! Your OTP is 1234' },
+  }),
+});
+const data = await res.json();
+console.log(data); // { success: true, sent: 1, failed: 0, total: 1 }`,
+
+  axios: `const axios = require('axios');
+
+const { data } = await axios.post('${BASE}/api/v1/send', {
+  phone: '919876543210',
+  message: { text: 'Hello! Your OTP is 1234' },
+}, {
+  headers: { 'X-API-Key': 'bsk_your_key_here' },
+});
+console.log(data);`,
+
+  python: `import requests
+
+response = requests.post(
+    '${BASE}/api/v1/send',
+    headers={'X-API-Key': 'bsk_your_key_here'},
+    json={
+        'phone': '919876543210',
+        'message': {'text': 'Hello! Your OTP is 1234'},
+    }
+)
+print(response.json())`,
+
+  php: `<?php
+$ch = curl_init('${BASE}/api/v1/send');
+curl_setopt_array($ch, [
+    CURLOPT_POST           => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER     => [
+        'X-API-Key: bsk_your_key_here',
+        'Content-Type: application/json',
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'phone'   => '919876543210',
+        'message' => ['text' => 'Hello! Your OTP is 1234'],
+    ]),
+]);
+echo curl_exec($ch);`,
+
+  go: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    body, _ := json.Marshal(map[string]any{
+        "phone":   "919876543210",
+        "message": map[string]string{"text": "Hello! Your OTP is 1234"},
+    })
+    req, _ := http.NewRequest("POST", "${BASE}/api/v1/send", bytes.NewBuffer(body))
+    req.Header.Set("X-API-Key", "bsk_your_key_here")
+    req.Header.Set("Content-Type", "application/json")
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+    fmt.Println(resp.Status)
+}`,
+
+  ruby: `require 'net/http'
+require 'json'
+require 'uri'
+
+uri  = URI('${BASE}/api/v1/send')
+http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = uri.scheme == 'https'
+
+req = Net::HTTP::Post.new(uri)
+req['X-API-Key']    = 'bsk_your_key_here'
+req['Content-Type'] = 'application/json'
+req.body = { phone: '919876543210', message: { text: 'Hello! Your OTP is 1234' } }.to_json
+
+puts http.request(req).body`,
+};
+
+function CodeExamples() {
+  const [tab, setTab] = useState('curl');
+  const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const copy = () => {
+    navigator.clipboard.writeText(CODE_SNIPPETS[tab] || '').then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
+      >
+        <span>Code examples — send a message</span>
+        {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </button>
+      {open && (
+        <>
+          {/* Language tabs */}
+          <div className="flex overflow-x-auto bg-gray-900 border-b border-gray-800">
+            {CODE_TABS.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`shrink-0 px-4 py-2.5 text-xs font-medium transition-colors ${
+                  tab === t.id
+                    ? 'text-green-400 border-b-2 border-green-400 bg-gray-950'
+                    : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {/* Code block */}
+          <div className="relative">
+            <pre className="bg-gray-950 text-green-400 text-xs p-4 overflow-x-auto leading-relaxed font-mono">
+              {CODE_SNIPPETS[tab]}
+            </pre>
+            <button
+              onClick={copy}
+              className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs rounded-lg transition-colors"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          {/* Full docs link */}
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-gray-500">Bulk send, image attachments, personalisation and more</span>
+            <Link to="/docs" className="flex items-center gap-1 text-xs text-sky-600 hover:text-sky-700 font-medium">
+              Full API Docs <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function SubscriptionPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -137,7 +316,6 @@ export function SubscriptionPage() {
   const [creatingKey, setCreatingKey] = useState(false);
   const [newKeyValue, setNewKeyValue] = useState<string | null>(null);
   const [newKeyName, setNewKeyName] = useState('');
-  const [showCurlExample, setShowCurlExample] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
 
   useEffect(() => {
@@ -502,11 +680,11 @@ export function SubscriptionPage() {
             Developer API Access
           </h2>
 
-          {(!subscription?.isActive || subscription?.plan === 'free') ? (
+          {(!subscription?.isActive) ? (
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">
               <Code className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">API access is available for Pro subscribers.</p>
-              <p className="text-sm text-gray-400 mt-1">Upgrade to Monthly or Yearly to enable developer API access.</p>
+              <p className="text-gray-500 font-medium">API access requires an active subscription.</p>
+              <p className="text-sm text-gray-400 mt-1">Subscribe to any plan to enable developer API access.</p>
             </div>
           ) : (
             <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
@@ -601,24 +779,8 @@ export function SubscriptionPage() {
                 <p className="text-sm text-gray-400">No API keys yet. Generate one above.</p>
               )}
 
-              {/* Collapsible curl example */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
-                <button
-                  onClick={() => setShowCurlExample(v => !v)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
-                >
-                  <span>Example: Send a message via curl</span>
-                  {showCurlExample ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {showCurlExample && (
-                  <pre className="bg-gray-900 text-green-400 text-xs p-4 overflow-x-auto leading-relaxed">
-{`curl -X POST ${import.meta.env.VITE_BACKEND_URL}/api/v1/send \\
-  -H "X-API-Key: bsk_your_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{"phone":"919876543210","message":{"text":"Hello! Your OTP is 1234"}}'`}
-                  </pre>
-                )}
-              </div>
+              {/* Multi-language code examples */}
+              <CodeExamples />
             </div>
           )}
         </div>
