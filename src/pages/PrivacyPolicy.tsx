@@ -1,5 +1,12 @@
+import { useSEO } from '@/hooks/useSEO';
+
 export function PrivacyPolicy() {
-  return (
+  useSEO({
+    title: 'Privacy Policy - WhatsApp Bulk Messenger',
+    description: 'Learn how we collect, use, and protect your personal information when you use WhatsApp Bulk Messenger.',
+    url: 'https://bulksender.todayintech.in/privacy'
+  });
+
     <div className="bg-white">
       {/* Header */}
       <div className="bg-gray-950 py-20">

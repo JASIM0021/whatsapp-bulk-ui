@@ -1,5 +1,12 @@
+import { useSEO } from '@/hooks/useSEO';
+
 export function RefundPolicy() {
-  return (
+  useSEO({
+    title: 'Refund Policy - WhatsApp Bulk Messenger',
+    description: 'Read the refund policy for WhatsApp Bulk Messenger.',
+    url: 'https://bulksender.todayintech.in/refund'
+  });
+
     <div className="bg-white">
       {/* Header */}
       <div className="bg-gray-950 py-20">

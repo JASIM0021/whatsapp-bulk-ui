@@ -3,6 +3,7 @@ import { Mail, Lock, ArrowLeft, User, ShieldCheck, KeyRound } from 'lucide-react
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
+import { useSEO } from '@/hooks/useSEO';
 
 type Step =
   | 'form'            // login / signup form
@@ -18,6 +19,13 @@ export function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>(
     location.pathname === '/signup' ? 'signup' : 'login'
   );
+  
+  useSEO({
+    title: mode === 'login' ? 'Sign In - WhatsApp Bulk Messenger' : 'Sign Up - WhatsApp Bulk Messenger',
+    description: mode === 'login' ? 'Sign in to access your WhatsApp Bulk Messenger dashboard.' : 'Create a new account on WhatsApp Bulk Messenger and get started with free messages today.',
+    url: mode === 'login' ? 'https://bulksender.todayintech.in/login' : 'https://bulksender.todayintech.in/signup'
+  });
+
   const [step, setStep] = useState<Step>('form');
 
   // ── Form fields ──────────────────────────────────────────────────────

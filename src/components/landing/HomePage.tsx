@@ -420,8 +420,17 @@ function CTA() {
   );
 }
 
+import { useSEO } from '@/hooks/useSEO';
+
 /* ─────────────── Page ─────────────── */
 export function HomePage() {
+  useSEO({
+    title: 'WhatsApp Bulk Messenger - Send Messages at Scale',
+    description: 'Bulk WhatsApp messaging tool. Upload contacts, select templates, and launch campaigns instantly without coding.',
+    keywords: 'whatsapp bulk sender, whatsapp marketing, bulk messaging, whatsapp api',
+    url: 'https://bulksender.todayintech.in/'
+  });
+
   return (
     <>
       <Hero />

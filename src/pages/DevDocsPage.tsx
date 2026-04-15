@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Copy, Check, ChevronDown, ChevronRight, Terminal, Zap, Shield, Code2, BookOpen, AlertCircle } from 'lucide-react';
+import { useSEO } from '@/hooks/useSEO';
 
 // ─── Code snippets ─────────────────────────────────────────────────────────────
 
@@ -342,9 +343,17 @@ function IC({ children }: { children: React.ReactNode }) {
   return <code className="bg-gray-100 text-green-700 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>;
 }
 
+import { useSEO } from '@/hooks/useSEO';
+
 // ─── Main docs page ───────────────────────────────────────────────────────────
 
 export function DevDocsPage() {
+  useSEO({
+    title: 'Developer API Docs - WhatsApp Bulk Messenger',
+    description: 'Documentation for integrating WhatsApp Bulk Messenger API to send automated basic and bulk messages programmatically.',
+    url: 'https://bulksender.todayintech.in/docs'
+  });
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero */}

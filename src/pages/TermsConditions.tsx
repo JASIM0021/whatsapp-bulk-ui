@@ -1,5 +1,12 @@
+import { useSEO } from '@/hooks/useSEO';
+
 export function TermsConditions() {
-  return (
+  useSEO({
+    title: 'Terms & Conditions - WhatsApp Bulk Messenger',
+    description: 'Read the terms and conditions for using WhatsApp Bulk Messenger.',
+    url: 'https://bulksender.todayintech.in/terms'
+  });
+
     <div className="bg-white">
       {/* Header */}
       <div className="bg-gray-950 py-20">
