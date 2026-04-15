@@ -343,8 +343,6 @@ function IC({ children }: { children: React.ReactNode }) {
   return <code className="bg-gray-100 text-green-700 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>;
 }
 
-import { useSEO } from '@/hooks/useSEO';
-
 // ─── Main docs page ───────────────────────────────────────────────────────────
 
 export function DevDocsPage() {

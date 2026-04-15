@@ -7,6 +7,8 @@ export function RefundPolicy() {
     url: 'https://bulksender.todayintech.in/refund'
   });
 
+  return (
+
     <div className="bg-white">
       {/* Header */}
       <div className="bg-gray-950 py-20">

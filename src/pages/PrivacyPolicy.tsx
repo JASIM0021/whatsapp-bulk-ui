@@ -7,6 +7,8 @@ export function PrivacyPolicy() {
     url: 'https://bulksender.todayintech.in/privacy'
   });
 
+  return (
+
     <div className="bg-white">
       {/* Header */}
       <div className="bg-gray-950 py-20">

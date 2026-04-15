@@ -7,6 +7,8 @@ export function TermsConditions() {
     url: 'https://bulksender.todayintech.in/terms'
   });
 
+  return (
+
     <div className="bg-white">
       {/* Header */}
       <div className="bg-gray-950 py-20">
