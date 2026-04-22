@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
     status: `${API_BASE_URL}/api/whatsapp/status`,
     disconnect: `${API_BASE_URL}/api/whatsapp/disconnect`,
     send: `${SSE_BASE_URL}/api/whatsapp/send`,         // SSE — direct to backend
+    contacts: `${API_BASE_URL}/api/whatsapp/contacts`,
   },
   upload: {
     contacts: `${API_BASE_URL}/api/upload`,
@@ -59,6 +60,7 @@ export const API_ENDPOINTS = {
     user: (id: string) => `${API_BASE_URL}/api/admin/users/${id}`,
     sendEmail: `${API_BASE_URL}/api/admin/email/promotional`,
     userActivity: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/activity`,
+    updateUserPlan: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/plan`,
     invoices: `${API_BASE_URL}/api/admin/invoices`,
     invoice: (id: string) => `${API_BASE_URL}/api/admin/invoices/${id}`,
     approveInvoice: (id: string) => `${API_BASE_URL}/api/admin/invoices/${id}/approve`,
@@ -73,10 +75,19 @@ export const API_ENDPOINTS = {
     delete: (id: string) => `${API_BASE_URL}/api/contacts/${id}`,
     deleteAll: `${API_BASE_URL}/api/contacts`,
   },
+  schedule: {
+    list: `${API_BASE_URL}/api/schedule`,
+    create: `${API_BASE_URL}/api/schedule`,
+    cancel: (id: string) => `${API_BASE_URL}/api/schedule/${id}`,
+  },
   apiKeys: {
     list:   `${API_BASE_URL}/api/apikeys`,
     create: `${API_BASE_URL}/api/apikeys`,
     revoke: (id: string) => `${API_BASE_URL}/api/apikeys/${id}`,
+  },
+  bot: {
+    get:    `${API_BASE_URL}/api/bot`,
+    upsert: `${API_BASE_URL}/api/bot`,
   },
   health: `${API_BASE_URL}/api/health`,
 };

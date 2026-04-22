@@ -16,6 +16,7 @@ import { SubscriptionPage } from './pages/SubscriptionPage'
 import { DevDocsPage } from './pages/DevDocsPage'
 import { AdminPanel } from './pages/AdminPanel'
 import { PaymentSuccess, PaymentFailure } from './pages/PaymentResult'
+import { BotSetupPage } from './pages/BotSetupPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -78,6 +79,9 @@ function AppRoutes() {
       } />
       <Route path="/admin" element={
         <ProtectedRoute><AdminPanel /></ProtectedRoute>
+      } />
+      <Route path="/bot" element={
+        <ProtectedRoute><BotSetupPage /></ProtectedRoute>
       } />
       <Route path="/app" element={
         <ProtectedRoute>

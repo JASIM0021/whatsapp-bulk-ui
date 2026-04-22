@@ -273,8 +273,8 @@ export function LoginPage() {
     }
   };
 
-  // ── Shared OTP box component ─────────────────────────────────────────
-  const OtpBoxes = () => (
+  // ── Shared OTP boxes (plain JSX, not a component — avoids remount/focus-loss on re-render) ──
+  const otpBoxes = (
     <div className="flex gap-3 justify-center" onPaste={handleOtpPaste}>
       {otp.map((digit, i) => (
         <input
@@ -338,7 +338,7 @@ export function LoginPage() {
               <form onSubmit={handleSignupOtpSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3 text-center">Enter verification code</label>
-                  <OtpBoxes />
+                  {otpBoxes}
                 </div>
                 {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-center">{error}</div>}
                 <button type="submit" disabled={isLoading || otp.join('').length < 5}
@@ -431,7 +431,7 @@ export function LoginPage() {
               <form onSubmit={handleForgotOtpSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3 text-center">Enter reset code</label>
-                  <OtpBoxes />
+                  {otpBoxes}
                 </div>
                 {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-center">{error}</div>}
                 <button type="submit" disabled={isLoading || otp.join('').length < 5}

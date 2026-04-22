@@ -538,6 +538,10 @@ export function SubscriptionPage() {
           {plans.map((plan) => {
             const Icon = plan.icon;
             const isCurrent = subscription?.plan === plan.id && subscription.isActive;
+            // Disable lower-tier plans when user already has a higher active plan
+            const planRank: Record<string, number> = { free: 0, monthly: 1, yearly: 2 };
+            const currentRank = planRank[subscription?.plan ?? 'free'] ?? 0;
+            const isLowerThan = subscription?.isActive && planRank[plan.id] < currentRank;
             const livePrice = plan.id !== 'free' ? (livePricing?.[plan.id]?.amount ?? plan.price) : 0;
             const freeMsgLimit = livePricing?.['free']?.messageLimit ?? 5;
             const displayPrice = plan.id === 'free' ? 0 : livePrice;
@@ -592,7 +596,7 @@ export function SubscriptionPage() {
                 ) : (
                   <>
                     {/* Promo code section */}
-                    {!isCurrent && (
+                    {!isCurrent && !isLowerThan && (
                       <div className="mb-4 border border-violet-200 rounded-xl p-3 bg-violet-50">
                         <p className="text-xs font-semibold text-violet-600 mb-2 flex items-center gap-1.5">
                           <Tag className="w-3.5 h-3.5" /> Have a promo code?
@@ -646,12 +650,14 @@ export function SubscriptionPage() {
                     )}
                     <button
                       onClick={() => handleUpgrade(plan.id)}
-                      disabled={paying !== null || isCurrent}
-                      className={`w-full py-3 rounded-xl text-white font-medium transition-all ${
+                      disabled={paying !== null || isCurrent || isLowerThan}
+                      className={`w-full py-3 rounded-xl font-medium transition-all ${
                         isCurrent
-                          ? 'bg-green-500 cursor-not-allowed'
-                          : plan.btnClass
-                      } disabled:opacity-60`}
+                          ? 'bg-green-500 text-white cursor-not-allowed'
+                          : isLowerThan
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : `${plan.btnClass} text-white`
+                      } disabled:opacity-80`}
                     >
                       {paying === plan.id ? (
                         <span className="flex items-center justify-center gap-2">
@@ -660,6 +666,8 @@ export function SubscriptionPage() {
                         </span>
                       ) : isCurrent ? (
                         'Current Plan'
+                      ) : isLowerThan ? (
+                        'Not Available'
                       ) : promoValidation?.valid && selectedPlan === plan.id ? (
                         `Pay ₹${promoValidation.finalAmount.toLocaleString()}`
                       ) : (

@@ -11,7 +11,7 @@ interface SendProgressProps {
   onClose: () => void;
   onComplete: (progress: SendProgressType) => void;
   contacts: any[];
-  message: any;
+  messages: any[];
 }
 
 export function SendProgress({
@@ -19,7 +19,7 @@ export function SendProgress({
   onClose,
   onComplete,
   contacts,
-  message,
+  messages,
 }: SendProgressProps) {
   const [progress, setProgress] = useState<SendProgressType>({
     total: contacts.length,
@@ -62,7 +62,7 @@ export function SendProgress({
     // Start sending
     apiFetch(API_ENDPOINTS.whatsapp.send, {
       method: 'POST',
-      body: JSON.stringify({ contacts, message }),
+      body: JSON.stringify({ contacts, messages }),
     })
       .then((response) => {
         if (!response.ok) {
@@ -133,7 +133,7 @@ export function SendProgress({
         hasSentRef.current = false;
       }
     };
-  }, [isOpen, contacts, message, onComplete]);
+  }, [isOpen, contacts, messages, onComplete]);
 
   const handleClose = () => {
     if (isComplete) {

@@ -2,17 +2,35 @@ import React, { useState, useRef, useMemo } from 'react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Message } from '@/types/message';
-import { MessageSquare, Link, Image as ImageIcon, Upload, X, FileText } from 'lucide-react';
+import { MessageSquare, Link, Image as ImageIcon, Upload, X, FileText, Plus, Trash2, Clock } from 'lucide-react';
 import { apiFetch, API_BASE_URL } from '@/config/api';
 import { Template } from '@/types/template';
 import { TemplateSelector } from './templates/TemplateSelector';
 import { TemplateEditor } from './templates/TemplateEditor';
 import { useTemplates } from '@/hooks/useTemplates';
 
+interface MessageSet {
+  text: string;
+  link: string;
+  imageUrl: string;
+  uploadedImage: { file: File; preview: string; path: string } | null;
+  isUploading: boolean;
+  uploadError: string;
+}
+
+const createEmptySet = (): MessageSet => ({
+  text: '',
+  link: '',
+  imageUrl: '',
+  uploadedImage: null,
+  isUploading: false,
+  uploadError: '',
+});
+
 interface MessageComposerProps {
   isOpen: boolean;
   onClose: () => void;
-  onSend: (message: Message) => void;
+  onSend: (messages: Message[], scheduledAt?: Date) => void;
   selectedCount: number;
 }
 
@@ -28,56 +46,75 @@ export function MessageComposer({
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
 
-  const [message, setMessage] = useState<Message>({ text: '', link: '', imageUrl: '' });
-  const [uploadedImage, setUploadedImage] = useState<{
-    file: File;
-    preview: string;
-    path: string;
-  } | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string>('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [messageSets, setMessageSets] = useState<MessageSet[]>([createEmptySet()]);
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Preview text: resolve all vars including {{name}} (shown as "John")
+  // Schedule state
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState('');  // datetime-local string
+
+  // Preview text for set[0] with template variable resolution
   const previewText = useMemo(() => {
-    if (!selectedTemplate) return message.text;
+    if (!selectedTemplate) return messageSets[0]?.text || '';
     let text = selectedTemplate.body;
     Object.entries(variableValues).forEach(([key, value]) => {
       text = text.replace(new RegExp(`{{${key}}}`, 'g'), value || `{{${key}}}`);
     });
     return text.replace(/{{name}}/g, 'John');
-  }, [selectedTemplate, message.text, variableValues]);
+  }, [selectedTemplate, messageSets, variableValues]);
 
   const handleTemplateSelect = (template: Template | null) => {
     setSelectedTemplate(template);
     setVariableValues({});
-    setMessage((m) => ({ ...m, text: template ? template.body : '' }));
+    setMessageSets(prev => {
+      const updated = [...prev];
+      updated[0] = { ...updated[0], text: template ? template.body : '' };
+      return updated;
+    });
   };
 
   const handleVariableChange = (name: string, value: string) => {
-    setVariableValues((prev) => ({ ...prev, [name]: value }));
+    setVariableValues(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleMessageChange = (text: string) => {
-    setMessage((m) => ({ ...m, text }));
-    if (selectedTemplate) setSelectedTemplate({ ...selectedTemplate, body: text });
+  const handleTextChange = (index: number, text: string) => {
+    setMessageSets(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], text };
+      return updated;
+    });
+    if (index === 0 && selectedTemplate) {
+      setSelectedTemplate({ ...selectedTemplate, body: text });
+    }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setUploadError('Please select an image file');
+      setMessageSets(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], uploadError: 'Please select an image file' };
+        return updated;
+      });
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setUploadError('Image must be less than 10MB');
+      setMessageSets(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], uploadError: 'Image must be less than 10MB' };
+        return updated;
+      });
       return;
     }
 
-    setUploadError('');
-    setIsUploading(true);
+    setMessageSets(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], uploadError: '', isUploading: true };
+      return updated;
+    });
+
     try {
       const preview = URL.createObjectURL(file);
       const formData = new FormData();
@@ -90,48 +127,99 @@ export function MessageComposer({
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setUploadedImage({ file, preview, path: data.filePath });
-        setMessage((m) => ({ ...m, imageUrl: '' }));
+        setMessageSets(prev => {
+          const updated = [...prev];
+          updated[index] = {
+            ...updated[index],
+            isUploading: false,
+            uploadedImage: { file, preview, path: data.filePath },
+            imageUrl: '',
+          };
+          return updated;
+        });
       } else {
-        setUploadError(data.error || 'Upload failed');
+        setMessageSets(prev => {
+          const updated = [...prev];
+          updated[index] = { ...updated[index], isUploading: false, uploadError: data.error || 'Upload failed' };
+          return updated;
+        });
       }
     } catch (error: unknown) {
-      setUploadError(error instanceof Error ? error.message : 'Failed to upload image');
-    } finally {
-      setIsUploading(false);
+      setMessageSets(prev => {
+        const updated = [...prev];
+        updated[index] = {
+          ...updated[index],
+          isUploading: false,
+          uploadError: error instanceof Error ? error.message : 'Failed to upload image',
+        };
+        return updated;
+      });
     }
   };
 
-  const handleRemoveImage = () => {
-    if (uploadedImage?.preview) URL.revokeObjectURL(uploadedImage.preview);
-    setUploadedImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  const handleRemoveImage = (index: number) => {
+    const set = messageSets[index];
+    if (set.uploadedImage?.preview) URL.revokeObjectURL(set.uploadedImage.preview);
+    setMessageSets(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], uploadedImage: null };
+      return updated;
+    });
+    if (fileInputRefs.current[index]) fileInputRefs.current[index]!.value = '';
+  };
+
+  const addMessageSet = () => {
+    setMessageSets(prev => [...prev, createEmptySet()]);
+  };
+
+  const removeMessageSet = (index: number) => {
+    const set = messageSets[index];
+    if (set.uploadedImage?.preview) URL.revokeObjectURL(set.uploadedImage.preview);
+    setMessageSets(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSend = () => {
-    if (!message.text.trim()) return;
+    const validSets = messageSets.filter(s => s.text.trim());
+    if (validSets.length === 0) return;
 
-    // Build final text: resolve non-name variables, keep {{name}} for backend substitution
-    let finalText = message.text;
-    if (selectedTemplate) {
-      finalText = selectedTemplate.body;
-      Object.entries(variableValues).forEach(([key, value]) => {
-        if (key !== 'name') {
-          finalText = finalText.replace(new RegExp(`{{${key}}}`, 'g'), value || `{{${key}}}`);
-        }
-      });
-    }
+    const messages: Message[] = validSets.map((set, i) => {
+      let finalText = set.text;
+      // Apply template variable resolution only for set[0]
+      if (i === 0 && selectedTemplate) {
+        finalText = selectedTemplate.body;
+        Object.entries(variableValues).forEach(([key, value]) => {
+          if (key !== 'name') {
+            finalText = finalText.replace(new RegExp(`{{${key}}}`, 'g'), value || `{{${key}}}`);
+          }
+        });
+      }
+      return {
+        text: finalText,
+        link: set.link,
+        imageUrl: set.imageUrl,
+        imagePath: set.uploadedImage?.path,
+      };
+    });
 
-    onSend({ ...message, text: finalText, imagePath: uploadedImage?.path });
-    setMessage({ text: '', link: '', imageUrl: '' });
+    const scheduleDate = scheduleEnabled && scheduledAt ? new Date(scheduledAt) : undefined;
+    onSend(messages, scheduleDate);
+
+    // Reset state
+    messageSets.forEach(s => {
+      if (s.uploadedImage?.preview) URL.revokeObjectURL(s.uploadedImage.preview);
+    });
+    setMessageSets([createEmptySet()]);
     setSelectedTemplate(null);
     setVariableValues({});
-    handleRemoveImage();
+    setScheduleEnabled(false);
+    setScheduledAt('');
     onClose();
   };
 
-  const characterCount = message.text.length;
-  const maxCharacters = 1000;
+  const validSetCount = messageSets.filter(s => s.text.trim()).length;
+
+  // Min datetime for the picker: 1 minute from now
+  const minDateTime = new Date(Date.now() + 60_000).toISOString().slice(0, 16);
 
   return (
     <>
@@ -144,7 +232,7 @@ export function MessageComposer({
             </p>
           </div>
 
-          {/* Template toggle */}
+          {/* Template toggle (applies to Message 1) */}
           <div className="flex items-center justify-between">
             <button
               onClick={() => setShowTemplates(!showTemplates)}
@@ -186,182 +274,257 @@ export function MessageComposer({
             </div>
           )}
 
-          {/* Message text */}
-          <div>
-            <label
-              htmlFor="message-text"
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"
+          {/* Message Sets */}
+          {messageSets.map((set, index) => (
+            <div
+              key={index}
+              className="border-2 border-gray-200 rounded-xl p-4 space-y-4"
             >
-              <MessageSquare size={18} />
-              Message Text *
-            </label>
-            <textarea
-              id="message-text"
-              value={message.text}
-              onChange={(e) => handleMessageChange(e.target.value)}
-              placeholder="Enter your message here..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-              rows={6}
-              maxLength={maxCharacters}
-            />
-            <div className="flex justify-between mt-1">
-              <p className="text-xs text-gray-500">
-                Messages will be sent with 3-5 second delays between each
-              </p>
-              <p className={`text-xs ${characterCount > maxCharacters * 0.9 ? 'text-red-600' : 'text-gray-500'}`}>
-                {characterCount} / {maxCharacters}
-              </p>
-            </div>
-          </div>
-
-          {/* Link (optional) */}
-          <div>
-            <label
-              htmlFor="message-link"
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"
-            >
-              <Link size={18} />
-              Link (Optional)
-            </label>
-            <input
-              id="message-link"
-              type="url"
-              value={message.link}
-              onChange={(e) => setMessage((m) => ({ ...m, link: e.target.value }))}
-              placeholder="https://example.com"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-            <p className="text-xs text-gray-500 mt-1">Link will be added at the end of your message</p>
-          </div>
-
-          {/* Image Upload (optional) */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <ImageIcon size={18} />
-              Image (Optional)
-            </label>
-
-            {!uploadedImage ? (
-              <div className="space-y-3">
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="image-upload"
-                  />
-                  <label
-                    htmlFor="image-upload"
-                    className={`flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-400 hover:bg-primary-50 cursor-pointer transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              {/* Set header */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-700">
+                  {messageSets.length > 1 ? `Message ${index + 1}` : 'Message'}
+                  {index === 0 && selectedTemplate ? ` — ${selectedTemplate.name}` : ''}
+                </span>
+                {messageSets.length > 1 && (
+                  <button
+                    onClick={() => removeMessageSet(index)}
+                    className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    type="button"
+                    title="Remove this message"
                   >
-                    <Upload size={18} className="text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      {isUploading ? 'Uploading...' : 'Click to upload image'}
-                    </span>
-                  </label>
-                  <p className="text-xs text-gray-500 mt-1">Supports: JPG, PNG, GIF, WebP (max 10MB)</p>
-                </div>
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="px-2 bg-white text-gray-500">OR</span>
-                  </div>
-                </div>
-
-                <div>
-                  <input
-                    id="message-image-url"
-                    type="url"
-                    value={message.imageUrl}
-                    onChange={(e) => setMessage((m) => ({ ...m, imageUrl: e.target.value }))}
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    disabled={isUploading}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Or paste an image URL</p>
+              {/* Message text */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <MessageSquare size={18} />
+                  Message Text *
+                </label>
+                <textarea
+                  value={set.text}
+                  onChange={(e) => handleTextChange(index, e.target.value)}
+                  placeholder="Enter your message here..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                  rows={4}
+                  maxLength={1000}
+                />
+                <div className="flex justify-between mt-1">
+                  {index === 0 && (
+                    <p className="text-xs text-gray-500">Messages will be sent with 3-5 second delays between each</p>
+                  )}
+                  <p className={`text-xs ml-auto ${set.text.length > 900 ? 'text-red-600' : 'text-gray-500'}`}>
+                    {set.text.length} / 1000
+                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="relative border border-gray-300 rounded-lg p-3 bg-gray-50">
-                <button
-                  onClick={handleRemoveImage}
-                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                  type="button"
-                >
-                  <X size={16} />
-                </button>
-                <div className="flex items-center gap-3">
-                  <img src={uploadedImage.preview} alt="Preview" className="w-20 h-20 object-cover rounded" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{uploadedImage.file.name}</p>
-                    <p className="text-xs text-gray-500">{(uploadedImage.file.size / 1024).toFixed(1)} KB</p>
-                    <p className="text-xs text-green-600 mt-1">✓ Uploaded successfully</p>
+
+              {/* Link */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <Link size={18} />
+                  Link (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={set.link}
+                  onChange={(e) => setMessageSets(prev => {
+                    const updated = [...prev];
+                    updated[index] = { ...updated[index], link: e.target.value };
+                    return updated;
+                  })}
+                  placeholder="https://example.com"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">Link will be added at the end of your message</p>
+              </div>
+
+              {/* Image */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <ImageIcon size={18} />
+                  Image (Optional)
+                </label>
+
+                {!set.uploadedImage ? (
+                  <div className="space-y-3">
+                    <div>
+                      <input
+                        ref={(el) => { fileInputRefs.current[index] = el; }}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(index, e)}
+                        className="hidden"
+                        id={`image-upload-${index}`}
+                      />
+                      <label
+                        htmlFor={`image-upload-${index}`}
+                        className={`flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-400 hover:bg-primary-50 cursor-pointer transition-colors ${set.isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <Upload size={18} className="text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {set.isUploading ? 'Uploading...' : 'Click to upload image'}
+                        </span>
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">Supports: JPG, PNG, GIF, WebP (max 10MB)</p>
+                    </div>
+
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-300" />
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="px-2 bg-white text-gray-500">OR</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <input
+                        type="url"
+                        value={set.imageUrl}
+                        onChange={(e) => setMessageSets(prev => {
+                          const updated = [...prev];
+                          updated[index] = { ...updated[index], imageUrl: e.target.value };
+                          return updated;
+                        })}
+                        placeholder="https://example.com/image.jpg"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        disabled={set.isUploading}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Or paste an image URL</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative border border-gray-300 rounded-lg p-3 bg-gray-50">
+                    <button
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                      type="button"
+                    >
+                      <X size={16} />
+                    </button>
+                    <div className="flex items-center gap-3">
+                      <img src={set.uploadedImage.preview} alt="Preview" className="w-20 h-20 object-cover rounded" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{set.uploadedImage.file.name}</p>
+                        <p className="text-xs text-gray-500">{(set.uploadedImage.file.size / 1024).toFixed(1)} KB</p>
+                        <p className="text-xs text-green-600 mt-1">✓ Uploaded successfully</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {set.uploadError && <p className="text-xs text-red-600 mt-1">{set.uploadError}</p>}
+              </div>
+
+              {/* Per-set preview */}
+              {set.text && (
+                <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                  <p className="text-xs font-medium text-gray-600 mb-2">
+                    {index === 0 && selectedTemplate ? 'Preview ({{name}} shown as "John"):' : 'Preview:'}
+                  </p>
+                  <div className="bg-white p-3 rounded-lg shadow-sm">
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap">
+                      {index === 0 ? previewText : set.text}
+                    </p>
+                    {set.link && (
+                      <a
+                        href={set.link}
+                        className="text-sm text-blue-600 hover:underline mt-2 block"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {set.link}
+                      </a>
+                    )}
+                    {(set.imageUrl || set.uploadedImage) && (
+                      <div className="mt-3">
+                        {set.uploadedImage ? (
+                          <img
+                            src={set.uploadedImage.preview}
+                            alt="Attachment preview"
+                            className="max-w-[200px] max-h-[150px] object-cover rounded-lg border border-gray-200"
+                          />
+                        ) : set.imageUrl ? (
+                          <img
+                            src={set.imageUrl}
+                            alt="Attachment preview"
+                            className="max-w-[200px] max-h-[150px] object-cover rounded-lg border border-gray-200"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        ) : null}
+                        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                          <ImageIcon size={12} />
+                          Image attachment
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
+              )}
+            </div>
+          ))}
+
+          {/* Add Another Message button */}
+          <button
+            onClick={addMessageSet}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-primary-300 rounded-xl text-primary-600 hover:border-primary-500 hover:bg-primary-50 transition-colors font-medium"
+            type="button"
+          >
+            <Plus size={20} />
+            Add Another Message
+          </button>
+
+          {/* Schedule toggle */}
+          <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <div
+                onClick={() => setScheduleEnabled(v => !v)}
+                className={`relative w-10 h-5 rounded-full transition-colors ${scheduleEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${scheduleEnabled ? 'translate-x-5' : ''}`} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock size={16} className={scheduleEnabled ? 'text-blue-600' : 'text-gray-400'} />
+                <span className={`text-sm font-medium ${scheduleEnabled ? 'text-blue-700' : 'text-gray-600'}`}>
+                  Schedule for later
+                </span>
+              </div>
+            </label>
+
+            {scheduleEnabled && (
+              <div className="pl-1">
+                <label className="block text-xs text-gray-500 mb-1">Send at</label>
+                <input
+                  type="datetime-local"
+                  value={scheduledAt}
+                  min={minDateTime}
+                  onChange={e => setScheduledAt(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-400 mt-1">Messages will be queued and sent automatically at the selected time.</p>
               </div>
             )}
-
-            {uploadError && <p className="text-xs text-red-600 mt-1">{uploadError}</p>}
           </div>
-
-          {/* Preview */}
-          {message.text && (
-            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-              <p className="text-xs font-medium text-gray-600 mb-2">
-                {selectedTemplate ? 'Preview ({{name}} shown as "John"):' : 'Preview:'}
-              </p>
-              <div className="bg-white p-3 rounded-lg shadow-sm">
-                <p className="text-sm text-gray-900 whitespace-pre-wrap">{previewText}</p>
-                {message.link && (
-                  <a
-                    href={message.link}
-                    className="text-sm text-blue-600 hover:underline mt-2 block"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {message.link}
-                  </a>
-                )}
-                {(message.imageUrl || uploadedImage) && (
-                  <div className="mt-3">
-                    {uploadedImage ? (
-                      <img
-                        src={uploadedImage.preview}
-                        alt="Attachment preview"
-                        className="max-w-[200px] max-h-[150px] object-cover rounded-lg border border-gray-200"
-                      />
-                    ) : message.imageUrl ? (
-                      <img
-                        src={message.imageUrl}
-                        alt="Attachment preview"
-                        className="max-w-[200px] max-h-[150px] object-cover rounded-lg border border-gray-200"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : null}
-                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                      <ImageIcon size={12} />
-                      Image attachment
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Actions */}
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleSend} disabled={!message.text.trim()}>
-              Send Messages
+            <Button
+              variant="primary"
+              onClick={handleSend}
+              disabled={validSetCount === 0 || (scheduleEnabled && !scheduledAt)}
+              className={scheduleEnabled ? '!bg-blue-600 hover:!bg-blue-700' : ''}
+            >
+              {scheduleEnabled ? (
+                <><Clock size={16} className="mr-1.5 inline" />Schedule{validSetCount > 1 ? ` ${validSetCount} Messages` : ''}</>
+              ) : (
+                validSetCount > 1 ? `Send ${validSetCount} Messages` : 'Send Messages'
+              )}
             </Button>
           </div>
         </div>

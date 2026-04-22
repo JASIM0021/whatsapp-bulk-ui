@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, Check, ChevronDown, ChevronRight, Terminal, Zap, Shield, Code2, BookOpen, AlertCircle } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronRight, Terminal, Zap, Shield, Code2, BookOpen, AlertCircle, Clock } from 'lucide-react';
 import { useSEO } from '@/hooks/useSEO';
 
 // ─── Code snippets ─────────────────────────────────────────────────────────────
@@ -102,6 +102,188 @@ req.body = { phone: '919876543210', message: { text: 'Hello! Your OTP is 1234' }
 
 res = http.request(req)
 puts res.body`,
+  },
+
+  schedule_send: {
+    curl: `curl -X POST ${BASE}/api/v1/send \\
+  -H "X-API-Key: bsk_your_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "phone": "919876543210",
+    "message": {"text": "Your appointment reminder!"},
+    "schedule_at": "2024-06-15T09:00:00Z"
+  }'`,
+
+    'node-fetch': `const res = await fetch('${BASE}/api/v1/send', {
+  method: 'POST',
+  headers: {
+    'X-API-Key': 'bsk_your_key_here',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    contacts: [
+      { phone: '919876543210', name: 'Rahul' },
+      { phone: '919123456789', name: 'Priya' },
+    ],
+    message: { text: 'Hi {{name}}, your sale starts tomorrow!' },
+    schedule_at: '2024-06-15T09:00:00Z',   // ISO 8601 UTC
+  }),
+});
+const data = await res.json();
+// { success: true, scheduled: true, job_id: "abc123", scheduled_at: "...", total: 2 }
+console.log(data);`,
+
+    python: `import requests
+
+response = requests.post(
+    '${BASE}/api/v1/send',
+    headers={'X-API-Key': 'bsk_your_key_here'},
+    json={
+        'contacts': [
+            {'phone': '919876543210', 'name': 'Rahul'},
+        ],
+        'message': {'text': 'Hi {{name}}, reminder for tomorrow!'},
+        'schedule_at': '2024-06-15T09:00:00Z',
+    }
+)
+data = response.json()
+# data['job_id'] — save this to cancel later
+print(data)`,
+
+    axios: `const { data } = await axios.post('${BASE}/api/v1/send', {
+  contacts: [{ phone: '919876543210', name: 'Rahul' }],
+  message: { text: 'Hi {{name}}, your promo starts now!' },
+  schedule_at: '2024-06-15T09:00:00Z',
+}, { headers: { 'X-API-Key': 'bsk_your_key_here' } });
+console.log(data.job_id);`,
+
+    php: `<?php
+$ch = curl_init('${BASE}/api/v1/send');
+curl_setopt_array($ch, [
+    CURLOPT_POST           => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER     => [
+        'X-API-Key: bsk_your_key_here',
+        'Content-Type: application/json',
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'phone'       => '919876543210',
+        'message'     => ['text' => 'Your appointment is tomorrow!'],
+        'schedule_at' => '2024-06-15T09:00:00Z',
+    ]),
+]);
+$result = json_decode(curl_exec($ch), true);
+echo $result['job_id'];`,
+
+    go: `body, _ := json.Marshal(map[string]any{
+    "phone":       "919876543210",
+    "message":     map[string]string{"text": "Your reminder!"},
+    "schedule_at": "2024-06-15T09:00:00Z",
+})
+req, _ := http.NewRequest("POST", "${BASE}/api/v1/send", bytes.NewBuffer(body))
+req.Header.Set("X-API-Key", "bsk_your_key_here")
+req.Header.Set("Content-Type", "application/json")
+resp, _ := http.DefaultClient.Do(req)
+defer resp.Body.Close()
+// resp.StatusCode == 202 (Accepted)`,
+
+    ruby: `require 'net/http'
+require 'json'
+require 'uri'
+
+uri = URI('${BASE}/api/v1/send')
+req = Net::HTTP::Post.new(uri)
+req['X-API-Key']    = 'bsk_your_key_here'
+req['Content-Type'] = 'application/json'
+req.body = {
+  phone:       '919876543210',
+  message:     { text: 'Your reminder!' },
+  schedule_at: '2024-06-15T09:00:00Z',
+}.to_json
+puts Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') { |h| h.request(req) }.body`,
+  },
+
+  schedule_list: {
+    curl: `# List all scheduled jobs
+curl -H "X-API-Key: bsk_your_key_here" ${BASE}/api/v1/schedules
+
+# Cancel a pending job
+curl -X DELETE -H "X-API-Key: bsk_your_key_here" ${BASE}/api/v1/schedules/JOB_ID_HERE`,
+
+    'node-fetch': `// List scheduled jobs
+const list = await fetch('${BASE}/api/v1/schedules', {
+  headers: { 'X-API-Key': 'bsk_your_key_here' },
+});
+const { schedules } = await list.json();
+console.log(schedules);
+
+// Cancel a pending job
+const cancel = await fetch(\`${BASE}/api/v1/schedules/\${jobId}\`, {
+  method: 'DELETE',
+  headers: { 'X-API-Key': 'bsk_your_key_here' },
+});
+console.log(await cancel.json()); // { success: true, message: "job cancelled" }`,
+
+    python: `import requests
+
+headers = {'X-API-Key': 'bsk_your_key_here'}
+
+# List
+schedules = requests.get('${BASE}/api/v1/schedules', headers=headers).json()
+for s in schedules['schedules']:
+    print(s['id'], s['status'], s['scheduledAt'])
+
+# Cancel
+job_id = schedules['schedules'][0]['id']
+result = requests.delete(f'${BASE}/api/v1/schedules/{job_id}', headers=headers)
+print(result.json())`,
+
+    axios: `const headers = { 'X-API-Key': 'bsk_your_key_here' };
+
+// List
+const { data: { schedules } } = await axios.get('${BASE}/api/v1/schedules', { headers });
+
+// Cancel
+await axios.delete(\`${BASE}/api/v1/schedules/\${jobId}\`, { headers });`,
+
+    php: `<?php
+$headers = ['X-API-Key: bsk_your_key_here'];
+
+// List
+$ch = curl_init('${BASE}/api/v1/schedules');
+curl_setopt_array($ch, [CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true]);
+$data = json_decode(curl_exec($ch), true);
+
+// Cancel
+$jobId = $data['schedules'][0]['id'];
+$ch = curl_init("${BASE}/api/v1/schedules/$jobId");
+curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => 'DELETE', CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true]);
+echo curl_exec($ch);`,
+
+    go: `// List
+req, _ := http.NewRequest("GET", "${BASE}/api/v1/schedules", nil)
+req.Header.Set("X-API-Key", "bsk_your_key_here")
+resp, _ := http.DefaultClient.Do(req)
+defer resp.Body.Close()
+
+// Cancel
+req2, _ := http.NewRequest("DELETE", "${BASE}/api/v1/schedules/"+jobID, nil)
+req2.Header.Set("X-API-Key", "bsk_your_key_here")
+resp2, _ := http.DefaultClient.Do(req2)
+defer resp2.Body.Close()`,
+
+    ruby: `headers = { 'X-API-Key' => 'bsk_your_key_here' }
+
+# List
+uri = URI('${BASE}/api/v1/schedules')
+req = Net::HTTP::Get.new(uri, headers)
+data = JSON.parse(Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') { |h| h.request(req) }.body)
+
+# Cancel
+job_id = data['schedules'][0]['id']
+uri2 = URI("${BASE}/api/v1/schedules/#{job_id}")
+req2 = Net::HTTP::Delete.new(uri2, headers)
+puts Net::HTTP.start(uri2.host, uri2.port, use_ssl: uri2.scheme == 'https') { |h| h.request(req2) }.body`,
   },
 
   send_bulk: {
@@ -500,6 +682,91 @@ export function DevDocsPage() {
               </tbody>
             </table>
           </div>
+        </Section>
+
+        {/* Scheduled Messaging */}
+        <Section title="Scheduled Messaging" icon={Clock}>
+          <p className="text-sm text-gray-600">
+            Add <IC>schedule_at</IC> (ISO 8601 UTC) to any send request and the message will be queued and delivered automatically at that time. The API returns HTTP <IC>202 Accepted</IC> immediately with a <IC>job_id</IC>.
+          </p>
+
+          <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+            <Clock className="w-4 h-4 mt-0.5 shrink-0" />
+            <p><strong>Dashboard scheduling:</strong> You can also schedule directly from the Compose window — toggle "Schedule for later", pick a date/time, and click Schedule.</p>
+          </div>
+
+          <h4 className="font-semibold text-gray-800 text-sm">Schedule a message</h4>
+          <CodeExample snippetKey="schedule_send" defaultTab="node-fetch" />
+
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">
+            <strong>Scheduled response (HTTP 202):</strong>
+            <pre className="mt-2 font-mono text-xs bg-green-100 rounded-lg p-3 overflow-x-auto">
+{`{
+  "success": true,
+  "scheduled": true,
+  "job_id": "6674a1c2f3b4e5d6a7b8c9d0",
+  "scheduled_at": "2024-06-15T09:00:00Z",
+  "total": 2
+}`}
+            </pre>
+          </div>
+
+          <h4 className="font-semibold text-gray-800 text-sm mt-2">List &amp; cancel scheduled jobs</h4>
+          <CodeExample snippetKey="schedule_list" defaultTab="node-fetch" />
+
+          <table className="w-full text-sm border border-gray-200 rounded-xl overflow-hidden">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Field</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Description</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              <tr>
+                <td className="px-4 py-3 font-mono text-xs text-green-700">schedule_at</td>
+                <td className="px-4 py-3 text-gray-500">string</td>
+                <td className="px-4 py-3 text-gray-600">ISO 8601 datetime (e.g. <IC>2024-06-15T09:00:00Z</IC>). Must be ≥ 30 seconds in the future.</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-mono text-xs text-green-700">job_id</td>
+                <td className="px-4 py-3 text-gray-500">string</td>
+                <td className="px-4 py-3 text-gray-600">Unique job identifier. Save this to check status or cancel.</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-mono text-xs">status</td>
+                <td className="px-4 py-3 text-gray-500">string</td>
+                <td className="px-4 py-3 text-gray-600"><IC>pending</IC> → <IC>running</IC> → <IC>done</IC> / <IC>failed</IC> / <IC>cancelled</IC></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4 className="font-semibold text-gray-800 text-sm">Schedule endpoints</h4>
+          <table className="w-full text-sm border border-gray-200 rounded-xl overflow-hidden">
+            <tbody className="divide-y divide-gray-100">
+              <tr>
+                <td className="px-4 py-3">
+                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded mr-2">POST</span>
+                  <IC>/api/v1/send</IC> <span className="text-gray-400 text-xs ml-1">with schedule_at</span>
+                </td>
+                <td className="px-4 py-3 text-gray-600 text-xs">Create a scheduled job — returns 202 + job_id</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3">
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded mr-2">GET</span>
+                  <IC>/api/v1/schedules</IC>
+                </td>
+                <td className="px-4 py-3 text-gray-600 text-xs">List all scheduled jobs (last 50)</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3">
+                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded mr-2">DELETE</span>
+                  <IC>/api/v1/schedules/:job_id</IC>
+                </td>
+                <td className="px-4 py-3 text-gray-600 text-xs">Cancel a pending job (only works before execution starts)</td>
+              </tr>
+            </tbody>
+          </table>
         </Section>
 
         {/* Bulk messaging */}

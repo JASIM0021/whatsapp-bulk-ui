@@ -11,11 +11,13 @@ import { parseFile } from '@/lib/fileParser';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
 import { Contact } from '@/types/contact';
-import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser } from 'lucide-react';
+import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TourGuide } from '@/components/TourGuide';
 import { ManualContactEntry } from '@/components/ManualContactEntry';
 import { SavedContactsDrawer } from '@/components/SavedContactsDrawer';
+import { WhatsAppContactsDrawer } from '@/components/WhatsAppContactsDrawer';
+import { ScheduledJobsDrawer } from '@/components/ScheduledJobsDrawer';
 import './App.css';
 
 function App() {
@@ -35,7 +37,10 @@ function App() {
   const [showMessageComposer, setShowMessageComposer] = useState(false);
   const [showSendProgress, setShowSendProgress] = useState(false);
   const [showSavedContacts, setShowSavedContacts] = useState(false);
-  const [currentMessage, setCurrentMessage] = useState<Message | null>(null);
+  const [showWAContacts, setShowWAContacts] = useState(false);
+  const [showScheduledJobs, setShowScheduledJobs] = useState(false);
+  const [scheduleToast, setScheduleToast] = useState('');
+  const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [showTour, setShowTour] = useState(false);
 
@@ -149,9 +154,37 @@ function App() {
     setTimeout(checkWhatsAppStatus, 1000);
   };
 
-  const handleSendMessages = (message: Message) => {
-    setCurrentMessage(message);
+  const handleSendMessages = async (messages: Message[], scheduledAt?: Date) => {
     setShowMessageComposer(false);
+
+    if (scheduledAt) {
+      // Schedule the job via API
+      try {
+        const res = await apiFetch(API_ENDPOINTS.schedule.create, {
+          method: 'POST',
+          body: JSON.stringify({
+            contacts: selectedContacts.map(c => ({ phone: c.formattedPhone || c.phone, name: c.name || '' })),
+            messages,
+            scheduledAt: scheduledAt.toISOString(),
+          }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          setScheduleToast(`Scheduled for ${scheduledAt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`);
+          setTimeout(() => setScheduleToast(''), 5000);
+        } else {
+          setScheduleToast(`Failed to schedule: ${json.error || 'unknown error'}`);
+          setTimeout(() => setScheduleToast(''), 5000);
+        }
+      } catch {
+        setScheduleToast('Network error — could not schedule');
+        setTimeout(() => setScheduleToast(''), 5000);
+      }
+      return;
+    }
+
+    // Immediate send
+    setCurrentMessages(messages);
     setShowSendProgress(true);
   };
 
@@ -216,6 +249,14 @@ function App() {
 
               <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
                 <button
+                  onClick={() => setShowScheduledJobs(true)}
+                  title="Scheduled messages"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  <CalendarClock size={14} />
+                  <span className="hidden lg:inline">Scheduled</span>
+                </button>
+                <button
                   onClick={() => navigate('/subscription')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     !user?.subscription?.isActive
@@ -241,6 +282,16 @@ function App() {
                     )
                   )}
                 </button>
+                {user?.subscription?.plan === 'yearly' && user?.subscription?.isActive && (
+                  <button
+                    onClick={() => navigate('/bot')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                    title="AI Chatbot Setup"
+                  >
+                    <Bot size={14} />
+                    <span className="hidden lg:inline">Bot</span>
+                  </button>
+                )}
                 {user?.role === 'admin' && (
                   <button
                     onClick={() => navigate('/admin')}
@@ -383,14 +434,24 @@ function App() {
                   <p className="text-xs sm:text-sm text-gray-600">Upload Excel/CSV or add manually</p>
                 </div>
               </div>
-              {/* My Contacts Book button */}
-              <button
-                onClick={() => setShowSavedContacts(true)}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors"
-              >
-                <BookUser size={16} />
-                <span className="hidden sm:inline">My Contacts</span>
-              </button>
+              {/* Contact source buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowSavedContacts(true)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors"
+                >
+                  <BookUser size={16} />
+                  <span className="hidden sm:inline">My Contacts</span>
+                </button>
+                <button
+                  onClick={() => setShowWAContacts(true)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                  title="Import from WhatsApp"
+                >
+                  <Users size={16} />
+                  <span className="hidden sm:inline">WhatsApp Contacts</span>
+                </button>
+              </div>
             </div>
             <div className="space-y-4">
               <FileUpload onFileUpload={handleFileUpload} isLoading={isFileUploading} />
@@ -498,13 +559,13 @@ function App() {
         selectedCount={selectedCount}
       />
 
-      {currentMessage && (
+      {currentMessages.length > 0 && (
         <SendProgress
           isOpen={showSendProgress}
           onClose={() => setShowSendProgress(false)}
           onComplete={handleSendComplete}
           contacts={selectedContacts}
-          message={currentMessage}
+          messages={currentMessages}
         />
       )}
 
@@ -514,6 +575,31 @@ function App() {
         onClose={() => setShowSavedContacts(false)}
         onLoad={handleSavedContactsLoad}
       />
+
+      {/* WhatsApp Contacts Drawer */}
+      <WhatsAppContactsDrawer
+        isOpen={showWAContacts}
+        onClose={() => setShowWAContacts(false)}
+        onLoad={handleSavedContactsLoad}
+        isWhatsAppConnected={isWhatsAppConnected}
+      />
+
+      {/* Scheduled Jobs Drawer */}
+      <ScheduledJobsDrawer
+        isOpen={showScheduledJobs}
+        onClose={() => setShowScheduledJobs(false)}
+      />
+
+      {/* Schedule success/error toast */}
+      {scheduleToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-gray-900 text-white text-sm rounded-xl shadow-2xl">
+          <CalendarClock size={16} className="text-blue-400 shrink-0" />
+          <span>{scheduleToast}</span>
+          <button onClick={() => setScheduleToast('')} className="ml-2 text-gray-400 hover:text-white">
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Tour Guide */}
       <TourGuide forceShow={showTour} />

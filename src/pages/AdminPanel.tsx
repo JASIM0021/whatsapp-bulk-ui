@@ -269,11 +269,20 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Plan update state
+  const [planToSet, setPlanToSet] = useState<'free' | 'monthly' | 'yearly'>('monthly');
+  const [planDays, setPlanDays] = useState('');
+  const [planSaving, setPlanSaving] = useState(false);
+  const [planMsg, setPlanMsg] = useState('');
+
   useEffect(() => {
     if (user) {
       setName(user.name);
       setRole(user.role as 'user' | 'admin');
       setError('');
+      setPlanMsg('');
+      setPlanToSet((user.subscription?.plan as 'free' | 'monthly' | 'yearly') || 'monthly');
+      setPlanDays('');
     }
   }, [user]);
 
@@ -301,11 +310,34 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
     }
   };
 
+  const handlePlanUpdate = async () => {
+    if (!user) return;
+    setPlanSaving(true);
+    setPlanMsg('');
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.updateUserPlan(user.id), {
+        method: 'PUT',
+        body: JSON.stringify({ plan: planToSet, daysToAdd: planDays ? parseInt(planDays) : 0 }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPlanMsg(`Plan updated to ${planToSet} (expires ${data.data?.expiryDate})`);
+        onUpdated();
+      } else {
+        setPlanMsg(data.error || 'Failed to update plan');
+      }
+    } catch {
+      setPlanMsg('Network error');
+    } finally {
+      setPlanSaving(false);
+    }
+  };
+
   if (!open || !user) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">Edit User</h3>
           <button onClick={onClose} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
@@ -344,6 +376,54 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
+
+        {/* Plan Update Section */}
+        <div className="px-6 pb-6 border-t border-gray-100 pt-4">
+          <p className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <Crown size={14} className="text-amber-500" /> Change Subscription Plan
+          </p>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              {(['free', 'monthly', 'yearly'] as const).map(p => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPlanToSet(p)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-colors capitalize ${
+                    planToSet === p
+                      ? 'bg-amber-50 border-amber-300 text-amber-700'
+                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                min="1"
+                placeholder="Days (blank = default)"
+                value={planDays}
+                onChange={e => setPlanDays(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
+              />
+              <button
+                type="button"
+                onClick={handlePlanUpdate}
+                disabled={planSaving}
+                className="px-4 py-2 bg-amber-500 text-white text-xs font-semibold rounded-lg hover:bg-amber-600 disabled:opacity-50 transition-colors whitespace-nowrap"
+              >
+                {planSaving ? 'Updating…' : 'Update Plan'}
+              </button>
+            </div>
+            {planMsg && (
+              <p className={`text-xs rounded-lg px-3 py-2 ${planMsg.includes('updated') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                {planMsg}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
