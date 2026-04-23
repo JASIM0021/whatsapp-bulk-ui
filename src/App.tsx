@@ -236,114 +236,125 @@ function App() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-          {/* Desktop: single row with logo, connect, subscription, user */}
-          <div className="hidden md:flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/icon-192.png" alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
+          {/* Desktop header */}
+          <div className="hidden md:flex items-center justify-between gap-4">
+
+            {/* Left: Logo + title */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              <img src="/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">WhatsApp Bulk Messenger</h1>
-                <p className="text-sm text-gray-600">Send bulk messages efficiently</p>
+                <h1 className="text-sm font-bold text-gray-900 leading-tight">WhatsApp Bulk Messenger</h1>
+                <p className="text-[11px] text-gray-400">Send bulk messages efficiently</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            {/* Right: all controls */}
+            <div className="flex items-center gap-2">
+
+              {/* WhatsApp connection */}
               <div data-tour="step-connect">
                 {isWhatsAppConnected ? (
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                      <span className="text-sm font-medium text-green-700">Connected</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-xs font-medium text-green-700">Connected</span>
                     </div>
                     <Button variant="secondary" size="sm" onClick={handleDisconnectWhatsApp}>
                       Disconnect
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    variant="primary"
-                    onClick={handleConnectWhatsApp}
-                    disabled={connectionStatus === 'connecting'}
-                  >
-                    <Smartphone className="mr-2" size={20} />
-                    {connectionStatus === 'connecting' ? 'Connecting...' : 'Connect WhatsApp'}
+                  <Button variant="primary" size="sm" onClick={handleConnectWhatsApp} disabled={connectionStatus === 'connecting'}>
+                    <Smartphone className="mr-1.5" size={15} />
+                    {connectionStatus === 'connecting' ? 'Connecting…' : 'Connect WhatsApp'}
                   </Button>
                 )}
               </div>
 
-              <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
+              <div className="w-px h-5 bg-gray-200 mx-1" />
+
+              {/* Icon nav buttons */}
+              <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => setShowScheduledJobs(true)}
                   title="Scheduled messages"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                  className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                 >
-                  <CalendarClock size={14} />
-                  <span className="hidden lg:inline">Scheduled</span>
-                </button>
-                <button
-                  onClick={() => navigate('/subscription')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    !user?.subscription?.isActive
-                      ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                      : user?.subscription?.plan === 'free'
-                      ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                      : 'bg-green-50 text-green-700 hover:bg-green-100'
-                  }`}
-                >
-                  <Crown size={14} />
-                  <span className="capitalize">
-                    {user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'free'}
-                  </span>
-                  {user?.subscription?.isActive && (
-                    user?.subscription?.plan === 'free' ? (
-                      <span className={user.subscription.messagesUsed >= user.subscription.messageLimit - 10 ? 'text-red-600' : ''}>
-                        ({user.subscription.messagesUsed}/{user.subscription.messageLimit} msgs)
-                      </span>
-                    ) : (
-                      <span className={user.subscription.daysLeft <= 3 ? 'text-red-600' : ''}>
-                        ({user.subscription.daysLeft}d left)
-                      </span>
-                    )
-                  )}
+                  <CalendarClock size={17} />
                 </button>
                 {user?.subscription?.plan === 'yearly' && user?.subscription?.isActive && (
                   <button
                     onClick={() => navigate('/bot')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
-                    title="AI Chatbot Setup"
+                    title="AI Chatbot"
+                    className="p-2 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
                   >
-                    <Bot size={14} />
-                    <span className="hidden lg:inline">Bot</span>
+                    <Bot size={17} />
                   </button>
                 )}
                 <button
                   onClick={() => navigate('/security')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors"
                   title="Security Settings"
+                  className="p-2 rounded-lg text-gray-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                 >
-                  <Lock size={14} />
-                  <span className="hidden lg:inline">Security</span>
+                  <Lock size={17} />
                 </button>
                 {user?.role === 'admin' && (
                   <button
                     onClick={() => navigate('/admin')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+                    title="Admin Panel"
+                    className="p-2 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-colors"
                   >
-                    <Shield size={14} />
-                    Admin
+                    <Shield size={17} />
                   </button>
                 )}
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <User size={16} className="text-gray-400" />
-                  <span className="font-medium">{user?.name}</span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  title="Logout"
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  <LogOut size={16} />
-                </button>
               </div>
+
+              <div className="w-px h-5 bg-gray-200 mx-1" />
+
+              {/* Subscription badge */}
+              <button
+                onClick={() => navigate('/subscription')}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  !user?.subscription?.isActive
+                    ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                    : user?.subscription?.plan === 'free'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                    : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                }`}
+              >
+                <Crown size={13} />
+                <span className="capitalize">
+                  {user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'Free'}
+                </span>
+                {user?.subscription?.isActive && (
+                  user?.subscription?.plan === 'free' ? (
+                    <span className={user.subscription.messagesUsed >= user.subscription.messageLimit - 10 ? 'text-red-600 font-semibold' : ''}>
+                      · {user.subscription.messagesUsed}/{user.subscription.messageLimit}
+                    </span>
+                  ) : (
+                    <span className={user.subscription.daysLeft <= 3 ? 'text-red-600 font-semibold' : ''}>
+                      · {user.subscription.daysLeft}d
+                    </span>
+                  )
+                )}
+              </button>
+
+              {/* User avatar + name */}
+              <div className="flex items-center gap-2 pl-1">
+                <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                  <User size={14} className="text-primary-600" />
+                </div>
+                <span className="text-sm font-medium text-gray-700 max-w-[100px] truncate">{user?.name}</span>
+              </div>
+
+              {/* Logout */}
+              <button
+                onClick={handleLogout}
+                title="Logout"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <LogOut size={16} />
+              </button>
             </div>
           </div>
 
