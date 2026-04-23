@@ -12,6 +12,11 @@ import {
   ArrowRight,
   Star,
   ChevronRight,
+  Bot,
+  CalendarClock,
+  MessageSquareWarning,
+  UserX,
+  Timer,
 } from 'lucide-react';
 
 /* ─────────────── Hero ─────────────── */
@@ -31,109 +36,233 @@ function Hero() {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-32 sm:pt-32 sm:pb-40">
-        <div className="max-w-3xl">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 mb-8">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs font-medium text-green-400 tracking-wide">WhatsApp Cloud API Powered</span>
-          </div>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 sm:pt-14 sm:pb-24">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-10 lg:gap-12">
 
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.08] tracking-tight mb-6">
-            Bulk WhatsApp
-            <br />
-            <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
-              messages at scale
-            </span>
-          </h1>
-
-          <p className="text-lg sm:text-xl text-gray-400 leading-relaxed max-w-xl mb-10">
-            Upload contacts, pick a template, attach media, and hit send.
-            Reach thousands of customers with personalized messages — no coding needed.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link
-              to="/signup"
-              className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl shadow-xl shadow-green-600/25 hover:shadow-green-600/40 hover:from-green-500 hover:to-emerald-500 transition-all"
-            >
-              Start Sending Free
-              <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-gray-300 border border-gray-700 rounded-2xl hover:bg-white/5 hover:border-gray-600 transition-all"
-            >
-              See How It Works
-            </a>
-          </div>
-
-          {/* Social proof */}
-          <div className="mt-14 flex items-center gap-6">
-            <div className="flex -space-x-2">
-              {[
-                'bg-gradient-to-br from-amber-400 to-orange-500',
-                'bg-gradient-to-br from-blue-400 to-indigo-500',
-                'bg-gradient-to-br from-pink-400 to-rose-500',
-                'bg-gradient-to-br from-green-400 to-emerald-500',
-              ].map((bg, i) => (
-                <div key={i} className={`w-8 h-8 rounded-full ${bg} border-2 border-gray-900 flex items-center justify-center`}>
-                  <span className="text-[10px] font-bold text-white">{['AK', 'MJ', 'SR', 'LP'][i]}</span>
-                </div>
-              ))}
+          {/* ── Left: text ── */}
+          <div className="flex-1 min-w-0">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-xs font-medium text-green-400 tracking-wide">WhatsApp Cloud API Powered</span>
             </div>
-            <div>
-              <div className="flex gap-0.5 mb-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={12} className="text-amber-400 fill-amber-400" />
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.08] tracking-tight mb-5">
+              Turn Your WhatsApp
+              <br />
+              <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                Into a Sales Machine
+              </span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-gray-400 leading-relaxed max-w-lg mb-8">
+              Bulk messaging + AI bot + scheduling — all in one platform.
+              Reach thousands, auto-reply leads, and send at the perfect time.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                to="/signup"
+                className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl shadow-xl shadow-green-600/25 hover:shadow-green-600/40 hover:from-green-500 hover:to-emerald-500 transition-all"
+              >
+                Start Free Trial
+                <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <a
+                href="https://wa.me/917679349780?text=Hi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-gray-300 border border-gray-700 rounded-2xl hover:bg-white/5 hover:border-gray-600 transition-all"
+              >
+                Try WhatsApp Bot Now
+              </a>
+            </div>
+
+            {/* Social proof */}
+            <div className="mt-10 flex items-center gap-5">
+              <div className="flex -space-x-2">
+                {[
+                  'bg-gradient-to-br from-amber-400 to-orange-500',
+                  'bg-gradient-to-br from-blue-400 to-indigo-500',
+                  'bg-gradient-to-br from-pink-400 to-rose-500',
+                  'bg-gradient-to-br from-green-400 to-emerald-500',
+                ].map((bg, i) => (
+                  <div key={i} className={`w-8 h-8 rounded-full ${bg} border-2 border-gray-900 flex items-center justify-center`}>
+                    <span className="text-[10px] font-bold text-white">{['AK', 'MJ', 'SR', 'LP'][i]}</span>
+                  </div>
                 ))}
               </div>
-              <p className="text-xs text-gray-500">Trusted by 2,000+ businesses</p>
+              <div>
+                <div className="flex gap-0.5 mb-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={12} className="text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">Trusted by 2,000+ businesses</p>
+              </div>
             </div>
           </div>
+
+          {/* ── Right: phone mockup ── */}
+          <div className="flex justify-center lg:justify-end lg:flex-shrink-0">
+            <div className="relative w-[220px] sm:w-[250px] lg:w-[270px]">
+              {/* Glow */}
+              <div className="absolute inset-0 bg-green-500/15 blur-3xl rounded-full scale-125 -z-10" />
+
+              {/* Phone body */}
+              <div className="relative bg-gray-900 rounded-[44px] p-[10px] shadow-2xl ring-1 ring-white/10">
+                {/* Side buttons */}
+                <div className="absolute -left-[3px] top-[80px] w-[3px] h-7 bg-gray-700 rounded-l-full" />
+                <div className="absolute -left-[3px] top-[120px] w-[3px] h-10 bg-gray-700 rounded-l-full" />
+                <div className="absolute -left-[3px] top-[172px] w-[3px] h-10 bg-gray-700 rounded-l-full" />
+                <div className="absolute -right-[3px] top-[120px] w-[3px] h-14 bg-gray-700 rounded-r-full" />
+
+                {/* Screen */}
+                <div className="bg-black rounded-[36px] overflow-hidden">
+                  {/* Dynamic island */}
+                  <div className="bg-black flex justify-center pt-3 pb-1">
+                    <div className="w-[80px] h-[24px] bg-gray-950 rounded-full flex items-center justify-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-gray-800 ring-1 ring-gray-700" />
+                      <div className="w-[5px] h-[5px] rounded-full bg-gray-700" />
+                    </div>
+                  </div>
+
+                  {/* GIF */}
+                  <img
+                    src="/demo-video.gif"
+                    alt="WhatsApp AI bot demo"
+                    className="w-full block"
+                  />
+
+                  {/* Home indicator */}
+                  <div className="bg-black py-2 flex justify-center">
+                    <div className="w-20 h-1 bg-gray-600 rounded-full" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Shine */}
+              <div className="absolute top-[10px] left-[18px] w-[26px] h-[100px] bg-white/5 rounded-full blur-sm rotate-12 pointer-events-none" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────── Problem ─────────────── */
+function Problem() {
+  const pains = [
+    {
+      icon: MessageSquareWarning,
+      title: 'Sending messages manually?',
+      desc: 'Copying and pasting the same message to hundreds of contacts wastes hours every day.',
+    },
+    {
+      icon: UserX,
+      title: 'Missing leads?',
+      desc: 'Prospects message you, get no instant reply, and move on to competitors — before you even see their message.',
+    },
+    {
+      icon: Timer,
+      title: 'Slow responses?',
+      desc: 'Delayed follow-ups kill conversions. Every minute without a reply costs you a potential sale.',
+    },
+  ];
+
+  return (
+    <section className="bg-gray-950 py-24 sm:py-32 border-t border-gray-800/50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <p className="text-sm font-semibold text-red-400 tracking-wide uppercase mb-3">Sound familiar?</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            WhatsApp marketing is broken for most businesses
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {pains.map((pain) => (
+            <div
+              key={pain.title}
+              className="bg-gray-900/60 border border-gray-800 rounded-2xl p-7 flex flex-col gap-4 hover:border-red-500/30 transition-all"
+            >
+              <div className="w-11 h-11 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center">
+                <pain.icon size={22} className="text-red-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white">{pain.title}</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">{pain.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────── Solution ─────────────── */
+function Solution() {
+  const pillars = [
+    {
+      icon: Upload,
+      label: 'Bulk Sender',
+      tagline: 'Reach 1,000+ instantly',
+      desc: 'Upload a CSV/Excel, pick a template, attach media, and broadcast to thousands in one click — with personalised names.',
+      color: 'from-green-500 to-emerald-600',
+      glow: 'shadow-green-500/20',
+      badge: 'bg-green-500/10 text-green-400 border-green-500/20',
+    },
+    {
+      icon: Bot,
+      label: 'AI Bot',
+      tagline: 'Auto-reply & convert leads',
+      desc: 'Your 24/7 WhatsApp agent. Answers FAQs, captures lead details, and books appointments — even while you sleep.',
+      color: 'from-violet-500 to-purple-600',
+      glow: 'shadow-violet-500/20',
+      badge: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+    },
+    {
+      icon: CalendarClock,
+      label: 'Scheduler',
+      tagline: 'Send at the perfect time',
+      desc: 'Schedule campaigns for peak engagement hours. Set it once and let BulkSend deliver at exactly the right moment.',
+      color: 'from-blue-500 to-indigo-600',
+      glow: 'shadow-blue-500/20',
+      badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    },
+  ];
+
+  return (
+    <section id="demo" className="bg-gray-900 py-24 sm:py-32 border-t border-gray-800/50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <p className="text-sm font-semibold text-green-400 tracking-wide uppercase mb-3">The Solution</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-4">
+            Three pillars. One unstoppable platform.
+          </h2>
+          <p className="text-lg text-gray-400">
+            BulkSend combines everything you need to turn WhatsApp into your highest-converting sales channel.
+          </p>
         </div>
 
-        {/* Floating chat mockup */}
-        <div className="hidden lg:block absolute right-8 xl:right-16 top-32 w-[340px]">
-          <div className="relative">
-            <div className="bg-gray-800/60 backdrop-blur border border-gray-700/50 rounded-3xl p-5 shadow-2xl">
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-700/50">
-                <img src="/icon-192.png" alt="Logo" className="w-10 h-10 rounded-full object-contain" />
-                <div>
-                  <p className="text-sm font-semibold text-white">BulkSend</p>
-                  <p className="text-xs text-green-400">Sending 1,247 messages...</p>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {pillars.map((p) => (
+            <div
+              key={p.label}
+              className="relative bg-gray-800/50 border border-gray-700/60 rounded-2xl p-8 flex flex-col gap-5 hover:border-gray-600 hover:bg-gray-800/80 transition-all group"
+            >
+              <div className={`w-13 h-13 bg-gradient-to-br ${p.color} rounded-2xl flex items-center justify-center shadow-xl ${p.glow} w-14 h-14`}>
+                <p.icon size={26} className="text-white" />
               </div>
-              {/* Chat bubbles */}
-              <div className="space-y-3">
-                <div className="bg-green-600/90 rounded-2xl rounded-bl-md px-4 py-2.5 max-w-[85%]">
-                  <p className="text-sm text-white">Hi Rahul! Your order #4521 has been shipped.</p>
-                  <p className="text-[10px] text-green-200 mt-1">10:32 AM</p>
-                </div>
-                <div className="bg-green-600/90 rounded-2xl rounded-bl-md px-4 py-2.5 max-w-[85%] opacity-70">
-                  <p className="text-sm text-white">Hi Priya! Your order #4522 has been shipped.</p>
-                  <p className="text-[10px] text-green-200 mt-1">10:35 AM</p>
-                </div>
-                <div className="bg-green-600/90 rounded-2xl rounded-bl-md px-4 py-2.5 max-w-[85%] opacity-40">
-                  <p className="text-sm text-white">Hi Amit! Your order #4523 has been shipped.</p>
-                  <p className="text-[10px] text-green-200 mt-1">10:38 AM</p>
-                </div>
-              </div>
-              {/* Progress bar */}
-              <div className="mt-5 pt-4 border-t border-gray-700/50">
-                <div className="flex justify-between text-xs mb-2">
-                  <span className="text-gray-400">Progress</span>
-                  <span className="text-green-400 font-semibold">847 / 1,247</span>
-                </div>
-                <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full" style={{ width: '68%' }} />
-                </div>
+              <div>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${p.badge} mb-3`}>
+                  {p.label}
+                </span>
+                <h3 className="text-xl font-bold text-white mb-2">{p.tagline}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed">{p.desc}</p>
               </div>
             </div>
-            {/* Decorative dots */}
-            <div className="absolute -bottom-4 -left-4 w-20 h-20 border border-green-500/10 rounded-2xl -z-10" />
-            <div className="absolute -top-3 -right-3 w-16 h-16 border border-emerald-500/10 rounded-2xl -z-10" />
-          </div>
+          ))}
         </div>
       </div>
     </section>
@@ -198,6 +327,13 @@ function Features() {
       desc: 'Auto-replace {{name}} with each contact\'s name. Every message feels personal, at any scale.',
       color: 'from-red-500 to-rose-600',
       shadow: 'shadow-red-500/20',
+    },
+    {
+      icon: Zap,
+      title: 'API: OTP, Alerts & Automation',
+      desc: 'Trigger WhatsApp messages programmatically — send OTPs, order alerts, and automated workflows via REST API.',
+      color: 'from-yellow-500 to-amber-600',
+      shadow: 'shadow-yellow-500/20',
     },
   ];
 
@@ -434,6 +570,8 @@ export function HomePage() {
   return (
     <>
       <Hero />
+      <Problem />
+      <Solution />
       <Features />
       <HowItWorks />
       <Pricing />

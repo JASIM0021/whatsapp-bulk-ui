@@ -11,6 +11,7 @@ function Navbar() {
     { to: '/#features', label: 'Features' },
     { to: '/#pricing', label: 'Pricing' },
     { to: '/docs', label: 'API Docs' },
+    { to: '/contact', label: 'Contact' },
   ];
 
   const isActive = (to: string) => location.pathname === to;
@@ -23,14 +24,14 @@ function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/60">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-950/90 backdrop-blur-xl border-b border-gray-800/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
             <img src="/icon-192.png" alt="WhatsApp Bulk Messenger" className="w-9 h-9 rounded-xl object-contain" />
-            <span className="text-lg font-bold text-gray-900 tracking-tight">
-              Bulk<span className="text-green-600">Send</span>
+            <span className="text-lg font-bold text-white tracking-tight">
+              Bulk<span className="text-green-400">Send</span>
             </span>
           </Link>
 
@@ -42,7 +43,7 @@ function Navbar() {
                   key={link.to}
                   to={link.to}
                   onClick={() => scrollToSection(link.to.split('#')[1] ? `#${link.to.split('#')[1]}` : '')}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100/80 transition-all"
+                  className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-all"
                 >
                   {link.label}
                 </Link>
@@ -52,8 +53,8 @@ function Navbar() {
                   to={link.to}
                   className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                     isActive(link.to)
-                      ? 'text-green-700 bg-green-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
+                      ? 'text-green-400 bg-green-500/10'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   {link.label}
@@ -66,13 +67,13 @@ function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               to="/login"
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors"
             >
               Sign In
             </Link>
             <Link
               to="/login"
-              className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-600/25 hover:shadow-green-600/40 transition-all"
+              className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-600/25 hover:shadow-green-600/40 transition-all"
             >
               Get Started Free
             </Link>
@@ -81,7 +82,7 @@ function Navbar() {
           {/* Mobile toggle */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            className="md:hidden p-2 rounded-lg text-gray-400 hover:bg-white/5"
           >
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -90,7 +91,7 @@ function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 px-4 pb-4 pt-2 space-y-1">
+        <div className="md:hidden bg-gray-950 border-t border-gray-800 px-4 pb-4 pt-2 space-y-1">
           {navLinks.map((link) => (
             <Link
               key={link.to}
@@ -99,12 +100,12 @@ function Navbar() {
                 if (link.to.includes('#')) scrollToSection(`#${link.to.split('#')[1]}`);
                 else setMobileOpen(false);
               }}
-              className="block px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50"
+              className="block px-4 py-2.5 text-sm font-medium text-gray-300 rounded-lg hover:bg-white/5"
             >
               {link.label}
             </Link>
           ))}
-          <div className="pt-3 border-t border-gray-100 space-y-2">
+          <div className="pt-3 border-t border-gray-800 space-y-2">
             <Link
               to="/login"
               onClick={() => setMobileOpen(false)}
@@ -122,15 +123,6 @@ function Navbar() {
 function Footer() {
   return (
     <footer className="bg-gray-950 text-gray-400">
-      {/* Wave divider */}
-      <div className="bg-white">
-        <svg viewBox="0 0 1440 64" fill="none" className="w-full block">
-          <path
-            d="M0 32C240 56 480 64 720 48C960 32 1200 8 1440 16V64H0V32Z"
-            fill="#030712"
-          />
-        </svg>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
@@ -162,6 +154,8 @@ function Footer() {
           <div>
             <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">Company</h4>
             <ul className="space-y-2.5">
+              <li><Link to="/about" className="text-sm hover:text-white transition-colors">About Us</Link></li>
+              <li><Link to="/contact" className="text-sm hover:text-white transition-colors">Contact Us</Link></li>
               <li><Link to="/privacy" className="text-sm hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms" className="text-sm hover:text-white transition-colors">Terms of Service</Link></li>
               <li><Link to="/refund" className="text-sm hover:text-white transition-colors">Refund Policy</Link></li>

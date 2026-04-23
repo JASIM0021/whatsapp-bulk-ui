@@ -18,6 +18,8 @@ import { AdminPanel } from './pages/AdminPanel'
 import { PaymentSuccess, PaymentFailure } from './pages/PaymentResult'
 import { BotSetupPage } from './pages/BotSetupPage'
 import { SecurityPage } from './pages/SecurityPage'
+import { ContactPage } from './pages/ContactPage'
+import { AboutPage } from './pages/AboutPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -65,6 +67,8 @@ function AppRoutes() {
       <Route path="/terms" element={<LandingLayout><TermsConditions /></LandingLayout>} />
       <Route path="/refund" element={<LandingLayout><RefundPolicy /></LandingLayout>} />
       <Route path="/docs" element={<LandingLayout><DevDocsPage /></LandingLayout>} />
+      <Route path="/contact" element={<LandingLayout><ContactPage /></LandingLayout>} />
+      <Route path="/about" element={<LandingLayout><AboutPage /></LandingLayout>} />
 
       {/* Login / Signup */}
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
