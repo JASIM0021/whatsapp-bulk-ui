@@ -11,7 +11,7 @@ import { parseFile } from '@/lib/fileParser';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
 import { Contact } from '@/types/contact';
-import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot } from 'lucide-react';
+import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TourGuide } from '@/components/TourGuide';
 import { ManualContactEntry } from '@/components/ManualContactEntry';
@@ -64,6 +64,29 @@ function App() {
     const interval = setInterval(checkWhatsAppStatus, 5000);
     return () => clearInterval(interval);
   }, [isAuthenticated, isLoading, checkWhatsAppStatus]);
+
+  // Heartbeat for auto-logout: send activity ping to backend on user interaction.
+  // The backend's idle checker disconnects WhatsApp if no heartbeat for 10 minutes.
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return;
+
+    let lastHeartbeat = 0;
+    const HEARTBEAT_INTERVAL = 2 * 60 * 1000; // 2 minutes
+
+    const sendHeartbeat = () => {
+      const now = Date.now();
+      if (now - lastHeartbeat < HEARTBEAT_INTERVAL) return;
+      lastHeartbeat = now;
+      apiFetch(API_ENDPOINTS.security.heartbeat, { method: 'POST' }).catch(() => {});
+    };
+
+    // Send on mount (page open/refresh counts as activity)
+    sendHeartbeat();
+
+    const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(evt => window.addEventListener(evt, sendHeartbeat, { passive: true }));
+    return () => events.forEach(evt => window.removeEventListener(evt, sendHeartbeat));
+  }, [isAuthenticated, isLoading]);
 
   // Save contacts to the user's persistent contacts book (fire-and-forget)
   const saveContactsToBook = useCallback(async (contactsToSave: Contact[]) => {
@@ -292,6 +315,14 @@ function App() {
                     <span className="hidden lg:inline">Bot</span>
                   </button>
                 )}
+                <button
+                  onClick={() => navigate('/security')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors"
+                  title="Security Settings"
+                >
+                  <Lock size={14} />
+                  <span className="hidden lg:inline">Security</span>
+                </button>
                 {user?.role === 'admin' && (
                   <button
                     onClick={() => navigate('/admin')}
@@ -358,8 +389,35 @@ function App() {
               </div>
             </div>
 
-            {/* Row 2: WhatsApp connect */}
-            <div className="mt-3 pt-3 border-t border-gray-100" data-tour="step-connect">
+            {/* Row 2: Quick-nav buttons */}
+            <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => setShowScheduledJobs(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-blue-50 text-blue-700 whitespace-nowrap shrink-0"
+              >
+                <CalendarClock size={13} />
+                Scheduled
+              </button>
+              {user?.subscription?.plan === 'yearly' && user?.subscription?.isActive && (
+                <button
+                  onClick={() => navigate('/bot')}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-indigo-50 text-indigo-700 whitespace-nowrap shrink-0"
+                >
+                  <Bot size={13} />
+                  Bot
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/security')}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-50 text-slate-700 whitespace-nowrap shrink-0"
+              >
+                <Lock size={13} />
+                Security
+              </button>
+            </div>
+
+            {/* Row 3: WhatsApp connect */}
+            <div className="mt-2 pt-2 border-t border-gray-100" data-tour="step-connect">
               {isWhatsAppConnected ? (
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">

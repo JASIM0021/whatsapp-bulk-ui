@@ -89,6 +89,10 @@ export const API_ENDPOINTS = {
     get:    `${API_BASE_URL}/api/bot`,
     upsert: `${API_BASE_URL}/api/bot`,
   },
+  security: {
+    settings:  `${API_BASE_URL}/api/settings/security`,
+    heartbeat: `${API_BASE_URL}/api/activity/heartbeat`,
+  },
   health: `${API_BASE_URL}/api/health`,
 };
 
