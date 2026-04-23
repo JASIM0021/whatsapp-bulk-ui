@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Plus, Trash2, Save, ArrowLeft, Crown, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader } from 'lucide-react';
+import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -34,7 +34,8 @@ export function BotSetupPage() {
   const [isToggeling, setIsToggeling] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
-  const isYearly = user?.subscription?.plan === 'yearly' && user?.subscription?.isActive;
+  const isActive = user?.subscription?.isActive ?? false;
+  const isFree = user?.subscription?.plan === 'free';
 
   useEffect(() => {
     const load = async () => {
@@ -163,35 +164,46 @@ export function BotSetupPage() {
               <p className="text-xs text-gray-500">AI-powered auto-reply for your business</p>
             </div>
           </div>
-          {isYearly && (
-            <span className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200">
-              <Crown size={12} /> Yearly Plan
+          {user?.subscription?.plan && (
+            <span className={`ml-auto flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border capitalize ${
+              !isActive ? 'bg-red-50 text-red-700 border-red-200'
+              : isFree ? 'bg-amber-50 text-amber-700 border-amber-200'
+              : 'bg-green-50 text-green-700 border-green-200'
+            }`}>
+              {user.subscription.plan === 'free' ? 'Free Trial' : user.subscription.plan}
             </span>
           )}
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-        {/* Yearly plan gate */}
-        {!isYearly && (
-          <div className="mb-6 p-5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-4">
-            <Crown size={24} className="text-amber-500 shrink-0 mt-0.5" />
+        {/* Free-plan quota notice */}
+        {isActive && isFree && (
+          <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+            <div className="text-amber-500 shrink-0 mt-0.5 text-lg">⚡</div>
             <div>
-              <p className="font-semibold text-amber-800">Yearly Plan Required</p>
-              <p className="text-sm text-amber-700 mt-1">
-                The WhatsApp chatbot feature is available exclusively on the yearly plan. Upgrade to unlock AI-powered auto-replies for your customers.
+              <p className="font-semibold text-amber-800 text-sm">Free Trial — Limited Replies</p>
+              <p className="text-sm text-amber-700 mt-0.5">
+                Bot replies count toward your message quota ({user?.subscription?.messagesUsed ?? 0}/{user?.subscription?.messageLimit ?? 0} used).
+                Upgrade for unlimited auto-replies.
               </p>
               <button
                 onClick={() => navigate('/subscription')}
-                className="mt-3 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors"
+                className="mt-2 px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 transition-colors"
               >
-                Upgrade to Yearly
+                Upgrade Plan
               </button>
             </div>
           </div>
         )}
 
-        <div className={!isYearly ? 'opacity-50 pointer-events-none select-none' : ''}>
+        {!isActive && (
+          <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            Your subscription has expired. <button onClick={() => navigate('/subscription')} className="underline font-medium">Renew now</button> to use the bot.
+          </div>
+        )}
+
+        <div className={!isActive ? 'opacity-50 pointer-events-none select-none' : ''}>
           {/* Enable/Disable toggle */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
             <div className="flex items-center justify-between">

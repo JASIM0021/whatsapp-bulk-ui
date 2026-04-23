@@ -282,7 +282,7 @@ function App() {
                 >
                   <CalendarClock size={17} />
                 </button>
-                {user?.subscription?.plan === 'yearly' && user?.subscription?.isActive && (
+                {user?.subscription?.isActive && (
                   <button
                     onClick={() => navigate('/bot')}
                     title="AI Chatbot"
@@ -409,7 +409,7 @@ function App() {
                 <CalendarClock size={13} />
                 Scheduled
               </button>
-              {user?.subscription?.plan === 'yearly' && user?.subscription?.isActive && (
+              {user?.subscription?.isActive && (
                 <button
                   onClick={() => navigate('/bot')}
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-indigo-50 text-indigo-700 whitespace-nowrap shrink-0"
