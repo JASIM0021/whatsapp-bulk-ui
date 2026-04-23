@@ -1037,16 +1037,23 @@ function PlansTab() {
   );
 
   const planMeta: Record<string, { label: string; description: string; prefix?: string; suffix: string }> = {
-    monthly: { label: 'Pro Monthly', description: 'Monthly subscription price', prefix: '₹', suffix: '/month' },
-    yearly: { label: 'Pro Yearly', description: 'Yearly subscription price', prefix: '₹', suffix: '/year' },
-    free: { label: 'Free Trial', description: 'Message limit for free trial', suffix: ' messages' },
+    starter:         { label: 'Starter Monthly',  description: 'Starter plan monthly price',      prefix: '₹', suffix: '/month' },
+    starter_yearly:  { label: 'Starter Yearly',   description: 'Starter plan yearly price',       prefix: '₹', suffix: '/year' },
+    growth:          { label: 'Growth Monthly',   description: 'Growth plan monthly price',       prefix: '₹', suffix: '/month' },
+    growth_yearly:   { label: 'Growth Yearly',    description: 'Growth plan yearly price',        prefix: '₹', suffix: '/year' },
+    business:        { label: 'Business Monthly', description: 'Business plan monthly price',     prefix: '₹', suffix: '/month' },
+    business_yearly: { label: 'Business Yearly',  description: 'Business plan yearly price',      prefix: '₹', suffix: '/year' },
+    addon_messages:  { label: 'Msg Add-On',       description: '+1,000 messages add-on price',   prefix: '₹', suffix: '/pack' },
+    free:            { label: 'Free Trial',        description: 'Message limit for free trial',                suffix: ' messages' },
+    monthly:         { label: 'Legacy Monthly',   description: 'Legacy ₹500 grandfathered plan', prefix: '₹', suffix: '/month' },
+    yearly:          { label: 'Legacy Yearly',    description: 'Legacy ₹5K grandfathered plan',  prefix: '₹', suffix: '/year' },
   };
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-gray-900">Plan Pricing</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
-        {['monthly', 'yearly', 'free'].map(planName => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {['starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'addon_messages', 'free', 'monthly', 'yearly'].map(planName => {
           const meta = planMeta[planName];
           if (!meta) return null;
           const isSaved = saved === planName;

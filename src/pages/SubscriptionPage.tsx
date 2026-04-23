@@ -45,53 +45,82 @@ interface PaymentRecord {
 const plans = [
   {
     id: 'free',
+    monthlyId: 'free',
+    yearlyId: 'free',
     name: 'Free Trial',
-    price: 0,
-    period: '5 messages',
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    msgLimit: '10 messages total',
     features: [
-      'Send up to 5 messages total',
+      'Send up to 10 messages total',
       'Basic templates',
       'File upload (Excel/CSV)',
       'WhatsApp QR connect',
-      'API access',
     ],
     icon: Shield,
     color: 'from-gray-500 to-gray-600',
     btnClass: 'bg-gray-500 hover:bg-gray-600',
   },
   {
-    id: 'monthly',
-    name: 'Pro Monthly',
-    price: 500,
-    period: '/month',
+    id: 'starter',
+    monthlyId: 'starter',
+    yearlyId: 'starter_yearly',
+    name: 'Starter',
+    monthlyPrice: 599,
+    yearlyPrice: 5990,
+    msgLimit: '1,000 messages/month',
     features: [
-      'Unlimited messages',
+      '1,000 messages per month',
       'All templates + custom',
-      'Image & media attachments',
-      'Priority support',
-      'Message scheduling',
-      'Detailed analytics',
+      'File upload (Excel/CSV)',
+      'WhatsApp QR connect',
+      'Basic support',
       'API access',
     ],
     icon: Zap,
     color: 'from-sky-500 to-sky-600',
     btnClass: 'bg-sky-600 hover:bg-sky-700',
-    popular: true,
   },
   {
-    id: 'yearly',
-    name: 'Pro Yearly',
-    price: 5000,
-    period: '/year',
+    id: 'growth',
+    monthlyId: 'growth',
+    yearlyId: 'growth_yearly',
+    name: 'Growth',
+    monthlyPrice: 1299,
+    yearlyPrice: 12990,
+    msgLimit: '5,000 messages/month',
     features: [
-      'Everything in Monthly',
-      'Save ₹1,000/year',
+      '5,000 messages per month',
+      'All templates + custom',
+      'Image & media attachments',
+      'Message scheduling',
+      'Detailed analytics',
       'Priority support',
-      'Early access to features',
-      'Bulk import up to 10K',
       'API access',
     ],
     icon: Crown,
+    color: 'from-violet-500 to-violet-600',
+    btnClass: 'bg-violet-600 hover:bg-violet-700',
+    popular: true,
+  },
+  {
+    id: 'business',
+    monthlyId: 'business',
+    yearlyId: 'business_yearly',
+    name: 'Business',
+    monthlyPrice: 1999,
+    yearlyPrice: 19990,
+    msgLimit: '15,000 messages/month',
+    features: [
+      '15,000 messages per month',
+      'Everything in Growth',
+      'Advanced automation',
+      'Bulk import up to 10K',
+      'Early access to features',
+      'Priority support',
+      'API access',
+    ],
+    icon: Zap,
     color: 'from-amber-500 to-amber-600',
     btnClass: 'bg-amber-600 hover:bg-amber-700',
   },
@@ -311,6 +340,7 @@ export function SubscriptionPage() {
   const [promoValidation, setPromoValidation] = useState<ValidatePromoResponse | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
   const [apiKeys, setApiKeys] = useState<APIKeyInfo[]>([]);
   const [apiKeysLoading, setApiKeysLoading] = useState(false);
   const [creatingKey, setCreatingKey] = useState(false);
@@ -515,11 +545,11 @@ export function SubscriptionPage() {
                 </h2>
                 <p className={`text-sm mt-1 ${subscription.isActive ? 'text-green-700' : 'text-red-700'}`}>
                   {subscription.isActive
-                    ? subscription.plan === 'free'
+                    ? subscription.messageLimit > 0
                       ? `Active — ${subscription.messageLimit - subscription.messagesUsed} of ${subscription.messageLimit} messages remaining`
                       : `Active — ${subscription.daysLeft} day${subscription.daysLeft !== 1 ? 's' : ''} remaining (expires ${subscription.expiryDate})`
-                    : subscription.plan === 'free'
-                      ? `Free trial exhausted (${subscription.messagesUsed}/${subscription.messageLimit} messages used). Upgrade to continue.`
+                    : subscription.messageLimit > 0
+                      ? `Quota exhausted (${subscription.messagesUsed}/${subscription.messageLimit} messages used). Upgrade or buy more messages.`
                       : `Expired — Please upgrade to continue using the app`}
                 </p>
               </div>
@@ -532,18 +562,53 @@ export function SubscriptionPage() {
 
         {/* Pricing Cards */}
         <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">Choose Your Plan</h1>
-        <p className="text-gray-500 text-center mb-10">Unlock the full power of WhatsApp Bulk Messaging</p>
+        <p className="text-gray-500 text-center mb-6">Unlock the full power of WhatsApp Bulk Messaging</p>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
+        {/* Billing toggle */}
+        <div className="flex items-center justify-center gap-3 mb-10">
+          <button
+            onClick={() => setBilling('monthly')}
+            className={`text-sm font-medium transition-colors ${billing === 'monthly' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={billing === 'yearly'}
+            onClick={() => setBilling(b => b === 'monthly' ? 'yearly' : 'monthly')}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${billing === 'yearly' ? 'bg-violet-600' : 'bg-gray-300'}`}
+          >
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${billing === 'yearly' ? 'translate-x-5' : 'translate-x-0'}`}
+            />
+          </button>
+          <button
+            onClick={() => setBilling('yearly')}
+            className={`text-sm font-medium transition-colors ${billing === 'yearly' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Yearly <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">Save ~17%</span>
+          </button>
+        </div>
+
+        <div className="grid md:grid-cols-4 gap-4 mb-8">
           {plans.map((plan) => {
             const Icon = plan.icon;
-            const isCurrent = subscription?.plan === plan.id && subscription.isActive;
-            // Disable lower-tier plans when user already has a higher active plan
-            const planRank: Record<string, number> = { free: 0, monthly: 1, yearly: 2 };
+            const activePlanId = billing === 'yearly' && plan.id !== 'free' ? plan.yearlyId : plan.monthlyId;
+            const isCurrent = (subscription?.plan === plan.monthlyId || subscription?.plan === plan.yearlyId) && subscription?.isActive;
+            const planRank: Record<string, number> = {
+              free: 0,
+              starter: 1, starter_yearly: 1,
+              growth: 2, growth_yearly: 2,
+              business: 3, business_yearly: 3,
+              monthly: 1, yearly: 1,
+            };
             const currentRank = planRank[subscription?.plan ?? 'free'] ?? 0;
             const isLowerThan = subscription?.isActive && planRank[plan.id] < currentRank;
-            const livePrice = plan.id !== 'free' ? (livePricing?.[plan.id]?.amount ?? plan.price) : 0;
-            const freeMsgLimit = livePricing?.['free']?.messageLimit ?? 5;
+            const defaultPrice = billing === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice;
+            const livePrice = plan.id !== 'free' ? (livePricing?.[activePlanId]?.amount ?? defaultPrice) : 0;
+            const freeMsgLimit = livePricing?.['free']?.messageLimit ?? 10;
             const displayPrice = plan.id === 'free' ? 0 : livePrice;
             const displayFeatures = plan.id === 'free'
               ? [`Send up to ${freeMsgLimit} messages total`, ...plan.features.slice(1)]
@@ -572,13 +637,15 @@ export function SubscriptionPage() {
                 </div>
 
                 <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
-                <div className="mt-2 mb-4">
+                <div className="mt-2 mb-1">
                   <span className="text-4xl font-extrabold text-gray-900">
                     {displayPrice === 0 ? 'Free' : `₹${displayPrice.toLocaleString()}`}
                   </span>
-                  {displayPrice > 0 && <span className="text-gray-500 text-sm">{plan.period}</span>}
-                  {plan.id === 'free' && <span className="text-gray-500 text-sm ml-1">{freeMsgLimit} messages</span>}
+                  {displayPrice > 0 && (
+                    <span className="text-gray-500 text-sm">{billing === 'yearly' ? '/year' : '/month'}</span>
+                  )}
                 </div>
+                <p className="text-xs text-gray-400 mb-4">{plan.id === 'free' ? `${freeMsgLimit} messages` : plan.msgLimit}</p>
 
                 <ul className="flex-1 space-y-3 mb-6">
                   {displayFeatures.map((f, i) => (
@@ -601,7 +668,7 @@ export function SubscriptionPage() {
                         <p className="text-xs font-semibold text-violet-600 mb-2 flex items-center gap-1.5">
                           <Tag className="w-3.5 h-3.5" /> Have a promo code?
                         </p>
-                        {promoValidation?.valid && selectedPlan === plan.id ? (
+                        {promoValidation?.valid && selectedPlan === activePlanId ? (
                           <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
                             <div>
                               <span className="text-xs font-semibold text-green-700">{promoValidation.code} applied!</span>
@@ -613,7 +680,7 @@ export function SubscriptionPage() {
                               <X className="w-4 h-4" />
                             </button>
                           </div>
-                        ) : promoValidation && !promoValidation.valid && selectedPlan === plan.id ? (
+                        ) : promoValidation && !promoValidation.valid && selectedPlan === activePlanId ? (
                           <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                             <span className="text-xs text-red-600">{promoValidation.message || 'Invalid promo code'}</span>
                             <button onClick={clearPromo} className="ml-2 text-red-400 hover:text-red-600 shrink-0">
@@ -625,22 +692,22 @@ export function SubscriptionPage() {
                             <input
                               type="text"
                               placeholder="Enter code (e.g. SAVE20)"
-                              value={selectedPlan === plan.id ? promoInput : ''}
+                              value={selectedPlan === activePlanId ? promoInput : ''}
                               onChange={e => {
-                                setSelectedPlan(plan.id);
+                                setSelectedPlan(activePlanId);
                                 setPromoInput(e.target.value.toUpperCase());
                                 setPromoValidation(null);
                               }}
-                              onFocus={() => setSelectedPlan(plan.id)}
-                              onKeyDown={e => { if (e.key === 'Enter') { setSelectedPlan(plan.id); applyPromo(plan.id); } }}
+                              onFocus={() => setSelectedPlan(activePlanId)}
+                              onKeyDown={e => { if (e.key === 'Enter') { setSelectedPlan(activePlanId); applyPromo(activePlanId); } }}
                               className="flex-1 min-w-0 text-sm border border-violet-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent bg-white uppercase placeholder:normal-case placeholder:text-gray-400"
                             />
                             <button
-                              onClick={() => { setSelectedPlan(plan.id); applyPromo(plan.id); }}
-                              disabled={promoLoading || !(selectedPlan === plan.id ? promoInput : '').trim()}
+                              onClick={() => { setSelectedPlan(activePlanId); applyPromo(activePlanId); }}
+                              disabled={promoLoading || !(selectedPlan === activePlanId ? promoInput : '').trim()}
                               className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg disabled:opacity-40 whitespace-nowrap transition-colors"
                             >
-                              {promoLoading && selectedPlan === plan.id
+                              {promoLoading && selectedPlan === activePlanId
                                 ? <Loader2 className="w-4 h-4 animate-spin" />
                                 : 'Apply'}
                             </button>
@@ -649,7 +716,7 @@ export function SubscriptionPage() {
                       </div>
                     )}
                     <button
-                      onClick={() => handleUpgrade(plan.id)}
+                      onClick={() => handleUpgrade(activePlanId)}
                       disabled={paying !== null || isCurrent || isLowerThan}
                       className={`w-full py-3 rounded-xl font-medium transition-all ${
                         isCurrent
@@ -659,7 +726,7 @@ export function SubscriptionPage() {
                           : `${plan.btnClass} text-white`
                       } disabled:opacity-80`}
                     >
-                      {paying === plan.id ? (
+                      {paying === activePlanId ? (
                         <span className="flex items-center justify-center gap-2">
                           <Loader2 className="w-4 h-4 animate-spin" />
                           Processing...
@@ -668,10 +735,10 @@ export function SubscriptionPage() {
                         'Current Plan'
                       ) : isLowerThan ? (
                         'Not Available'
-                      ) : promoValidation?.valid && selectedPlan === plan.id ? (
+                      ) : promoValidation?.valid && selectedPlan === activePlanId ? (
                         `Pay ₹${promoValidation.finalAmount.toLocaleString()}`
                       ) : (
-                        `Upgrade to ${plan.name}`
+                        `Get ${plan.name}`
                       )}
                     </button>
                   </>
@@ -680,6 +747,29 @@ export function SubscriptionPage() {
             );
           })}
         </div>
+
+        {/* Extra Messages Add-On */}
+        {subscription?.isActive && subscription.messageLimit > 0 && subscription.plan !== 'free' && (
+          <div className="mb-8 p-5 rounded-2xl border border-amber-200 bg-amber-50 flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p className="font-semibold text-amber-900">Need more messages?</p>
+              <p className="text-sm text-amber-700 mt-0.5">
+                Buy an extra 1,000 messages for ₹{(livePricing?.['addon_messages']?.amount ?? 199).toLocaleString()} — added instantly to your current plan.
+              </p>
+            </div>
+            <button
+              onClick={() => handleUpgrade('addon_messages')}
+              disabled={paying !== null}
+              className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
+            >
+              {paying === 'addon_messages' ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+              ) : (
+                <>+ Buy 1,000 Messages</>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Developer API Section */}
         <div className="mt-12">

@@ -430,27 +430,36 @@ function Pricing() {
     {
       name: 'Free Trial',
       price: 'Free',
-      period: '5 messages',
+      period: '10 messages',
       desc: 'Perfect for trying things out',
-      features: ['Send up to 5 messages total', 'Basic templates', 'CSV/Excel upload', 'WhatsApp QR connect', 'Community support'],
+      features: ['Send up to 10 messages total', 'Basic templates', 'CSV/Excel upload', 'WhatsApp QR connect'],
       cta: 'Get Started',
       highlight: false,
     },
     {
-      name: 'Pro Monthly',
-      price: '₹500',
+      name: 'Starter',
+      price: '₹599',
+      period: '/month',
+      desc: 'Great for small teams',
+      features: ['1,000 messages/month', 'All templates + custom', 'CSV/Excel upload', 'Basic support', 'API access'],
+      cta: 'Start Free Trial',
+      highlight: false,
+    },
+    {
+      name: 'Growth',
+      price: '₹1,299',
       period: '/month',
       desc: 'For growing businesses',
-      features: ['Unlimited messages', 'All templates + custom', 'Image & media attachments', 'Priority support', 'Message scheduling', 'Delivery analytics'],
+      features: ['5,000 messages/month', 'Image & media attachments', 'Message scheduling', 'Delivery analytics', 'Priority support', 'API access'],
       cta: 'Start Free Trial',
       highlight: true,
     },
     {
-      name: 'Pro Yearly',
-      price: '₹5,000',
-      period: '/year',
-      desc: 'Best value — save ₹1,000',
-      features: ['Everything in Monthly', 'Save ₹1,000/year', 'Priority support', 'Early access to features', 'Bulk import up to 10K', 'API access (coming soon)'],
+      name: 'Business',
+      price: '₹1,999',
+      period: '/month',
+      desc: 'High-volume sending',
+      features: ['15,000 messages/month', 'Everything in Growth', 'Advanced automation', 'Bulk import up to 10K', 'Early access to features', 'Priority support'],
       cta: 'Start Free Trial',
       highlight: false,
     },
@@ -467,9 +476,10 @@ function Pricing() {
           <p className="text-lg text-gray-500">
             Start free, upgrade when you need more. No hidden fees, ever.
           </p>
+          <p className="text-sm text-green-600 font-medium mt-2">Annual billing available — save ~17%</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-6 max-w-6xl mx-auto">
           {plans.map((plan) => (
             <div
               key={plan.name}
