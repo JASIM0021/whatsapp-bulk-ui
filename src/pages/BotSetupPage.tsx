@@ -75,8 +75,9 @@ export function BotSetupPage() {
   };
 
   const handleSave = async () => {
-    if (!config.businessName.trim() || !config.description.trim()) {
-      showToast('Business name and description are required', false);
+    const hasCustomPrompt = config.customSystemPrompt.trim() !== '';
+    if (!hasCustomPrompt && (!config.businessName.trim() || !config.description.trim())) {
+      showToast('Business name and description are required (or enter a custom system prompt)', false);
       return;
     }
     const cleanServices = config.services.map(s => s.trim()).filter(Boolean);
@@ -107,8 +108,9 @@ export function BotSetupPage() {
   };
 
   const handleToggle = async () => {
-    if (!config.businessName.trim() || !config.description.trim()) {
-      showToast('Save your business info before enabling the bot', false);
+    const hasCustomPrompt = config.customSystemPrompt.trim() !== '';
+    if (!hasCustomPrompt && (!config.businessName.trim() || !config.description.trim())) {
+      showToast('Save your business info (or enter a custom system prompt) before enabling the bot', false);
       return;
     }
     const newEnabled = !config.isEnabled;
