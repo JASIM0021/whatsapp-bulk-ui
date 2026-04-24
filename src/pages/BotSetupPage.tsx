@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader, Ban } from 'lucide-react';
+import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader, Ban, Sparkles, Code2 } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -14,6 +14,7 @@ interface BotConfig {
   productLink: string;
   isEnabled: boolean;
   excludedNumbers: string[];
+  customSystemPrompt: string;
 }
 
 const EMPTY: BotConfig = {
@@ -25,6 +26,7 @@ const EMPTY: BotConfig = {
   productLink: '',
   isEnabled: false,
   excludedNumbers: [],
+  customSystemPrompt: '',
 };
 
 export function BotSetupPage() {
@@ -55,6 +57,7 @@ export function BotSetupPage() {
             productLink: d.productLink || '',
             isEnabled: d.isEnabled ?? false,
             excludedNumbers: d.excludedNumbers ?? [],
+            customSystemPrompt: d.customSystemPrompt ?? '',
           });
         }
       } catch {
@@ -350,6 +353,41 @@ export function BotSetupPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
               />
             </div>
+          </div>
+
+          {/* System Prompt */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+            <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
+              <Code2 size={16} className="text-indigo-500" /> System Prompt
+            </h2>
+            <p className="text-xs text-gray-500 mb-3">
+              Override the AI's behaviour with a custom system prompt. Leave blank to use the auto-generated prompt built from your business info above.
+            </p>
+
+            {/* Auto-preview banner */}
+            {!config.customSystemPrompt.trim() && (
+              <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg">
+                <Sparkles size={13} className="text-indigo-400 shrink-0" />
+                <span className="text-xs text-indigo-600">Auto-generated prompt is active — based on your business name, description and services.</span>
+              </div>
+            )}
+
+            <textarea
+              value={config.customSystemPrompt}
+              onChange={e => setConfig(prev => ({ ...prev, customSystemPrompt: e.target.value }))}
+              placeholder={`Example:\nYou are Aria, a friendly support agent for Acme Corp. Only answer questions about our products. Always reply in English. Keep responses under 3 sentences.`}
+              rows={8}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-y leading-relaxed"
+            />
+
+            {config.customSystemPrompt.trim() && (
+              <button
+                onClick={() => setConfig(prev => ({ ...prev, customSystemPrompt: '' }))}
+                className="mt-2 text-xs text-gray-400 hover:text-red-500 transition-colors"
+              >
+                Clear — revert to auto-generated prompt
+              </button>
+            )}
           </div>
 
           {/* Excluded Numbers */}
