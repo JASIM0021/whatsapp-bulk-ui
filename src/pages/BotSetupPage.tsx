@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader } from 'lucide-react';
+import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader, Ban } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,6 +13,7 @@ interface BotConfig {
   bookingLink: string;
   productLink: string;
   isEnabled: boolean;
+  excludedNumbers: string[];
 }
 
 const EMPTY: BotConfig = {
@@ -23,6 +24,7 @@ const EMPTY: BotConfig = {
   bookingLink: '',
   productLink: '',
   isEnabled: false,
+  excludedNumbers: [],
 };
 
 export function BotSetupPage() {
@@ -52,6 +54,7 @@ export function BotSetupPage() {
             bookingLink: d.bookingLink || '',
             productLink: d.productLink || '',
             isEnabled: d.isEnabled ?? false,
+            excludedNumbers: d.excludedNumbers ?? [],
           });
         }
       } catch {
@@ -135,6 +138,12 @@ export function BotSetupPage() {
     setConfig(prev => ({ ...prev, services: prev.services.filter((_, idx) => idx !== i) }));
   const updateService = (i: number, val: string) =>
     setConfig(prev => ({ ...prev, services: prev.services.map((s, idx) => idx === i ? val : s) }));
+
+  const addExcluded = () => setConfig(prev => ({ ...prev, excludedNumbers: [...prev.excludedNumbers, ''] }));
+  const removeExcluded = (i: number) =>
+    setConfig(prev => ({ ...prev, excludedNumbers: prev.excludedNumbers.filter((_, idx) => idx !== i) }));
+  const updateExcluded = (i: number, val: string) =>
+    setConfig(prev => ({ ...prev, excludedNumbers: prev.excludedNumbers.map((n, idx) => idx === i ? val : n) }));
 
   if (isLoading) {
     return (
@@ -341,6 +350,39 @@ export function BotSetupPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
               />
             </div>
+          </div>
+
+          {/* Excluded Numbers */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+            <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
+              <Ban size={16} className="text-red-500" /> Excluded Numbers
+            </h2>
+            <p className="text-xs text-gray-500 mb-4">Auto-reply will be silently skipped for these numbers. Enter numbers with country code (e.g. 919876543210).</p>
+            <div className="space-y-2.5">
+              {config.excludedNumbers.map((num, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={num}
+                    onChange={e => updateExcluded(i, e.target.value.replace(/\D/g, ''))}
+                    placeholder="e.g. 919876543210"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none font-mono"
+                  />
+                  <button
+                    onClick={() => removeExcluded(i)}
+                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={addExcluded}
+              className="mt-3 flex items-center gap-1.5 text-sm text-red-600 hover:text-red-800 font-medium"
+            >
+              <Plus size={15} /> Add number to exclude
+            </button>
           </div>
 
           {/* Save Button */}
