@@ -11,7 +11,7 @@ import { parseFile } from '@/lib/fileParser';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
 import { Contact } from '@/types/contact';
-import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock } from 'lucide-react';
+import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TourGuide } from '@/components/TourGuide';
 import { ManualContactEntry } from '@/components/ManualContactEntry';
@@ -43,6 +43,7 @@ function App() {
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [showTour, setShowTour] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'send' | 'contacts' | 'schedule' | 'more'>('send');
 
   // Define before useEffect so the closure captures the correct binding
   const checkWhatsAppStatus = useCallback(async () => {
@@ -228,6 +229,22 @@ function App() {
     navigate('/');
   };
 
+  const handleMobileTab = (tab: 'send' | 'contacts' | 'schedule' | 'more') => {
+    setMobileTab(tab);
+    if (tab === 'contacts') setShowSavedContacts(true);
+    else if (tab === 'schedule') setShowScheduledJobs(true);
+  };
+
+  const handleSavedContactsClose = () => {
+    setShowSavedContacts(false);
+    setMobileTab('send');
+  };
+
+  const handleScheduledJobsClose = () => {
+    setShowScheduledJobs(false);
+    setMobileTab('send');
+  };
+
   const selectedContacts = contacts.filter((c) => selection[c.id]);
   const selectedCount = selectedContacts.length;
 
@@ -358,85 +375,42 @@ function App() {
             </div>
           </div>
 
-          {/* Mobile: stacked layout */}
+          {/* Mobile: simplified header */}
           <div className="md:hidden">
-            {/* Row 1: Logo + user icons */}
+            {/* Row 1: Logo + WA status + avatar */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
                 <img src="/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain shrink-0" />
-                <h1 className="text-lg font-bold text-gray-900 truncate">Bulk Messenger</h1>
+                <h1 className="text-base font-bold text-gray-900 truncate">Bulk Messenger</h1>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  onClick={() => navigate('/subscription')}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium ${
-                    !user?.subscription?.isActive
-                      ? 'bg-red-50 text-red-700'
-                      : user?.subscription?.plan === 'free'
-                      ? 'bg-amber-50 text-amber-700'
-                      : 'bg-green-50 text-green-700'
+              <div className="flex items-center gap-2 shrink-0">
+                {/* WA status dot */}
+                <div
+                  data-tour="step-connect"
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-medium border ${
+                    isWhatsAppConnected
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : 'bg-gray-100 text-gray-500 border-gray-200'
                   }`}
                 >
-                  <Crown size={12} />
-                  <span className="capitalize">
-                    {user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'free'}
-                  </span>
-                </button>
-                {user?.role === 'admin' && (
-                  <button
-                    onClick={() => navigate('/admin')}
-                    className="p-1.5 rounded-md bg-purple-50 text-purple-700"
-                  >
-                    <Shield size={14} />
-                  </button>
-                )}
+                  <div className={`w-1.5 h-1.5 rounded-full ${isWhatsAppConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                  {isWhatsAppConnected ? 'Connected' : 'Disconnected'}
+                </div>
                 <button
-                  onClick={handleLogout}
-                  title="Logout"
-                  className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50"
+                  onClick={() => setMobileTab('more')}
+                  className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center"
                 >
-                  <LogOut size={16} />
+                  <User size={15} className="text-primary-600" />
                 </button>
               </div>
             </div>
 
-            {/* Row 2: Quick-nav buttons */}
-            <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-              <button
-                onClick={() => setShowScheduledJobs(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-blue-50 text-blue-700 whitespace-nowrap shrink-0"
-              >
-                <CalendarClock size={13} />
-                Scheduled
-              </button>
-              {user?.subscription?.isActive && (
-                <button
-                  onClick={() => navigate('/bot')}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-indigo-50 text-indigo-700 whitespace-nowrap shrink-0"
-                >
-                  <Bot size={13} />
-                  Bot
-                </button>
-              )}
-              <button
-                onClick={() => navigate('/security')}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-50 text-slate-700 whitespace-nowrap shrink-0"
-              >
-                <Lock size={13} />
-                Security
-              </button>
-            </div>
-
-            {/* Row 3: WhatsApp connect */}
+            {/* Row 2: WhatsApp connect/disconnect */}
             <div className="mt-2 pt-2 border-t border-gray-100" data-tour="step-connect">
               {isWhatsAppConnected ? (
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-sm font-medium text-green-700">Connected</span>
-                  </div>
-                  <Button variant="secondary" size="sm" onClick={handleDisconnectWhatsApp}>
-                    Disconnect
+                <div className="flex items-center gap-2">
+                  <Button variant="secondary" size="sm" onClick={handleDisconnectWhatsApp} className="flex-1">
+                    Disconnect WhatsApp
                   </Button>
                 </div>
               ) : (
@@ -489,8 +463,116 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="space-y-4 sm:space-y-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-24 md:pb-8">
+
+        {/* ── Mobile: More tab ── */}
+        {mobileTab === 'more' && (
+          <div className="md:hidden space-y-3">
+            {/* User card */}
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+              <div className="px-4 py-4 flex items-center gap-3 border-b border-gray-100">
+                <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                  <User size={20} className="text-primary-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-900 truncate">{user?.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                </div>
+              </div>
+
+              {/* Subscription */}
+              <button
+                onClick={() => navigate('/subscription')}
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Crown size={18} className="text-amber-500" />
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-800">Subscription</p>
+                    <p className="text-xs text-gray-500 capitalize">
+                      {user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'Free'}
+                      {user?.subscription?.isActive && user.subscription.plan === 'free'
+                        ? ` · ${user.subscription.messagesUsed}/${user.subscription.messageLimit} msgs`
+                        : user?.subscription?.isActive
+                        ? ` · ${user?.subscription?.daysLeft}d left`
+                        : ' · Expired'}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight size={16} className="text-gray-400" />
+              </button>
+
+              {/* Bot */}
+              {user?.subscription?.isActive && (
+                <button
+                  onClick={() => navigate('/bot')}
+                  className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Bot size={18} className="text-indigo-500" />
+                    <p className="text-sm font-medium text-gray-800">AI Chatbot</p>
+                  </div>
+                  <ChevronRight size={16} className="text-gray-400" />
+                </button>
+              )}
+
+              {/* Security */}
+              <button
+                onClick={() => navigate('/security')}
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Lock size={18} className="text-slate-500" />
+                  <p className="text-sm font-medium text-gray-800">Security</p>
+                </div>
+                <ChevronRight size={16} className="text-gray-400" />
+              </button>
+
+              {/* Admin */}
+              {user?.role === 'admin' && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Shield size={18} className="text-purple-500" />
+                    <p className="text-sm font-medium text-gray-800">Admin Panel</p>
+                  </div>
+                  <ChevronRight size={16} className="text-gray-400" />
+                </button>
+              )}
+
+              {/* Help */}
+              <button
+                onClick={() => {
+                  localStorage.removeItem('bulksend_tour_completed');
+                  setShowTour(true);
+                  setTimeout(() => setShowTour(false), 100);
+                  setMobileTab('send');
+                }}
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <HelpCircle size={18} className="text-green-500" />
+                  <p className="text-sm font-medium text-gray-800">Help & Tour</p>
+                </div>
+                <ChevronRight size={16} className="text-gray-400" />
+              </button>
+            </div>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-red-50 text-red-600 rounded-2xl border border-red-100 font-medium text-sm hover:bg-red-100 transition-colors"
+            >
+              <LogOut size={17} />
+              Log Out
+            </button>
+          </div>
+        )}
+
+        {/* ── Main workflow (Send tab on mobile, always on desktop) ── */}
+        <div className={`${mobileTab !== 'send' ? 'hidden md:block' : ''} space-y-4 sm:space-y-8`}>
           {/* Step 1: Upload Contacts */}
           <section data-tour="step-upload" className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
@@ -607,7 +689,7 @@ function App() {
               <p className="text-sm text-gray-600">Upload an Excel or CSV file to get started</p>
             </div>
           )}
-        </div>
+        </div>{/* end workflow div */}
       </main>
 
       {/* Modals */}
@@ -641,7 +723,7 @@ function App() {
       {/* Saved Contacts Drawer */}
       <SavedContactsDrawer
         isOpen={showSavedContacts}
-        onClose={() => setShowSavedContacts(false)}
+        onClose={handleSavedContactsClose}
         onLoad={handleSavedContactsLoad}
       />
 
@@ -656,12 +738,12 @@ function App() {
       {/* Scheduled Jobs Drawer */}
       <ScheduledJobsDrawer
         isOpen={showScheduledJobs}
-        onClose={() => setShowScheduledJobs(false)}
+        onClose={handleScheduledJobsClose}
       />
 
       {/* Schedule success/error toast */}
       {scheduleToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-gray-900 text-white text-sm rounded-xl shadow-2xl">
+        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-gray-900 text-white text-sm rounded-xl shadow-2xl">
           <CalendarClock size={16} className="text-blue-400 shrink-0" />
           <span>{scheduleToast}</span>
           <button onClick={() => setScheduleToast('')} className="ml-2 text-gray-400 hover:text-white">
@@ -673,7 +755,7 @@ function App() {
       {/* Tour Guide */}
       <TourGuide forceShow={showTour} />
 
-      {/* Help button to replay tour */}
+      {/* Help button to replay tour — desktop only */}
       <button
         onClick={() => {
           localStorage.removeItem('bulksend_tour_completed');
@@ -681,10 +763,67 @@ function App() {
           setTimeout(() => setShowTour(false), 100);
         }}
         title="Show Guide"
-        className="fixed bottom-6 right-6 w-12 h-12 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 hover:shadow-xl flex items-center justify-center transition-all z-50"
+        className="hidden md:flex fixed bottom-6 right-6 w-12 h-12 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 hover:shadow-xl items-center justify-center transition-all z-50"
       >
         <HelpCircle size={22} />
       </button>
+
+      {/* ── Mobile Bottom Tab Bar ── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
+        <div className="flex items-stretch h-16">
+          {/* Send tab */}
+          <button
+            onClick={() => setMobileTab('send')}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
+              mobileTab === 'send' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'send' ? 'bg-primary-50' : ''}`}>
+              <MessageSquare size={20} strokeWidth={mobileTab === 'send' ? 2.5 : 1.8} />
+            </div>
+            <span className={`text-[10px] font-medium leading-none ${mobileTab === 'send' ? 'text-primary-600' : 'text-gray-400'}`}>Send</span>
+          </button>
+
+          {/* Contacts tab */}
+          <button
+            onClick={() => handleMobileTab('contacts')}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
+              mobileTab === 'contacts' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'contacts' ? 'bg-primary-50' : ''}`}>
+              <BookUser size={20} strokeWidth={mobileTab === 'contacts' ? 2.5 : 1.8} />
+            </div>
+            <span className={`text-[10px] font-medium leading-none ${mobileTab === 'contacts' ? 'text-primary-600' : 'text-gray-400'}`}>Contacts</span>
+          </button>
+
+          {/* Schedule tab */}
+          <button
+            onClick={() => handleMobileTab('schedule')}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
+              mobileTab === 'schedule' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'schedule' ? 'bg-blue-50' : ''}`}>
+              <CalendarClock size={20} strokeWidth={mobileTab === 'schedule' ? 2.5 : 1.8} />
+            </div>
+            <span className={`text-[10px] font-medium leading-none ${mobileTab === 'schedule' ? 'text-blue-600' : 'text-gray-400'}`}>Schedule</span>
+          </button>
+
+          {/* More tab */}
+          <button
+            onClick={() => setMobileTab(mobileTab === 'more' ? 'send' : 'more')}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
+              mobileTab === 'more' ? 'text-gray-700' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'more' ? 'bg-gray-100' : ''}`}>
+              <MoreHorizontal size={20} strokeWidth={mobileTab === 'more' ? 2.5 : 1.8} />
+            </div>
+            <span className={`text-[10px] font-medium leading-none ${mobileTab === 'more' ? 'text-gray-700' : 'text-gray-400'}`}>More</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

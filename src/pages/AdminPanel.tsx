@@ -270,7 +270,7 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
   const [saving, setSaving] = useState(false);
 
   // Plan update state
-  const [planToSet, setPlanToSet] = useState<'free' | 'monthly' | 'yearly'>('monthly');
+  const [planToSet, setPlanToSet] = useState('starter');
   const [planDays, setPlanDays] = useState('');
   const [planSaving, setPlanSaving] = useState(false);
   const [planMsg, setPlanMsg] = useState('');
@@ -281,7 +281,7 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
       setRole(user.role as 'user' | 'admin');
       setError('');
       setPlanMsg('');
-      setPlanToSet((user.subscription?.plan as 'free' | 'monthly' | 'yearly') || 'monthly');
+      setPlanToSet(user.subscription?.plan || 'starter');
       setPlanDays('');
     }
   }, [user]);
@@ -383,19 +383,33 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
             <Crown size={14} className="text-amber-500" /> Change Subscription Plan
           </p>
           <div className="space-y-3">
-            <div className="flex gap-2">
-              {(['free', 'monthly', 'yearly'] as const).map(p => (
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: 'free',               label: 'Free Trial' },
+                { value: 'starter',            label: 'Starter Monthly' },
+                { value: 'starter_yearly',     label: 'Starter Yearly' },
+                { value: 'growth',             label: 'Growth Monthly' },
+                { value: 'growth_yearly',      label: 'Growth Yearly' },
+                { value: 'business',           label: 'Business Monthly' },
+                { value: 'business_yearly',    label: 'Business Yearly' },
+                { value: 'monthly',            label: 'Legacy Monthly' },
+                { value: 'yearly',             label: 'Legacy Yearly' },
+                { value: 'unlimited_monthly',  label: '∞ Unlimited Monthly' },
+                { value: 'unlimited_yearly',   label: '∞ Unlimited Yearly' },
+              ].map(({ value, label }) => (
                 <button
-                  key={p}
+                  key={value}
                   type="button"
-                  onClick={() => setPlanToSet(p)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-colors capitalize ${
-                    planToSet === p
-                      ? 'bg-amber-50 border-amber-300 text-amber-700'
+                  onClick={() => setPlanToSet(value)}
+                  className={`py-2 rounded-lg text-xs font-medium border transition-colors ${
+                    planToSet === value
+                      ? value.startsWith('unlimited')
+                        ? 'bg-purple-50 border-purple-400 text-purple-700'
+                        : 'bg-amber-50 border-amber-300 text-amber-700'
                       : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
-                  {p}
+                  {label}
                 </button>
               ))}
             </div>
@@ -1105,20 +1119,218 @@ interface PromoCodeData {
   createdAt: string;
 }
 
+const PROMO_PLANS = [
+  { value: 'starter',         label: 'Starter Monthly' },
+  { value: 'starter_yearly',  label: 'Starter Yearly' },
+  { value: 'growth',          label: 'Growth Monthly' },
+  { value: 'growth_yearly',   label: 'Growth Yearly' },
+  { value: 'business',        label: 'Business Monthly' },
+  { value: 'business_yearly', label: 'Business Yearly' },
+  { value: 'monthly',         label: 'Legacy Monthly' },
+  { value: 'yearly',          label: 'Legacy Yearly' },
+];
+
+type PromoForm = {
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: string;
+  maxUses: string;
+  applicablePlans: string[];
+  expiresAt: string;
+};
+
+const EMPTY_FORM: PromoForm = {
+  code: '', discountType: 'percentage', discountValue: '', maxUses: '0', applicablePlans: [], expiresAt: '',
+};
+
+function PromoModal({ mode, promo, onClose, onSaved }: {
+  mode: 'create' | 'edit';
+  promo?: PromoCodeData;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState<PromoForm>(() => {
+    if (mode === 'edit' && promo) {
+      return {
+        code: promo.code,
+        discountType: promo.discountType as 'percentage' | 'fixed',
+        discountValue: String(promo.discountValue),
+        maxUses: String(promo.maxUses),
+        applicablePlans: promo.applicablePlans || [],
+        expiresAt: promo.expiresAt ? promo.expiresAt.slice(0, 10) : '',
+      };
+    }
+    return EMPTY_FORM;
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const togglePlan = (plan: string) =>
+    setForm(prev => ({
+      ...prev,
+      applicablePlans: prev.applicablePlans.includes(plan)
+        ? prev.applicablePlans.filter(p => p !== plan)
+        : [...prev.applicablePlans, plan],
+    }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const val = parseFloat(form.discountValue);
+    if (mode === 'create' && !form.code.trim()) { setError('Code is required'); return; }
+    if (isNaN(val) || val <= 0) { setError('Discount value must be > 0'); return; }
+    if (form.discountType === 'percentage' && val > 100) { setError('Percentage must be ≤ 100'); return; }
+    setSaving(true);
+    try {
+      if (mode === 'create') {
+        const res = await apiFetch(API_ENDPOINTS.admin.promos, {
+          method: 'POST',
+          body: JSON.stringify({
+            code: form.code.trim().toUpperCase(),
+            discountType: form.discountType,
+            discountValue: val,
+            maxUses: parseInt(form.maxUses) || 0,
+            applicablePlans: form.applicablePlans,
+            expiresAt: form.expiresAt || undefined,
+          }),
+        });
+        const data = await res.json();
+        if (!data.success) { setError(data.error || 'Failed to create'); return; }
+      } else {
+        const expiresAt = form.expiresAt
+          ? new Date(form.expiresAt).toISOString()
+          : '';
+        const res = await apiFetch(API_ENDPOINTS.admin.promo(promo!.id), {
+          method: 'PUT',
+          body: JSON.stringify({
+            discountType: form.discountType,
+            discountValue: val,
+            maxUses: parseInt(form.maxUses) || 0,
+            applicablePlans: form.applicablePlans,
+            expiresAt,
+          }),
+        });
+        const data = await res.json();
+        if (!data.success) { setError(data.error || 'Failed to update'); return; }
+      }
+      onSaved();
+      onClose();
+    } catch { setError('Network error'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
+          <h3 className="text-lg font-semibold text-gray-900">
+            {mode === 'create' ? 'Create Promo Code' : `Edit — ${promo?.code}`}
+          </h3>
+          <button onClick={onClose} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+          {mode === 'create' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+              <input
+                type="text"
+                value={form.code}
+                onChange={e => setForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                placeholder="SUMMER20"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-500 outline-none uppercase"
+              />
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Discount Type</label>
+            <div className="flex gap-2">
+              {(['percentage', 'fixed'] as const).map(type => (
+                <button type="button" key={type}
+                  onClick={() => setForm(p => ({ ...p, discountType: type }))}
+                  className={`flex-1 py-2 text-sm rounded-lg border font-medium transition-colors ${
+                    form.discountType === type
+                      ? 'bg-purple-600 text-white border-purple-600'
+                      : 'border-gray-300 text-gray-600 hover:border-purple-400'
+                  }`}
+                >
+                  {type === 'percentage' ? '% Percentage' : '₹ Fixed Amount'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Discount Value ({form.discountType === 'percentage' ? '%' : '₹'})
+            </label>
+            <input
+              type="number"
+              value={form.discountValue}
+              onChange={e => setForm(p => ({ ...p, discountValue: e.target.value }))}
+              min="0.01" step="0.01"
+              placeholder={form.discountType === 'percentage' ? '20' : '100'}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Max Uses (0 = unlimited)</label>
+            <input
+              type="number"
+              value={form.maxUses}
+              onChange={e => setForm(p => ({ ...p, maxUses: e.target.value }))}
+              min="0" step="1"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Applicable Plans (empty = all)</label>
+            <div className="grid grid-cols-2 gap-2">
+              {PROMO_PLANS.map(({ value, label }) => (
+                <button type="button" key={value}
+                  onClick={() => togglePlan(value)}
+                  className={`py-2 text-sm rounded-lg border font-medium transition-colors ${
+                    form.applicablePlans.includes(value)
+                      ? 'bg-sky-600 text-white border-sky-600'
+                      : 'border-gray-300 text-gray-600 hover:border-sky-400'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Expires At (optional)</label>
+            <input
+              type="date"
+              value={form.expiresAt}
+              onChange={e => setForm(p => ({ ...p, expiresAt: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+            />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving}
+              className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">
+              {saving ? (mode === 'create' ? 'Creating...' : 'Saving...') : (mode === 'create' ? 'Create' : 'Save Changes')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function PromosTab() {
   const [promos, setPromos] = useState<PromoCodeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    code: '',
-    discountType: 'percentage' as 'percentage' | 'fixed',
-    discountValue: '',
-    maxUses: '0',
-    applicablePlans: [] as string[],
-    expiresAt: '',
-  });
-  const [formError, setFormError] = useState('');
+  const [editingPromo, setEditingPromo] = useState<PromoCodeData | null>(null);
 
   const fetchPromos = async () => {
     setLoading(true);
@@ -1131,35 +1343,6 @@ function PromosTab() {
   };
 
   useEffect(() => { fetchPromos(); }, []);
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError('');
-    const val = parseFloat(form.discountValue);
-    if (!form.code.trim()) { setFormError('Code is required'); return; }
-    if (isNaN(val) || val <= 0) { setFormError('Discount value must be > 0'); return; }
-    if (form.discountType === 'percentage' && val > 100) { setFormError('Percentage must be ≤ 100'); return; }
-    setSaving(true);
-    try {
-      const res = await apiFetch(API_ENDPOINTS.admin.promos, {
-        method: 'POST',
-        body: JSON.stringify({
-          code: form.code.trim().toUpperCase(),
-          discountType: form.discountType,
-          discountValue: val,
-          maxUses: parseInt(form.maxUses) || 0,
-          applicablePlans: form.applicablePlans,
-          expiresAt: form.expiresAt || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!data.success) { setFormError(data.error || 'Failed to create'); return; }
-      setShowCreate(false);
-      setForm({ code: '', discountType: 'percentage', discountValue: '', maxUses: '0', applicablePlans: [], expiresAt: '' });
-      fetchPromos();
-    } catch { setFormError('Failed to create promo code'); }
-    finally { setSaving(false); }
-  };
 
   const toggleActive = async (promo: PromoCodeData) => {
     try {
@@ -1179,15 +1362,6 @@ function PromosTab() {
     } catch { /* ignore */ }
   };
 
-  const togglePlan = (plan: string) => {
-    setForm(prev => ({
-      ...prev,
-      applicablePlans: prev.applicablePlans.includes(plan)
-        ? prev.applicablePlans.filter(p => p !== plan)
-        : [...prev.applicablePlans, plan],
-    }));
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -1201,107 +1375,11 @@ function PromosTab() {
         </button>
       </div>
 
-      {/* Create modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Create Promo Code</h3>
-              <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
-                <X size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
-              {formError && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{formError}</p>}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-                <input
-                  type="text"
-                  value={form.code}
-                  onChange={e => setForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
-                  placeholder="SUMMER20"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-500 outline-none uppercase"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Discount Type</label>
-                <div className="flex gap-2">
-                  {(['percentage', 'fixed'] as const).map(type => (
-                    <button type="button" key={type}
-                      onClick={() => setForm(p => ({ ...p, discountType: type }))}
-                      className={`flex-1 py-2 text-sm rounded-lg border font-medium transition-colors ${
-                        form.discountType === type
-                          ? 'bg-purple-600 text-white border-purple-600'
-                          : 'border-gray-300 text-gray-600 hover:border-purple-400'
-                      }`}
-                    >
-                      {type === 'percentage' ? '% Percentage' : '₹ Fixed Amount'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Discount Value ({form.discountType === 'percentage' ? '%' : '₹'})
-                </label>
-                <input
-                  type="number"
-                  value={form.discountValue}
-                  onChange={e => setForm(p => ({ ...p, discountValue: e.target.value }))}
-                  min="0.01" step="0.01"
-                  placeholder={form.discountType === 'percentage' ? '20' : '100'}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Max Uses (0 = unlimited)</label>
-                <input
-                  type="number"
-                  value={form.maxUses}
-                  onChange={e => setForm(p => ({ ...p, maxUses: e.target.value }))}
-                  min="0" step="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Applicable Plans (empty = all)</label>
-                <div className="flex gap-2">
-                  {['monthly', 'yearly'].map(plan => (
-                    <button type="button" key={plan}
-                      onClick={() => togglePlan(plan)}
-                      className={`flex-1 py-2 text-sm rounded-lg border font-medium capitalize transition-colors ${
-                        form.applicablePlans.includes(plan)
-                          ? 'bg-sky-600 text-white border-sky-600'
-                          : 'border-gray-300 text-gray-600 hover:border-sky-400'
-                      }`}
-                    >
-                      {plan}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Expires At (optional)</label>
-                <input
-                  type="date"
-                  value={form.expiresAt}
-                  onChange={e => setForm(p => ({ ...p, expiresAt: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-                />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowCreate(false)}
-                  className="flex-1 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50">
-                  Cancel
-                </button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">
-                  {saving ? 'Creating...' : 'Create'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <PromoModal mode="create" onClose={() => setShowCreate(false)} onSaved={fetchPromos} />
+      )}
+      {editingPromo && (
+        <PromoModal mode="edit" promo={editingPromo} onClose={() => setEditingPromo(null)} onSaved={fetchPromos} />
       )}
 
       {loading ? (
@@ -1354,12 +1432,22 @@ function PromosTab() {
                     </button>
                   </td>
                   <td className="py-3 px-4">
-                    <button
-                      onClick={() => handleDelete(promo)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setEditingPromo(promo)}
+                        className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(promo)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

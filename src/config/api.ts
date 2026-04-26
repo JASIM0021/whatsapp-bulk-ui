@@ -50,6 +50,7 @@ export const API_ENDPOINTS = {
   subscription: {
     status: `${API_BASE_URL}/api/subscription`,
     initiate: `${API_BASE_URL}/api/payment/initiate`,
+    razorpayVerify: `${API_BASE_URL}/api/payment/razorpay/verify`,
     history: `${API_BASE_URL}/api/payment/history`,
     plans: `${API_BASE_URL}/api/subscription/plans`,
     validatePromo: `${API_BASE_URL}/api/payment/validate-promo`,

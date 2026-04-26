@@ -15,6 +15,7 @@ interface SubscriptionInfo {
 }
 
 interface PayUFormData {
+  gateway: 'payu';
   action: string;
   key: string;
   txnid: string;
@@ -32,6 +33,31 @@ interface PayUFormData {
   udf4: string;
   udf5: string;
 }
+
+interface RazorpayOrderData {
+  gateway: 'razorpay';
+  orderId: string;
+  amount: number; // paise
+  currency: string;
+  keyId: string;
+  txnId: string;
+  description: string;
+  prefillName: string;
+  prefillEmail: string;
+  prefillPhone: string;
+}
+
+type PaymentInitData = PayUFormData | RazorpayOrderData;
+
+const loadRazorpayScript = (): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if ((window as any).Razorpay) { resolve(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+    document.body.appendChild(script);
+  });
 
 interface PaymentRecord {
   id: string;
@@ -459,7 +485,6 @@ export function SubscriptionPage() {
   const handleUpgrade = async (plan: string) => {
     if (plan === 'free') return;
     setPaying(plan);
-    // Clear promo if it was for a different plan
     const appliedPromo = promoValidation?.valid && promoValidation.code ? promoValidation.code : '';
     try {
       const res = await apiFetch(API_ENDPOINTS.subscription.initiate, {
@@ -471,8 +496,56 @@ export function SubscriptionPage() {
         alert(data.error || 'Failed to initiate payment');
         return;
       }
-      // Submit PayU form
-      const formData: PayUFormData = data.data;
+
+      const initData: PaymentInitData = data.data;
+
+      if (initData.gateway === 'razorpay') {
+        // ── Razorpay checkout ──────────────────────────────────────────────
+        await loadRazorpayScript();
+        const rzpData = initData as RazorpayOrderData;
+        const options = {
+          key: rzpData.keyId,
+          amount: rzpData.amount,
+          currency: rzpData.currency,
+          name: 'BulkSend',
+          description: rzpData.description,
+          order_id: rzpData.orderId,
+          prefill: {
+            name: rzpData.prefillName,
+            email: rzpData.prefillEmail,
+            contact: rzpData.prefillPhone,
+          },
+          theme: { color: '#22c55e' },
+          modal: { ondismiss: () => setPaying(null) },
+          handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+            try {
+              const verifyRes = await apiFetch(API_ENDPOINTS.subscription.razorpayVerify, {
+                method: 'POST',
+                body: JSON.stringify({
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                  txnId: rzpData.txnId,
+                }),
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyData.success) {
+                window.location.href = `/payment/success?txnid=${verifyData.data.txnId}`;
+              } else {
+                window.location.href = `/payment/failure?error=${encodeURIComponent(verifyData.error || 'verification_failed')}`;
+              }
+            } catch {
+              window.location.href = '/payment/failure?error=verification_error';
+            }
+          },
+        };
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+        return; // setPaying handled by modal ondismiss or redirect
+      }
+
+      // ── PayU hidden form POST ──────────────────────────────────────────
+      const formData = initData as PayUFormData;
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = formData.action;
