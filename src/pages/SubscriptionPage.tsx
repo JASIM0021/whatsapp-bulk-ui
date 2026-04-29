@@ -603,17 +603,17 @@ export function SubscriptionPage() {
             <span>Back to App</span>
           </button>
           <div className="flex-1" />
-          <span className="text-sm text-gray-500">Logged in as {user?.email}</span>
+          <span className="hidden sm:block text-sm text-gray-500 truncate max-w-[200px]">Logged in as {user?.email}</span>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Current Subscription Status */}
         {subscription && (
-          <div className={`mb-8 p-6 rounded-2xl border ${subscription.isActive ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
+          <div className={`mb-8 p-4 sm:p-6 rounded-2xl border ${subscription.isActive ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                   Current Plan: <span className="capitalize">{subscription.plan}</span>
                 </h2>
                 <p className={`text-sm mt-1 ${subscription.isActive ? 'text-green-700' : 'text-red-700'}`}>
@@ -622,11 +622,11 @@ export function SubscriptionPage() {
                       ? `Active — ${subscription.messageLimit - subscription.messagesUsed} of ${subscription.messageLimit} messages remaining`
                       : `Active — ${subscription.daysLeft} day${subscription.daysLeft !== 1 ? 's' : ''} remaining (expires ${subscription.expiryDate})`
                     : subscription.messageLimit > 0
-                      ? `Quota exhausted (${subscription.messagesUsed}/${subscription.messageLimit} messages used). Upgrade or buy more messages.`
+                      ? `Quota exhausted (${subscription.messagesUsed}/${subscription.messageLimit} used). Upgrade to continue.`
                       : `Expired — Please upgrade to continue using the app`}
                 </p>
               </div>
-              <div className={`px-4 py-2 rounded-full text-sm font-medium ${subscription.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              <div className={`self-start sm:self-auto px-4 py-2 rounded-full text-sm font-medium shrink-0 ${subscription.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                 {subscription.isActive ? 'Active' : 'Expired'}
               </div>
             </div>
@@ -665,7 +665,7 @@ export function SubscriptionPage() {
           </button>
         </div>
 
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {plans.map((plan) => {
             const Icon = plan.icon;
             const activePlanId = billing === 'yearly' && plan.id !== 'free' ? plan.yearlyId : plan.monthlyId;
@@ -823,7 +823,7 @@ export function SubscriptionPage() {
 
         {/* Extra Messages Add-On */}
         {subscription?.isActive && subscription.messageLimit > 0 && subscription.plan !== 'free' && (
-          <div className="mb-8 p-5 rounded-2xl border border-amber-200 bg-amber-50 flex items-center justify-between gap-4 flex-wrap">
+          <div className="mb-8 p-4 sm:p-5 rounded-2xl border border-amber-200 bg-amber-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
               <p className="font-semibold text-amber-900">Need more messages?</p>
               <p className="text-sm text-amber-700 mt-0.5">
@@ -833,7 +833,7 @@ export function SubscriptionPage() {
             <button
               onClick={() => handleUpgrade('addon_messages')}
               disabled={paying !== null}
-              className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
             >
               {paying === 'addon_messages' ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
@@ -882,18 +882,18 @@ export function SubscriptionPage() {
               )}
 
               {/* Generate key form */}
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <input
                   type="text"
                   placeholder="Key label (e.g. Production)"
                   value={newKeyName}
                   onChange={e => setNewKeyName(e.target.value)}
-                  className="flex-1 max-w-xs text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                  className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
                 />
                 <button
                   onClick={handleCreateKey}
                   disabled={creatingKey}
-                  className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-lg disabled:opacity-60 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-lg disabled:opacity-60 transition-colors"
                 >
                   {creatingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   Generate New Key
@@ -906,31 +906,58 @@ export function SubscriptionPage() {
                   <Loader2 className="w-4 h-4 animate-spin" /> Loading keys...
                 </div>
               ) : apiKeys.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-2 px-3 font-medium text-gray-500">Key</th>
-                        <th className="text-left py-2 px-3 font-medium text-gray-500">Name</th>
-                        <th className="text-left py-2 px-3 font-medium text-gray-500">Created</th>
-                        <th className="text-left py-2 px-3 font-medium text-gray-500">Last Used</th>
-                        <th className="text-left py-2 px-3 font-medium text-gray-500">Status</th>
-                        <th className="py-2 px-3" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {apiKeys.map(k => (
-                        <tr key={k.id} className="border-b border-gray-100 last:border-0">
-                          <td className="py-2 px-3 font-mono text-xs text-gray-700">{k.keyPreview}</td>
-                          <td className="py-2 px-3 text-gray-700">{k.name}</td>
-                          <td className="py-2 px-3 text-gray-500">{new Date(k.createdAt).toLocaleDateString()}</td>
-                          <td className="py-2 px-3 text-gray-500">{k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : '—'}</td>
-                          <td className="py-2 px-3">
+                <>
+                  {/* Desktop table */}
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-2 px-3 font-medium text-gray-500">Key</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-500">Name</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-500">Created</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-500">Last Used</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-500">Status</th>
+                          <th className="py-2 px-3" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {apiKeys.map(k => (
+                          <tr key={k.id} className="border-b border-gray-100 last:border-0">
+                            <td className="py-2 px-3 font-mono text-xs text-gray-700">{k.keyPreview}</td>
+                            <td className="py-2 px-3 text-gray-700">{k.name}</td>
+                            <td className="py-2 px-3 text-gray-500">{new Date(k.createdAt).toLocaleDateString()}</td>
+                            <td className="py-2 px-3 text-gray-500">{k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : '—'}</td>
+                            <td className="py-2 px-3">
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${k.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                {k.isActive ? 'Active' : 'Revoked'}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3">
+                              {k.isActive && (
+                                <button
+                                  onClick={() => handleRevokeKey(k.id)}
+                                  className="text-red-400 hover:text-red-600 transition-colors"
+                                  title="Revoke key"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Mobile cards */}
+                  <div className="sm:hidden space-y-3">
+                    {apiKeys.map(k => (
+                      <div key={k.id} className="border border-gray-200 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-gray-900 text-sm truncate">{k.name}</span>
+                          <div className="flex items-center gap-2 shrink-0">
                             <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${k.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                               {k.isActive ? 'Active' : 'Revoked'}
                             </span>
-                          </td>
-                          <td className="py-2 px-3">
                             {k.isActive && (
                               <button
                                 onClick={() => handleRevokeKey(k.id)}
@@ -940,12 +967,17 @@ export function SubscriptionPage() {
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          </div>
+                        </div>
+                        <p className="font-mono text-xs text-gray-500 break-all">{k.keyPreview}</p>
+                        <div className="flex items-center justify-between text-xs text-gray-400">
+                          <span>Created: {new Date(k.createdAt).toLocaleDateString()}</span>
+                          <span>Used: {k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : '—'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <p className="text-sm text-gray-400">No API keys yet. Generate one above.</p>
               )}

@@ -1,6 +1,118 @@
 import { useState } from 'react';
-import { Copy, Check, ChevronDown, ChevronRight, Terminal, Zap, Shield, Code2, BookOpen, AlertCircle, Clock } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronRight, Terminal, Zap, Shield, Code2, BookOpen, AlertCircle, Clock, Bot } from 'lucide-react';
 import { useSEO } from '@/hooks/useSEO';
+
+// ─── AI Agent Prompt ───────────────────────────────────────────────────────────
+
+const AI_AGENT_PROMPT = `You are helping me integrate with the WhatsApp Bulk Sender API.
+
+## Environment Setup (do this first)
+Add the following variable to your .env file:
+
+  WHATSAPP_API_KEY=bsk_your_key_here
+
+Then load it in your code:
+  - Node.js / Next.js:  process.env.WHATSAPP_API_KEY
+  - Python:             os.environ["WHATSAPP_API_KEY"]
+  - Go:                 os.Getenv("WHATSAPP_API_KEY")
+  - PHP:                $_ENV["WHATSAPP_API_KEY"]
+  - Ruby:               ENV["WHATSAPP_API_KEY"]
+
+Never hardcode the key in source code or commit it to a repository.
+Get your actual key from: Subscription page → Developer API section.
+
+## Base URL
+https://bulksender.todayintech.in
+
+## Authentication
+Every request must include the header:
+  X-API-Key: <value of WHATSAPP_API_KEY>   (keys start with bsk_)
+
+## Send a Message  —  POST /api/v1/send
+Single recipient:
+  { "phone": "919876543210", "message": { "text": "Hello!" } }
+
+Multiple recipients (max 50 per call):
+  {
+    "contacts": [
+      { "phone": "919876543210", "name": "Rahul" },
+      { "phone": "919123456789", "name": "Priya" }
+    ],
+    "message": { "text": "Hi {{name}}, your order is confirmed!" }
+  }
+
+Optional fields:
+  - message.imageUrl  — public image URL to attach
+  - schedule_at       — ISO 8601 UTC datetime to schedule delivery
+
+Success response: { "success": true, "sent": N, "failed": N, "total": N }
+Scheduled response (HTTP 202): { "success": true, "scheduled": true, "job_id": "...", "scheduled_at": "...", "total": N }
+
+## Scheduled Jobs
+  GET    /api/v1/schedules          — list last 50 scheduled jobs
+  DELETE /api/v1/schedules/:job_id  — cancel a pending job
+
+## Error Codes
+  400 — bad request (missing fields, >50 contacts)
+  401 — missing or invalid API key
+  403 — subscription expired
+  503 — WhatsApp not connected (scan QR in dashboard first)
+
+## Important Notes
+- Phone numbers must include country code, no + or spaces (e.g. 919876543210 for India)
+- Use {{name}} in message text for per-contact personalisation
+- The API inserts a 3–5 second delay between messages; set HTTP timeout to at least 5 minutes for 50 contacts
+- Always check the "failed" field — HTTP 200 does not guarantee every message succeeded
+
+Please help me integrate this API into my project.`;
+
+// ─── AI Prompt Block component ─────────────────────────────────────────────────
+
+function AIPromptBlock() {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(AI_AGENT_PROMPT).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div className="border border-violet-200 rounded-2xl overflow-hidden bg-gradient-to-br from-violet-50 to-indigo-50">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-violet-200 bg-white/60">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
+            <Bot className="w-4 h-4 text-violet-600" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="font-semibold text-gray-900 text-sm">AI Agent Prompt</h2>
+            <p className="text-xs text-gray-500">Copy &amp; paste into Copilot, Cursor, Claude, or any agentic environment</p>
+          </div>
+        </div>
+        <button
+          onClick={copy}
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+            copied
+              ? 'bg-green-100 text-green-700 border border-green-200'
+              : 'bg-violet-600 hover:bg-violet-700 text-white shadow-sm shadow-violet-200'
+          }`}
+        >
+          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          {copied ? 'Copied!' : 'Copy Prompt'}
+        </button>
+      </div>
+      {/* Prompt preview */}
+      <pre className="px-6 py-5 text-xs text-gray-700 font-mono whitespace-pre-wrap leading-relaxed overflow-x-auto max-h-64 overflow-y-auto bg-white/40">
+        {AI_AGENT_PROMPT}
+      </pre>
+      {/* Footer hint */}
+      <div className="px-6 py-3 border-t border-violet-100 bg-white/40 flex items-start gap-2 text-xs text-violet-700">
+        <Bot className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+        <span>Paste this prompt at the start of your AI chat session. The agent will set up your <code className="bg-violet-100 px-1 rounded font-mono">WHATSAPP_API_KEY</code> .env variable and write integration code in any language.</span>
+      </div>
+    </div>
+  );
+}
 
 // ─── Code snippets ─────────────────────────────────────────────────────────────
 
@@ -553,6 +665,9 @@ export function DevDocsPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">
+
+        {/* AI Agent Prompt */}
+        <AIPromptBlock />
 
         {/* Quick start */}
         <Section title="Quick Start" icon={Zap} defaultOpen>
