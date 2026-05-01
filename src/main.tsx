@@ -20,6 +20,7 @@ import { BotSetupPage } from './pages/BotSetupPage'
 import { SecurityPage } from './pages/SecurityPage'
 import { ContactPage } from './pages/ContactPage'
 import { AboutPage } from './pages/AboutPage'
+import { EmailPage } from './pages/EmailPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -90,6 +91,13 @@ function AppRoutes() {
       } />
       <Route path="/security" element={
         <ProtectedRoute><SecurityPage /></ProtectedRoute>
+      } />
+      <Route path="/email" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <EmailPage />
+          </AppProvider>
+        </ProtectedRoute>
       } />
       <Route path="/app" element={
         <ProtectedRoute>

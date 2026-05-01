@@ -11,7 +11,7 @@ import { parseFile } from '@/lib/fileParser';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
 import { Contact } from '@/types/contact';
-import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock, ChevronRight, MoreHorizontal, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TourGuide } from '@/components/TourGuide';
 import { ManualContactEntry } from '@/components/ManualContactEntry';
@@ -324,6 +324,15 @@ function App() {
                     <Shield size={17} />
                   </button>
                 )}
+                {/* ── Email Channel Switch ── */}
+                <button
+                  onClick={() => navigate('/email')}
+                  title="Switch to Email Channel"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 ml-1 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-xs font-semibold border border-blue-200"
+                >
+                  <Mail size={14} />
+                  <span className="hidden sm:inline">Email</span>
+                </button>
               </div>
 
               <div className="w-px h-5 bg-gray-200 mx-1" />
@@ -468,6 +477,26 @@ function App() {
         {/* ── Mobile: More tab ── */}
         {mobileTab === 'more' && (
           <div className="md:hidden space-y-3">
+            {/* ── Email Channel Switch card ── */}
+            <button
+              onClick={() => navigate('/email')}
+              className="w-full flex items-center justify-between px-4 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 text-white transition-all active:scale-[0.98]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Mail size={20} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-sm leading-none">Email Channel</p>
+                  <p className="text-blue-200 text-xs mt-0.5">Bulk email campaigns</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 bg-white/20 rounded-lg px-3 py-1.5">
+                <span className="text-xs font-semibold">Open</span>
+                <ChevronRight size={14} />
+              </div>
+            </button>
+
             {/* User card */}
             <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
               <div className="px-4 py-4 flex items-center gap-3 border-b border-gray-100">
@@ -779,9 +808,9 @@ function App() {
             }`}
           >
             <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'send' ? 'bg-primary-50' : ''}`}>
-              <MessageSquare size={20} strokeWidth={mobileTab === 'send' ? 2.5 : 1.8} />
+              <MessageSquare size={19} strokeWidth={mobileTab === 'send' ? 2.5 : 1.8} />
             </div>
-            <span className={`text-[10px] font-medium leading-none ${mobileTab === 'send' ? 'text-primary-600' : 'text-gray-400'}`}>Send</span>
+            <span className={`text-[9px] font-medium leading-none ${mobileTab === 'send' ? 'text-primary-600' : 'text-gray-400'}`}>Send</span>
           </button>
 
           {/* Contacts tab */}
@@ -792,9 +821,9 @@ function App() {
             }`}
           >
             <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'contacts' ? 'bg-primary-50' : ''}`}>
-              <BookUser size={20} strokeWidth={mobileTab === 'contacts' ? 2.5 : 1.8} />
+              <BookUser size={19} strokeWidth={mobileTab === 'contacts' ? 2.5 : 1.8} />
             </div>
-            <span className={`text-[10px] font-medium leading-none ${mobileTab === 'contacts' ? 'text-primary-600' : 'text-gray-400'}`}>Contacts</span>
+            <span className={`text-[9px] font-medium leading-none ${mobileTab === 'contacts' ? 'text-primary-600' : 'text-gray-400'}`}>Contacts</span>
           </button>
 
           {/* Schedule tab */}
@@ -805,9 +834,20 @@ function App() {
             }`}
           >
             <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'schedule' ? 'bg-blue-50' : ''}`}>
-              <CalendarClock size={20} strokeWidth={mobileTab === 'schedule' ? 2.5 : 1.8} />
+              <CalendarClock size={19} strokeWidth={mobileTab === 'schedule' ? 2.5 : 1.8} />
             </div>
-            <span className={`text-[10px] font-medium leading-none ${mobileTab === 'schedule' ? 'text-blue-600' : 'text-gray-400'}`}>Schedule</span>
+            <span className={`text-[9px] font-medium leading-none ${mobileTab === 'schedule' ? 'text-blue-600' : 'text-gray-400'}`}>Schedule</span>
+          </button>
+
+          {/* ── Email tab ── */}
+          <button
+            onClick={() => navigate('/email')}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors text-gray-400 hover:text-blue-600"
+          >
+            <div className="p-1.5 rounded-xl transition-colors hover:bg-blue-50">
+              <Mail size={19} strokeWidth={1.8} />
+            </div>
+            <span className="text-[9px] font-medium leading-none">Email</span>
           </button>
 
           {/* More tab */}
@@ -818,9 +858,9 @@ function App() {
             }`}
           >
             <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'more' ? 'bg-gray-100' : ''}`}>
-              <MoreHorizontal size={20} strokeWidth={mobileTab === 'more' ? 2.5 : 1.8} />
+              <MoreHorizontal size={19} strokeWidth={mobileTab === 'more' ? 2.5 : 1.8} />
             </div>
-            <span className={`text-[10px] font-medium leading-none ${mobileTab === 'more' ? 'text-gray-700' : 'text-gray-400'}`}>More</span>
+            <span className={`text-[9px] font-medium leading-none ${mobileTab === 'more' ? 'text-gray-700' : 'text-gray-400'}`}>More</span>
           </button>
         </div>
       </nav>

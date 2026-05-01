@@ -94,6 +94,18 @@ export const API_ENDPOINTS = {
     settings:  `${API_BASE_URL}/api/settings/security`,
     heartbeat: `${API_BASE_URL}/api/activity/heartbeat`,
   },
+  // ── Email (Omnichannel) ───────────────────────────────────────────────
+  email: {
+    smtp:           `${API_BASE_URL}/api/email/smtp`,
+    smtpTest:       `${API_BASE_URL}/api/email/smtp/test`,
+    send:           `${SSE_BASE_URL}/api/email/send`,      // SSE — direct to backend
+    schedule:       `${API_BASE_URL}/api/email/schedule`,
+    cancelSchedule: (id: string) => `${API_BASE_URL}/api/email/schedule/${id}`,
+    templates:      `${API_BASE_URL}/api/email/templates`,
+    deleteTemplate: (id: string) => `${API_BASE_URL}/api/email/templates/${id}`,
+    bot:            `${API_BASE_URL}/api/email/bot`,
+    copyBot:        `${API_BASE_URL}/api/email/bot/copy-from-whatsapp`,
+  },
   health: `${API_BASE_URL}/api/health`,
 };
 
