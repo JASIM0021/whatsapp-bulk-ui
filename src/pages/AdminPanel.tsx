@@ -706,6 +706,27 @@ function EmailTab() {
   const [recipients, setRecipients] = useState<'all' | 'active' | 'trial'>('all');
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ sent: number; failed: number } | null>(null);
+  const [editorTab, setEditorTab] = useState<'editor' | 'preview'>('editor');
+
+  const STARTER_TEMPLATE = `<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;">
+  <div style="background:#16a34a;padding:28px 40px;text-align:center;border-radius:8px 8px 0 0;">
+    <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700;">NexBotix</h1>
+  </div>
+  <div style="background:#fff;padding:40px;border:1px solid #e4e4e7;border-top:none;">
+    <h2 style="margin:0 0 16px;color:#18181b;font-size:20px;">Hi {{name}},</h2>
+    <p style="margin:0 0 16px;color:#3f3f46;font-size:15px;line-height:1.6;">
+      Your message body goes here...
+    </p>
+    <div style="text-align:center;margin:32px 0;">
+      <a href="https://bulksender.todayintech.in" style="background:#16a34a;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">
+        Go to Dashboard
+      </a>
+    </div>
+  </div>
+  <div style="background:#fafafa;padding:20px 40px;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 8px 8px;text-align:center;">
+    <p style="margin:0;color:#a1a1aa;font-size:12px;">NexBotix &mdash; Messaging Platform</p>
+  </div>
+</div>`;
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -736,7 +757,8 @@ function EmailTab() {
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-gray-900">Send Promotional Email</h2>
 
-      <form onSubmit={handleSend} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5 max-w-2xl">
+      <form onSubmit={handleSend} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5 max-w-3xl">
+        {/* Recipients */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Recipients</label>
           <div className="flex gap-3">
@@ -757,6 +779,7 @@ function EmailTab() {
           </div>
         </div>
 
+        {/* Subject */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
           <input
@@ -769,19 +792,85 @@ function EmailTab() {
           />
         </div>
 
+        {/* Body with Editor / Preview tabs */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Body (HTML supported)</label>
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Write your email content here... HTML tags are supported."
-            required
-            rows={10}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-y font-mono"
-          />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setEditorTab('editor')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  editorTab === 'editor'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                ✏️ Editor
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditorTab('preview')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  editorTab === 'preview'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                👁️ Preview
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setBody(STARTER_TEMPLATE); setEditorTab('editor'); }}
+              className="text-xs text-green-600 hover:text-green-700 font-medium border border-green-200 hover:border-green-300 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              + Use NexBotix Template
+            </button>
+          </div>
+
+          {editorTab === 'editor' ? (
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Write your email content here... HTML tags are supported."
+              required
+              rows={14}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-y font-mono"
+            />
+          ) : (
+            <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+              {/* Email client header bar */}
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 border-b border-gray-200">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                <span className="text-xs text-gray-400 ml-2 font-mono truncate">
+                  Subject: {subject || '(no subject)'}
+                </span>
+              </div>
+              {body.trim() ? (
+                <iframe
+                  srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:16px;background:#f4f4f5;}</style></head><body>${body}</body></html>`}
+                  sandbox="allow-same-origin"
+                  className="w-full bg-white"
+                  style={{ height: '420px', border: 'none' }}
+                  title="Email Preview"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-2">
+                  <span className="text-3xl">📧</span>
+                  <p className="text-sm">Nothing to preview yet — write some HTML in the Editor tab.</p>
+                </div>
+              )}
+            </div>
+          )}
+          <p className="text-xs text-gray-400 mt-1.5">
+            Supports full HTML. Use <code className="bg-gray-100 px-1 rounded">{'{{name}}'}</code> for personalised recipient names.
+          </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* Actions */}
+        <div className="flex items-center gap-4 pt-1">
           <button
             type="submit"
             disabled={sending}
@@ -793,9 +882,9 @@ function EmailTab() {
 
           {result && (
             <div className="flex items-center gap-3 text-sm">
-              <span className="text-green-600 font-medium">{result.sent} sent</span>
+              <span className="text-green-600 font-medium">✓ {result.sent} sent</span>
               {result.failed > 0 && (
-                <span className="text-red-500 font-medium">{result.failed} failed</span>
+                <span className="text-red-500 font-medium">✗ {result.failed} failed</span>
               )}
             </div>
           )}
@@ -804,6 +893,7 @@ function EmailTab() {
     </div>
   );
 }
+
 
 /* ─── Invoices Tab ─── */
 function InvoicesTab() {
