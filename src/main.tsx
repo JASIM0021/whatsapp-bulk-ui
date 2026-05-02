@@ -25,6 +25,7 @@ import { EmailPage } from './pages/EmailPage'
 import { WebsiteChatbotSetupPage } from './pages/WebsiteChatbotSetupPage'
 import { WebsiteChatbotLeadsPage } from './pages/WebsiteChatbotLeadsPage'
 import { WebsiteChatbotEmbedPage } from './pages/WebsiteChatbotEmbedPage'
+import { DashboardPage } from './pages/DashboardPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -124,6 +125,11 @@ function AppRoutes() {
         <ProtectedRoute><WebsiteChatbotEmbedPage /></ProtectedRoute>
       } />
       <Route path="/app" element={
+        <ProtectedRoute>
+          <DashboardPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/whatsapp" element={
         <ProtectedRoute>
           <AppProvider>
             <App />

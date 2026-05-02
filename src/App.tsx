@@ -11,7 +11,7 @@ import { parseFile } from '@/lib/fileParser';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
 import { Contact } from '@/types/contact';
-import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock, ChevronRight, MoreHorizontal, Mail, Globe } from 'lucide-react';
+import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock, ChevronRight, MoreHorizontal, Mail, Globe, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TourGuide } from '@/components/TourGuide';
 import { ManualContactEntry } from '@/components/ManualContactEntry';
@@ -257,11 +257,20 @@ function App() {
           <div className="hidden md:flex items-center justify-between gap-4">
 
             {/* Left: Logo + title */}
-            <div className="flex items-center gap-2.5 shrink-0">
-              <img src="/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
-              <div>
-                <h1 className="text-sm font-bold text-gray-900 leading-tight">NexBotix</h1>
-                <p className="text-[11px] text-gray-400">Send bulk messages efficiently</p>
+            <div className="flex items-center gap-4 shrink-0">
+              <button
+                onClick={() => navigate('/app')}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+                title="Back to Dashboard"
+              >
+                <ArrowLeft size={18} className="text-gray-600" />
+              </button>
+              <div className="flex items-center gap-2.5">
+                <img src="/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
+                <div>
+                  <h1 className="text-sm font-bold text-gray-900 leading-tight">WhatsApp Campaign</h1>
+                  <p className="text-[11px] text-gray-400">Send bulk messages efficiently</p>
+                </div>
               </div>
             </div>
 
@@ -350,10 +359,10 @@ function App() {
               <button
                 onClick={() => navigate('/subscription')}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${!user?.subscription?.isActive
-                    ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                    : user?.subscription?.plan === 'free'
-                      ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                      : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                  ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                  : user?.subscription?.plan === 'free'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                    : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
                   }`}
               >
                 <Crown size={13} />
@@ -405,8 +414,8 @@ function App() {
                 <div
                   data-tour="step-connect"
                   className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-medium border ${isWhatsAppConnected
-                      ? 'bg-green-50 text-green-700 border-green-200'
-                      : 'bg-gray-100 text-gray-500 border-gray-200'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-gray-100 text-gray-500 border-gray-200'
                     }`}
                 >
                   <div className={`w-1.5 h-1.5 rounded-full ${isWhatsAppConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />

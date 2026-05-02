@@ -513,18 +513,18 @@ export function WebsiteChatbotSetupPage() {
                 <div className={`absolute bottom-24 ${config.position === 'bottom-right' ? 'right-6' : 'left-6'} rounded-2xl shadow-2xl overflow-hidden bg-white flex flex-col transition-all duration-300 ease-in-out`} style={{ height: '420px', width: config.widgetSize === 'small' ? '280px' : config.widgetSize === 'large' ? '360px' : '320px' }}>
                   {/* Header */}
                   <div className="flex items-center justify-between px-5 py-4 transition-colors duration-300" style={{ backgroundColor: config.primaryColor }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-sm">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-sm flex-shrink-0">
                         <MessageCircle size={18} style={{ color: config.iconColor }} />
                       </div>
-                      <div>
-                        <p className="text-sm font-bold tracking-wide" style={{ color: config.iconColor }}>{config.businessName || 'Chat Assistant'}</p>
+                      <div className="min-w-0 flex-1 pr-2">
+                        <p className="text-sm font-bold tracking-wide truncate" style={{ color: config.iconColor }}>{config.businessName || 'Chat Assistant'}</p>
                         <p className="text-[11px] font-medium opacity-80 flex items-center gap-1.5" style={{ color: config.iconColor }}>
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span> Online
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"></span> Online
                         </p>
                       </div>
                     </div>
-                    <button className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors" style={{ color: config.iconColor }}>✕</button>
+                    <button className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors flex-shrink-0 ml-2" style={{ color: config.iconColor }}>✕</button>
                   </div>
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50 relative">

@@ -41,7 +41,7 @@ export function EmailPage() {
           className="flex items-center gap-2 text-slate-400 hover:text-white text-xs mb-4 transition-colors"
         >
           <ArrowLeft size={14} />
-          <span>Back to WhatsApp</span>
+          <span>Back to Dashboard</span>
         </button>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
