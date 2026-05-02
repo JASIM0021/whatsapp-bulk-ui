@@ -9,24 +9,24 @@ const AI_AGENT_PROMPT = `You are helping me integrate with the NexBotix API.
 ## Environment Setup (do this first)
 Add the following variable to your .env file:
 
-  WHATSAPP_API_KEY=bsk_your_key_here
+  NEXBOTIX_API_KEY=bsk_your_key_here
 
 Then load it in your code:
-  - Node.js / Next.js:  process.env.WHATSAPP_API_KEY
-  - Python:             os.environ["WHATSAPP_API_KEY"]
-  - Go:                 os.Getenv("WHATSAPP_API_KEY")
-  - PHP:                $_ENV["WHATSAPP_API_KEY"]
-  - Ruby:               ENV["WHATSAPP_API_KEY"]
+  - Node.js / Next.js:  process.env.nexbotix
+  - Python:             os.environ["NEXBOTIX_API_KEY"]
+  - Go:                 os.Getenv("NEXBOTIX_API_KEY")
+  - PHP:                $_ENV["NEXBOTIX_API_KEY"]
+  - Ruby:               ENV["NEXBOTIX_API_KEY"]
 
 Never hardcode the key in source code or commit it to a repository.
 Get your actual key from: Subscription page → Developer API section.
 
 ## Base URL
-https://bulksender.todayintech.in
+https://nexbotix.todayintech.in
 
 ## Authentication
 Every request must include the header:
-  X-API-Key: <value of WHATSAPP_API_KEY>   (keys start with bsk_)
+  X-API-Key: <value of NEXBOTIX_API_KEY>   (keys start with bsk_)
 
 ## Send a Message  —  POST /api/v1/send
 Single recipient:
@@ -92,8 +92,8 @@ function AIPromptBlock() {
         <button
           onClick={copy}
           className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${copied
-              ? 'bg-green-100 text-green-700 border border-green-200'
-              : 'bg-violet-600 hover:bg-violet-700 text-white shadow-sm shadow-violet-200'
+            ? 'bg-green-100 text-green-700 border border-green-200'
+            : 'bg-violet-600 hover:bg-violet-700 text-white shadow-sm shadow-violet-200'
             }`}
         >
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -107,7 +107,7 @@ function AIPromptBlock() {
       {/* Footer hint */}
       <div className="px-6 py-3 border-t border-violet-100 bg-white/40 flex items-start gap-2 text-xs text-violet-700">
         <Bot className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-        <span>Paste this prompt at the start of your AI chat session. The agent will set up your <code className="bg-violet-100 px-1 rounded font-mono">WHATSAPP_API_KEY</code> .env variable and write integration code in any language.</span>
+        <span>Paste this prompt at the start of your AI chat session. The agent will set up your <code className="bg-violet-100 px-1 rounded font-mono">NEXBOTIX_API_KEY</code> .env variable and write integration code in any language.</span>
       </div>
     </div>
   );
@@ -590,8 +590,8 @@ function CodeExample({ snippetKey, defaultTab = 'curl' }: { snippetKey: string; 
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`shrink-0 px-4 py-2.5 text-xs font-medium transition-colors ${tab === t.id
-                ? 'text-green-400 border-b-2 border-green-400 bg-gray-950'
-                : 'text-gray-400 hover:text-gray-200'
+              ? 'text-green-400 border-b-2 border-green-400 bg-gray-950'
+              : 'text-gray-400 hover:text-gray-200'
               }`}
           >
             {t.label}
@@ -641,7 +641,7 @@ export function DevDocsPage() {
   useSEO({
     title: 'Developer API Docs - NexBotix',
     description: 'Documentation for integrating NexBotix API to send automated basic and bulk messages programmatically.',
-    url: 'https://bulksender.todayintech.in/docs'
+    url: 'https://nexbotix.todayintech.in/docs'
   });
 
   return (

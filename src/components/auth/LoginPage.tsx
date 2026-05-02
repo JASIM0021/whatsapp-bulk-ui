@@ -23,7 +23,7 @@ export function LoginPage() {
   useSEO({
     title: mode === 'login' ? 'Sign In - NexBotix' : 'Sign Up - NexBotix',
     description: mode === 'login' ? 'Sign in to access your NexBotix dashboard.' : 'Create a new account on NexBotix and get started with free messages today.',
-    url: mode === 'login' ? 'https://bulksender.todayintech.in/login' : 'https://bulksender.todayintech.in/signup'
+    url: mode === 'login' ? 'https://nexbotix.todayintech.in/login' : 'https://nexbotix.todayintech.in/signup'
   });
 
   const [step, setStep] = useState<Step>('form');
@@ -541,10 +541,10 @@ export function LoginPage() {
             <ArrowLeft size={16} /> Back to home
           </Link>
 
-            <Link to="/" className="flex lg:hidden items-center gap-2 mb-8 justify-center hover:opacity-80 transition-opacity">
-              <img src="/icon-192.png" alt="NexBotix" className="w-10 h-10 rounded-xl object-contain" />
-              <span className="text-xl font-bold text-gray-900">NexBotix</span>
-            </Link>
+          <Link to="/" className="flex lg:hidden items-center gap-2 mb-8 justify-center hover:opacity-80 transition-opacity">
+            <img src="/icon-192.png" alt="NexBotix" className="w-10 h-10 rounded-xl object-contain" />
+            <span className="text-xl font-bold text-gray-900">NexBotix</span>
+          </Link>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             {/* Tabs */}

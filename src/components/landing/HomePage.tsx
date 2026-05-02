@@ -508,8 +508,8 @@ function Pricing() {
 
             return (
               <div key={key} className={`relative rounded-2xl p-8 flex flex-col transition-all duration-300 ${meta.highlight
-                  ? 'bg-gradient-to-b from-gray-900 to-gray-950 text-white border-2 border-green-500/30 shadow-2xl shadow-green-500/10 scale-[1.02]'
-                  : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg'
+                ? 'bg-gradient-to-b from-gray-900 to-gray-950 text-white border-2 border-green-500/30 shadow-2xl shadow-green-500/10 scale-[1.02]'
+                : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg'
                 }`}>
                 {meta.highlight && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-xs font-bold text-white tracking-wide shadow-lg whitespace-nowrap">
@@ -565,8 +565,8 @@ function Pricing() {
                 {/* CTA */}
                 <Link to={isFree ? '/signup' : '/subscription'}
                   className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold transition-all ${meta.highlight
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-[1.02]'
-                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-[1.02]'
+                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}>
                   {isFree ? 'Get Started' : 'Subscribe Now'}
                   <ChevronRight size={16} />
@@ -615,7 +615,7 @@ export function HomePage() {
     title: 'NexBotix - Send Messages at Scale',
     description: 'Bulk WhatsApp messaging tool. Upload contacts, select templates, and launch campaigns instantly without coding.',
     keywords: 'whatsapp bulk sender, whatsapp marketing, bulk messaging, whatsapp api',
-    url: 'https://bulksender.todayintech.in/'
+    url: 'https://nexbotix.todayintech.in/'
   });
 
   return (

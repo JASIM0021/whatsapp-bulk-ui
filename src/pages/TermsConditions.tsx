@@ -4,7 +4,7 @@ export function TermsConditions() {
   useSEO({
     title: 'Terms & Conditions - NexBotix',
     description: 'Read the terms and conditions for using NexBotix.',
-    url: 'https://bulksender.todayintech.in/terms'
+    url: 'https://nexbotix.todayintech.in/terms'
   });
 
   return (

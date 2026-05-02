@@ -4,7 +4,7 @@ export function RefundPolicy() {
   useSEO({
     title: 'Refund Policy - NexBotix',
     description: 'Read the refund policy for NexBotix.',
-    url: 'https://bulksender.todayintech.in/refund'
+    url: 'https://nexbotix.todayintech.in/refund'
   });
 
   return (
