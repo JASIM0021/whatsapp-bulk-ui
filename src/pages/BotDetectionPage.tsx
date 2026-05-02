@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield, User, AlertTriangle, Clock, TrendingUp, Loader, RefreshCw, Filter, Check } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface DetectionLog {
   id: string;
@@ -27,7 +26,6 @@ interface DetectionStats {
 
 export function BotDetectionPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [logs, setLogs] = useState<DetectionLog[]>([]);
   const [stats, setStats] = useState<DetectionStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);

@@ -14,8 +14,6 @@ import {
   ArrowRight,
   Star,
   ChevronRight,
-  Bot,
-  CalendarClock,
   MessageSquareWarning,
   UserX,
   Timer,

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
-import { ArrowLeft, Loader2, RefreshCw, ChevronLeft, ChevronRight, Mail, Phone, User, ExternalLink, Calendar, MessageSquare, X, Bot, Users } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCw, ChevronLeft, ChevronRight, Mail, Phone, ExternalLink, Calendar, MessageSquare, X, Bot, Users } from 'lucide-react';
 
 interface Lead {
   id: string;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch, API_ENDPOINTS, API_BASE_URL } from '@/config/api';
-import { Globe, Loader2, Save, RefreshCw, Copy, Check, ChevronRight, Users, Code, ArrowLeft, Bot, MessageSquare, ShieldCheck, Mail, Palette, Layout, MessageCircle, Info } from 'lucide-react';
+import { Globe, Loader2, Save, RefreshCw, Copy, Check, Users, ArrowLeft, Bot, MessageSquare, ShieldCheck, Mail, Palette, Layout, MessageCircle, Info } from 'lucide-react';
 import { WebsiteChatbotLeadsPage } from './WebsiteChatbotLeadsPage';
 
 interface ChatbotConfig {

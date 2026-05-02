@@ -71,7 +71,7 @@ function AppRoutes() {
     s.src = 'http://localhost:4000/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
     s.async = true;
     document.body.appendChild(s);
-    return () => document.body.removeChild(s);
+    return () => { document.body.removeChild(s); };
   }, [])
   return (
     <Routes>

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Settings, LayoutDashboard } from 'lucide-react';
+import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User } from 'lucide-react';
 
 export function DashboardPage() {
   const { user, logout } = useAuth();
