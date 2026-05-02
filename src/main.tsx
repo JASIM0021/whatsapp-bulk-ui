@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
@@ -22,6 +22,9 @@ import { SecurityPage } from './pages/SecurityPage'
 import { ContactPage } from './pages/ContactPage'
 import { AboutPage } from './pages/AboutPage'
 import { EmailPage } from './pages/EmailPage'
+import { WebsiteChatbotSetupPage } from './pages/WebsiteChatbotSetupPage'
+import { WebsiteChatbotLeadsPage } from './pages/WebsiteChatbotLeadsPage'
+import { WebsiteChatbotEmbedPage } from './pages/WebsiteChatbotEmbedPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -61,6 +64,14 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+
+  useEffect(() => {
+    const s = document.createElement('script');
+    s.src = 'http://localhost:4000/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
+    s.async = true;
+    document.body.appendChild(s);
+    return () => document.body.removeChild(s);
+  }, [])
   return (
     <Routes>
       {/* Public landing pages */}
@@ -102,6 +113,15 @@ function AppRoutes() {
             <EmailPage />
           </AppProvider>
         </ProtectedRoute>
+      } />
+      <Route path="/website-chatbot" element={
+        <ProtectedRoute><WebsiteChatbotSetupPage /></ProtectedRoute>
+      } />
+      <Route path="/website-chatbot/leads" element={
+        <ProtectedRoute><WebsiteChatbotLeadsPage /></ProtectedRoute>
+      } />
+      <Route path="/website-chatbot/embed" element={
+        <ProtectedRoute><WebsiteChatbotEmbedPage /></ProtectedRoute>
       } />
       <Route path="/app" element={
         <ProtectedRoute>

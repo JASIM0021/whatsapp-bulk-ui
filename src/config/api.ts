@@ -109,6 +109,15 @@ export const API_ENDPOINTS = {
     bot:            `${API_BASE_URL}/api/email/bot`,
     copyBot:        `${API_BASE_URL}/api/email/bot/copy-from-whatsapp`,
   },
+  // ── Website Chatbot ───────────────────────────────────────────────────
+  websiteChatbot: {
+    config:     `${API_BASE_URL}/api/website-chatbot/config`,
+    crawl:      `${API_BASE_URL}/api/website-chatbot/crawl`,
+    script:     `${API_BASE_URL}/api/website-chatbot/script`,
+    chat:       `${API_BASE_URL}/api/website-chatbot/chat`,
+    leads:      `${API_BASE_URL}/api/website-chatbot/leads`,
+    submitLead: `${API_BASE_URL}/api/website-chatbot/leads/submit`,
+  },
   health: `${API_BASE_URL}/api/health`,
 };
 

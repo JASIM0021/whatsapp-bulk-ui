@@ -35,7 +35,7 @@ const EMPTY: BotConfig = {
   isEnabled: false,
   excludedNumbers: [],
   customSystemPrompt: '',
-  enableAIDetection: false,
+  enableAIDetection: true,  // Enable AI detection by default
   maxMessagesPerHour: 30,
   minResponseTimeSeconds: 2,
   handoffKeywords: ['human', 'agent', 'talk to person', 'real human'],
@@ -74,7 +74,7 @@ export function BotSetupPage() {
             isEnabled: d.isEnabled ?? false,
             excludedNumbers: d.excludedNumbers ?? [],
             customSystemPrompt: d.customSystemPrompt ?? '',
-            enableAIDetection: d.enableAIDetection ?? false,
+            enableAIDetection: d.enableAIDetection ?? true,  // Default to true
             maxMessagesPerHour: d.maxMessagesPerHour ?? 30,
             minResponseTimeSeconds: d.minResponseTimeSeconds ?? 2,
             handoffKeywords: d.handoffKeywords?.length ? d.handoffKeywords : ['human', 'agent', 'talk to person', 'real human'],

@@ -11,7 +11,7 @@ import { parseFile } from '@/lib/fileParser';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
 import { Contact } from '@/types/contact';
-import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock, ChevronRight, MoreHorizontal, Mail } from 'lucide-react';
+import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock, ChevronRight, MoreHorizontal, Mail, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TourGuide } from '@/components/TourGuide';
 import { ManualContactEntry } from '@/components/ManualContactEntry';
@@ -308,6 +308,15 @@ function App() {
                     <Bot size={17} />
                   </button>
                 )}
+                {user?.subscription?.isActive && (
+                  <button
+                    onClick={() => navigate('/website-chatbot')}
+                    title="Website Chatbot"
+                    className="p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+                  >
+                    <Globe size={17} />
+                  </button>
+                )}
                 <button
                   onClick={() => navigate('/security')}
                   title="Security Settings"
@@ -531,16 +540,28 @@ function App() {
 
               {/* Bot */}
               {user?.subscription?.isActive && (
-                <button
-                  onClick={() => navigate('/bot')}
-                  className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Bot size={18} className="text-indigo-500" />
-                    <p className="text-sm font-medium text-gray-800">AI Chatbot</p>
-                  </div>
-                  <ChevronRight size={16} className="text-gray-400" />
-                </button>
+                <>
+                  <button
+                    onClick={() => navigate('/bot')}
+                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Bot size={18} className="text-indigo-500" />
+                      <p className="text-sm font-medium text-gray-800">AI Chatbot</p>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => navigate('/website-chatbot')}
+                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Globe size={18} className="text-green-500" />
+                      <p className="text-sm font-medium text-gray-800">Website Chatbot</p>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-400" />
+                  </button>
+                </>
               )}
 
               {/* Security */}
