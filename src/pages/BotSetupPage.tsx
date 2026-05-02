@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader, Ban, Sparkles, Code2 } from 'lucide-react';
+import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader, Ban, Sparkles, Code2, Shield, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -15,6 +15,14 @@ interface BotConfig {
   isEnabled: boolean;
   excludedNumbers: string[];
   customSystemPrompt: string;
+  // AI Detection Settings
+  enableAIDetection?: boolean;
+  maxMessagesPerHour?: number;
+  minResponseTimeSeconds?: number;
+  handoffKeywords?: string[];
+  // Human Agent Settings
+  humanAgentPhone?: string;
+  enableAutoHandoff?: boolean;
 }
 
 const EMPTY: BotConfig = {
@@ -27,6 +35,12 @@ const EMPTY: BotConfig = {
   isEnabled: false,
   excludedNumbers: [],
   customSystemPrompt: '',
+  enableAIDetection: false,
+  maxMessagesPerHour: 30,
+  minResponseTimeSeconds: 2,
+  handoffKeywords: ['human', 'agent', 'talk to person', 'real human'],
+  humanAgentPhone: '',
+  enableAutoHandoff: false,
 };
 
 export function BotSetupPage() {
@@ -37,6 +51,8 @@ export function BotSetupPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isToggeling, setIsToggeling] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [aiDetectionExpanded, setAiDetectionExpanded] = useState(false);
+  const [handoffExpanded, setHandoffExpanded] = useState(false);
 
   const isActive = user?.subscription?.isActive ?? false;
   const isFree = user?.subscription?.plan === 'free';
@@ -58,6 +74,12 @@ export function BotSetupPage() {
             isEnabled: d.isEnabled ?? false,
             excludedNumbers: d.excludedNumbers ?? [],
             customSystemPrompt: d.customSystemPrompt ?? '',
+            enableAIDetection: d.enableAIDetection ?? false,
+            maxMessagesPerHour: d.maxMessagesPerHour ?? 30,
+            minResponseTimeSeconds: d.minResponseTimeSeconds ?? 2,
+            handoffKeywords: d.handoffKeywords?.length ? d.handoffKeywords : ['human', 'agent', 'talk to person', 'real human'],
+            humanAgentPhone: d.humanAgentPhone ?? '',
+            enableAutoHandoff: d.enableAutoHandoff ?? false,
           });
         }
       } catch {
@@ -149,6 +171,12 @@ export function BotSetupPage() {
     setConfig(prev => ({ ...prev, excludedNumbers: prev.excludedNumbers.filter((_, idx) => idx !== i) }));
   const updateExcluded = (i: number, val: string) =>
     setConfig(prev => ({ ...prev, excludedNumbers: prev.excludedNumbers.map((n, idx) => idx === i ? val : n) }));
+
+  const addHandoffKeyword = () => setConfig(prev => ({ ...prev, handoffKeywords: [...(prev.handoffKeywords || []), ''] }));
+  const removeHandoffKeyword = (i: number) =>
+    setConfig(prev => ({ ...prev, handoffKeywords: (prev.handoffKeywords || []).filter((_, idx) => idx !== i) }));
+  const updateHandoffKeyword = (i: number, val: string) =>
+    setConfig(prev => ({ ...prev, handoffKeywords: (prev.handoffKeywords || []).map((k, idx) => idx === i ? val : k) }));
 
   if (isLoading) {
     return (
@@ -423,6 +451,158 @@ export function BotSetupPage() {
             >
               <Plus size={15} /> Add number to exclude
             </button>
+          </div>
+
+          {/* Smart AI Detection Settings */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+            <button
+              onClick={() => setAiDetectionExpanded(!aiDetectionExpanded)}
+              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Shield size={16} className="text-purple-500" /> Smart AI Detection
+              </h2>
+              {aiDetectionExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+            </button>
+            {aiDetectionExpanded && (
+              <div className="px-5 pb-5 pt-0 border-t border-gray-100 space-y-4">
+                <p className="text-xs text-gray-500 mt-4">
+                  Automatically detect and stop bot-to-bot conversations. When enabled, the system analyzes message patterns, frequency, and timing to identify automated systems.
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Enable AI Detection</label>
+                    <p className="text-xs text-gray-500 mt-0.5">Detect and block automated bot interactions</p>
+                  </div>
+                  <button
+                    onClick={() => setConfig(prev => ({ ...prev, enableAIDetection: !prev.enableAIDetection }))}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${config.enableAIDetection ? 'bg-purple-600' : 'bg-gray-300'}`}
+                  >
+                    <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${config.enableAIDetection ? 'translate-x-5' : ''}`} />
+                  </button>
+                </div>
+
+                {config.enableAIDetection && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Max Messages Per Hour
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={config.maxMessagesPerHour || 30}
+                        onChange={e => setConfig(prev => ({ ...prev, maxMessagesPerHour: Math.max(1, Math.min(100, parseInt(e.target.value) || 30)) }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Flag contact if they send more messages than this in one hour</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Min Response Time (seconds)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="60"
+                        value={config.minResponseTimeSeconds || 2}
+                        onChange={e => setConfig(prev => ({ ...prev, minResponseTimeSeconds: Math.max(1, Math.min(60, parseInt(e.target.value) || 2)) }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Flag if average time between messages is less than this (need 3+ messages)</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Human Agent Handoff Settings */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+            <button
+              onClick={() => setHandoffExpanded(!handoffExpanded)}
+              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                <User size={16} className="text-blue-500" /> Human Agent Handoff
+              </h2>
+              {handoffExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+            </button>
+            {handoffExpanded && (
+              <div className="px-5 pb-5 pt-0 border-t border-gray-100 space-y-4">
+                <p className="text-xs text-gray-500 mt-4">
+                  Seamlessly transfer conversations to a human agent when customers request it. Configure keywords and agent phone number below.
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Enable Auto Handoff</label>
+                    <p className="text-xs text-gray-500 mt-0.5">Automatically transfer to human agent on keyword match</p>
+                  </div>
+                  <button
+                    onClick={() => setConfig(prev => ({ ...prev, enableAutoHandoff: !prev.enableAutoHandoff }))}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${config.enableAutoHandoff ? 'bg-blue-600' : 'bg-gray-300'}`}
+                  >
+                    <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${config.enableAutoHandoff ? 'translate-x-5' : ''}`} />
+                  </button>
+                </div>
+
+                {config.enableAutoHandoff && (
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Human Agent Phone Number <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={config.humanAgentPhone || ''}
+                        onChange={e => setConfig(prev => ({ ...prev, humanAgentPhone: e.target.value }))}
+                        placeholder="+919876543210"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Include country code with + (e.g., +919876543210)</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Handoff Keywords
+                      </label>
+                      <p className="text-xs text-gray-500 mb-2">When customer uses these words, they'll be transferred to a human agent</p>
+                      <div className="space-y-2">
+                        {(config.handoffKeywords || []).map((keyword, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={keyword}
+                              onChange={e => updateHandoffKeyword(i, e.target.value)}
+                              placeholder={`Keyword ${i + 1}`}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            />
+                            {(config.handoffKeywords || []).length > 1 && (
+                              <button
+                                onClick={() => removeHandoffKeyword(i)}
+                                className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        onClick={addHandoffKeyword}
+                        className="mt-3 flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        <Plus size={15} /> Add keyword
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Save Button */}

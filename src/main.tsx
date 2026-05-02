@@ -17,6 +17,7 @@ import { DevDocsPage } from './pages/DevDocsPage'
 import { AdminPanel } from './pages/AdminPanel'
 import { PaymentSuccess, PaymentFailure } from './pages/PaymentResult'
 import { BotSetupPage } from './pages/BotSetupPage'
+import { BotDetectionPage } from './pages/BotDetectionPage'
 import { SecurityPage } from './pages/SecurityPage'
 import { ContactPage } from './pages/ContactPage'
 import { AboutPage } from './pages/AboutPage'
@@ -88,6 +89,9 @@ function AppRoutes() {
       } />
       <Route path="/bot" element={
         <ProtectedRoute><BotSetupPage /></ProtectedRoute>
+      } />
+      <Route path="/bot/detection" element={
+        <ProtectedRoute><BotDetectionPage /></ProtectedRoute>
       } />
       <Route path="/security" element={
         <ProtectedRoute><SecurityPage /></ProtectedRoute>

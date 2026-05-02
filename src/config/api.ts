@@ -88,8 +88,10 @@ export const API_ENDPOINTS = {
     revoke: (id: string) => `${API_BASE_URL}/api/apikeys/${id}`,
   },
   bot: {
-    get:    `${API_BASE_URL}/api/bot`,
-    upsert: `${API_BASE_URL}/api/bot`,
+    get:             `${API_BASE_URL}/api/bot`,
+    upsert:          `${API_BASE_URL}/api/bot`,
+    detectionLogs:   `${API_BASE_URL}/api/bot/detection-logs`,
+    detectionStats:  `${API_BASE_URL}/api/bot/detection-stats`,
   },
   security: {
     settings:  `${API_BASE_URL}/api/settings/security`,
