@@ -47,11 +47,11 @@ function Hero() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
               <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-xs font-medium text-green-400 tracking-wide">WhatsApp Cloud API Powered</span>
+              <span className="text-xs font-medium text-green-400 tracking-wide">Multi-Channel Marketing AI</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.08] tracking-tight mb-5">
-              Turn Your WhatsApp
+              Turn Every Channel
               <br />
               <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
                 Into a Sales Machine
@@ -59,8 +59,7 @@ function Hero() {
             </h1>
 
             <p className="text-base sm:text-lg text-gray-400 leading-relaxed max-w-lg mb-8">
-              Bulk messaging + AI bot + scheduling — all in one platform.
-              Reach thousands, auto-reply leads, and send at the perfect time.
+              WhatsApp marketing, professional email campaigns, and AI website chatbots — all in one unified platform. Capture leads, automate replies, and close sales seamlessly.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -160,18 +159,18 @@ function Problem() {
   const pains = [
     {
       icon: MessageSquareWarning,
-      title: 'Sending messages manually?',
-      desc: 'Copying and pasting the same message to hundreds of contacts wastes hours every day.',
+      title: 'Scattered marketing tools?',
+      desc: 'Using separate platforms for WhatsApp, Email, and Chatbots wastes time, money, and fractures your customer data.',
     },
     {
       icon: UserX,
       title: 'Missing leads?',
-      desc: 'Prospects message you, get no instant reply, and move on to competitors — before you even see their message.',
+      desc: 'Prospects visit your website or WhatsApp, get no instant reply, and move to competitors before you even see their message.',
     },
     {
       icon: Timer,
       title: 'Slow responses?',
-      desc: 'Delayed follow-ups kill conversions. Every minute without a reply costs you a potential sale.',
+      desc: 'Delayed follow-ups across email and messaging channels kill conversions. Every minute costs you a potential sale.',
     },
   ];
 
@@ -181,7 +180,7 @@ function Problem() {
         <div className="text-center max-w-2xl mx-auto mb-14">
           <p className="text-sm font-semibold text-red-400 tracking-wide uppercase mb-3">Sound familiar?</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            WhatsApp marketing is broken for most businesses
+            Customer engagement is broken for most businesses
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -207,31 +206,31 @@ function Problem() {
 function Solution() {
   const pillars = [
     {
-      icon: Upload,
-      label: 'Bulk Sender',
+      icon: Zap,
+      label: 'WhatsApp Marketing',
       tagline: 'Reach 1,000+ instantly',
-      desc: 'Upload a CSV/Excel, pick a template, attach media, and broadcast to thousands in one click — with personalised names.',
+      desc: 'Upload a CSV, pick a template, and broadcast to thousands in one click. Includes an AI bot that auto-replies, captures leads, and schedules campaigns.',
       color: 'from-green-500 to-emerald-600',
       glow: 'shadow-green-500/20',
       badge: 'bg-green-500/10 text-green-400 border-green-500/20',
     },
     {
-      icon: Bot,
-      label: 'AI Bot',
-      tagline: 'Auto-reply & convert leads',
-      desc: 'Your 24/7 WhatsApp agent. Answers FAQs, captures lead details, and books appointments — even while you sleep.',
-      color: 'from-violet-500 to-purple-600',
-      glow: 'shadow-violet-500/20',
-      badge: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
-    },
-    {
-      icon: CalendarClock,
-      label: 'Scheduler',
-      tagline: 'Send at the perfect time',
-      desc: 'Schedule campaigns for peak engagement hours. Set it once and let NexBotix deliver at exactly the right moment.',
+      icon: FileText,
+      label: 'Email Campaigns',
+      tagline: 'Professional outreach',
+      desc: 'Design and schedule beautiful HTML emails. Connect your own SMTP, track delivery progress, and reach your audience reliably.',
       color: 'from-blue-500 to-indigo-600',
       glow: 'shadow-blue-500/20',
       badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    },
+    {
+      icon: Globe,
+      label: 'Website Chatbot',
+      tagline: 'Convert website traffic',
+      desc: 'Embed an intelligent AI chat widget on your site. Instantly answer visitor questions, capture lead details, and send them to your CRM via webhooks.',
+      color: 'from-violet-500 to-purple-600',
+      glow: 'shadow-violet-500/20',
+      badge: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
     },
   ];
 
@@ -241,10 +240,10 @@ function Solution() {
         <div className="text-center max-w-2xl mx-auto mb-14">
           <p className="text-sm font-semibold text-green-400 tracking-wide uppercase mb-3">The Solution</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-4">
-            Three pillars. One unstoppable platform.
+            Three channels. One unstoppable platform.
           </h2>
           <p className="text-lg text-gray-400">
-            NexBotix combines everything you need to turn WhatsApp into your highest-converting sales channel.
+            NexBotix combines everything you need to turn visitors into leads and leads into loyal customers.
           </p>
         </div>
 
@@ -284,8 +283,8 @@ function Features() {
     },
     {
       icon: FileText,
-      title: 'Message Templates',
-      desc: 'Create reusable templates with dynamic variables like {{name}}, {{order_id}}, and more.',
+      title: 'Message & Email Templates',
+      desc: 'Create reusable WhatsApp and HTML email templates with dynamic variables like {{name}} and {{order_id}}.',
       color: 'from-violet-500 to-purple-600',
       shadow: 'shadow-violet-500/20',
     },
@@ -319,8 +318,8 @@ function Features() {
     },
     {
       icon: Shield,
-      title: 'Secure Sessions',
-      desc: 'Per-user WhatsApp sessions with encrypted storage. Your data stays yours, always.',
+      title: 'Secure & Private',
+      desc: 'Per-user sessions with encrypted storage for your SMTP credentials and WhatsApp sessions.',
       color: 'from-gray-500 to-gray-700',
       shadow: 'shadow-gray-500/20',
     },
@@ -379,18 +378,18 @@ function HowItWorks() {
   const steps = [
     {
       num: '01',
-      title: 'Upload Your Contacts',
-      desc: 'Import your Excel or CSV file with phone numbers and names. We validate everything automatically.',
+      title: 'Upload Contacts & Leads',
+      desc: 'Import your Excel/CSV files or capture leads automatically via the Website Chatbot.',
     },
     {
       num: '02',
-      title: 'Connect WhatsApp',
-      desc: 'Scan the QR code with your phone to link your WhatsApp account. One-time setup, stays connected.',
+      title: 'Connect Your Channels',
+      desc: 'Scan the QR code to link WhatsApp and add your SMTP details for emails. One-time secure setup.',
     },
     {
       num: '03',
-      title: 'Compose & Send',
-      desc: 'Write your message or pick a template, attach images if needed, and hit send. Watch delivery in real time.',
+      title: 'Automate & Broadcast',
+      desc: 'Launch email campaigns, send WhatsApp blasts, or set your AI bots live to run 24/7.',
     },
   ];
 
@@ -612,9 +611,9 @@ import { useSEO } from '@/hooks/useSEO';
 /* ─────────────── Page ─────────────── */
 export function HomePage() {
   useSEO({
-    title: 'NexBotix - Send Messages at Scale',
-    description: 'Bulk WhatsApp messaging tool. Upload contacts, select templates, and launch campaigns instantly without coding.',
-    keywords: 'whatsapp bulk sender, whatsapp marketing, bulk messaging, whatsapp api',
+    title: 'NexBotix - Multi-Channel Marketing & Chatbots',
+    description: 'Unified platform for WhatsApp marketing, Email campaigns, and AI Website Chatbots. Engage customers, capture leads, and automate sales.',
+    keywords: 'whatsapp bulk sender, email campaigns, website chatbot, lead capture, marketing automation, nexbotix',
     url: 'https://nexbotix.todayintech.in/'
   });
 
