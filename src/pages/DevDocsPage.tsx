@@ -4,7 +4,7 @@ import { useSEO } from '@/hooks/useSEO';
 
 // ─── AI Agent Prompt ───────────────────────────────────────────────────────────
 
-const AI_AGENT_PROMPT = `You are helping me integrate with the WhatsApp Bulk Sender API.
+const AI_AGENT_PROMPT = `You are helping me integrate with the NexBotix API.
 
 ## Environment Setup (do this first)
 Add the following variable to your .env file:
@@ -91,11 +91,10 @@ function AIPromptBlock() {
         </div>
         <button
           onClick={copy}
-          className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-            copied
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${copied
               ? 'bg-green-100 text-green-700 border border-green-200'
               : 'bg-violet-600 hover:bg-violet-700 text-white shadow-sm shadow-violet-200'
-          }`}
+            }`}
         >
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           {copied ? 'Copied!' : 'Copy Prompt'}
@@ -542,13 +541,13 @@ puts http.request(req).body`,
 // ─── Tab labels ────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'curl',       label: 'cURL' },
+  { id: 'curl', label: 'cURL' },
   { id: 'node-fetch', label: 'Node.js' },
-  { id: 'axios',      label: 'Axios' },
-  { id: 'python',     label: 'Python' },
-  { id: 'php',        label: 'PHP' },
-  { id: 'go',         label: 'Go' },
-  { id: 'ruby',       label: 'Ruby' },
+  { id: 'axios', label: 'Axios' },
+  { id: 'python', label: 'Python' },
+  { id: 'php', label: 'PHP' },
+  { id: 'go', label: 'Go' },
+  { id: 'ruby', label: 'Ruby' },
 ];
 
 // ─── CodeBlock component ───────────────────────────────────────────────────────
@@ -590,11 +589,10 @@ function CodeExample({ snippetKey, defaultTab = 'curl' }: { snippetKey: string; 
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`shrink-0 px-4 py-2.5 text-xs font-medium transition-colors ${
-              tab === t.id
+            className={`shrink-0 px-4 py-2.5 text-xs font-medium transition-colors ${tab === t.id
                 ? 'text-green-400 border-b-2 border-green-400 bg-gray-950'
                 : 'text-gray-400 hover:text-gray-200'
-            }`}
+              }`}
           >
             {t.label}
           </button>
@@ -641,8 +639,8 @@ function IC({ children }: { children: React.ReactNode }) {
 
 export function DevDocsPage() {
   useSEO({
-    title: 'Developer API Docs - WhatsApp Bulk Messenger',
-    description: 'Documentation for integrating WhatsApp Bulk Messenger API to send automated basic and bulk messages programmatically.',
+    title: 'Developer API Docs - NexBotix',
+    description: 'Documentation for integrating NexBotix API to send automated basic and bulk messages programmatically.',
     url: 'https://bulksender.todayintech.in/docs'
   });
 
@@ -681,7 +679,7 @@ export function DevDocsPage() {
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">
             <strong>Response (success):</strong>
             <pre className="mt-2 font-mono text-xs bg-green-100 rounded-lg p-3 overflow-x-auto">
-{`{
+              {`{
   "success": true,
   "sent": 1,
   "failed": 0,
@@ -816,7 +814,7 @@ export function DevDocsPage() {
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">
             <strong>Scheduled response (HTTP 202):</strong>
             <pre className="mt-2 font-mono text-xs bg-green-100 rounded-lg p-3 overflow-x-auto">
-{`{
+              {`{
   "success": true,
   "scheduled": true,
   "job_id": "6674a1c2f3b4e5d6a7b8c9d0",
@@ -899,7 +897,7 @@ export function DevDocsPage() {
         <Section title="Error Handling" icon={AlertCircle}>
           <p className="text-sm text-gray-600">All errors return a JSON body with an <IC>error</IC> field:</p>
           <pre className="bg-gray-950 text-red-400 text-xs p-4 rounded-xl overflow-x-auto font-mono">
-{`// 401 - missing/invalid key
+            {`// 401 - missing/invalid key
 {"success": false, "error": "invalid or inactive API key"}
 
 // 403 - subscription expired

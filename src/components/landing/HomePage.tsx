@@ -228,7 +228,7 @@ function Solution() {
       icon: CalendarClock,
       label: 'Scheduler',
       tagline: 'Send at the perfect time',
-      desc: 'Schedule campaigns for peak engagement hours. Set it once and let BulkSend deliver at exactly the right moment.',
+      desc: 'Schedule campaigns for peak engagement hours. Set it once and let NexBotix deliver at exactly the right moment.',
       color: 'from-blue-500 to-indigo-600',
       glow: 'shadow-blue-500/20',
       badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
@@ -244,7 +244,7 @@ function Solution() {
             Three pillars. One unstoppable platform.
           </h2>
           <p className="text-lg text-gray-400">
-            BulkSend combines everything you need to turn WhatsApp into your highest-converting sales channel.
+            NexBotix combines everything you need to turn WhatsApp into your highest-converting sales channel.
           </p>
         </div>
 
@@ -429,13 +429,13 @@ function HowItWorks() {
 
 /* ─────────────── Pricing ─────────────── */
 const PLAN_META: Record<string, { name: string; desc: string; features: string[]; highlight?: boolean }> = {
-  free:            { name: 'Free Trial', desc: 'Perfect for trying things out',   features: ['Send up to 10 messages total','Basic templates','CSV/Excel upload','WhatsApp QR connect'] },
-  starter:         { name: 'Starter',   desc: 'Great for small teams',           features: ['1,000 messages/month','All templates + custom','CSV/Excel upload','Basic support','API access'] },
-  starter_yearly:  { name: 'Starter',   desc: 'Great for small teams',           features: ['1,000 messages/month','All templates + custom','CSV/Excel upload','Basic support','API access'] },
-  growth:          { name: 'Growth',    desc: 'For growing businesses',           features: ['5,000 messages/month','Image & media attachments','Message scheduling','Delivery analytics','Priority support','API access'], highlight: true },
-  growth_yearly:   { name: 'Growth',    desc: 'For growing businesses',           features: ['5,000 messages/month','Image & media attachments','Message scheduling','Delivery analytics','Priority support','API access'], highlight: true },
-  business:        { name: 'Business',  desc: 'High-volume sending',              features: ['15,000 messages/month','Everything in Growth','Advanced automation','Bulk import up to 10K','Early access to features','Priority support'] },
-  business_yearly: { name: 'Business',  desc: 'High-volume sending',              features: ['15,000 messages/month','Everything in Growth','Advanced automation','Bulk import up to 10K','Early access to features','Priority support'] },
+  free: { name: 'Free Trial', desc: 'Perfect for trying things out', features: ['Send up to 10 messages total', 'Basic templates', 'CSV/Excel upload', 'WhatsApp QR connect'] },
+  starter: { name: 'Starter', desc: 'Great for small teams', features: ['1,000 messages/month', 'All templates + custom', 'CSV/Excel upload', 'Basic support', 'API access'] },
+  starter_yearly: { name: 'Starter', desc: 'Great for small teams', features: ['1,000 messages/month', 'All templates + custom', 'CSV/Excel upload', 'Basic support', 'API access'] },
+  growth: { name: 'Growth', desc: 'For growing businesses', features: ['5,000 messages/month', 'Image & media attachments', 'Message scheduling', 'Delivery analytics', 'Priority support', 'API access'], highlight: true },
+  growth_yearly: { name: 'Growth', desc: 'For growing businesses', features: ['5,000 messages/month', 'Image & media attachments', 'Message scheduling', 'Delivery analytics', 'Priority support', 'API access'], highlight: true },
+  business: { name: 'Business', desc: 'High-volume sending', features: ['15,000 messages/month', 'Everything in Growth', 'Advanced automation', 'Bulk import up to 10K', 'Early access to features', 'Priority support'] },
+  business_yearly: { name: 'Business', desc: 'High-volume sending', features: ['15,000 messages/month', 'Everything in Growth', 'Advanced automation', 'Bulk import up to 10K', 'Early access to features', 'Priority support'] },
 };
 
 function Pricing() {
@@ -448,7 +448,7 @@ function Pricing() {
     fetch(`${API_BASE_URL}/api/subscription/plans`)
       .then(r => r.json())
       .then(d => { if (d.success && d.data) setLivePricing(d.data); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
 
     // Support ?testCurrency=US in the browser URL for local dev testing
@@ -457,7 +457,7 @@ function Pricing() {
     fetch(currencyUrl)
       .then(r => r.json())
       .then(d => { if (d.success && d.data) setCurrency({ symbol: d.data.symbol, isIndia: d.data.isIndia, rate: d.data.exchangeRate }); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const fmt = (inr: number) =>
@@ -507,11 +507,10 @@ function Pricing() {
             const msgLimit = liveData?.messageLimit ?? 10;
 
             return (
-              <div key={key} className={`relative rounded-2xl p-8 flex flex-col transition-all duration-300 ${
-                meta.highlight
+              <div key={key} className={`relative rounded-2xl p-8 flex flex-col transition-all duration-300 ${meta.highlight
                   ? 'bg-gradient-to-b from-gray-900 to-gray-950 text-white border-2 border-green-500/30 shadow-2xl shadow-green-500/10 scale-[1.02]'
                   : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg'
-              }`}>
+                }`}>
                 {meta.highlight && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-xs font-bold text-white tracking-wide shadow-lg whitespace-nowrap">
                     MOST POPULAR
@@ -565,11 +564,10 @@ function Pricing() {
 
                 {/* CTA */}
                 <Link to={isFree ? '/signup' : '/subscription'}
-                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold transition-all ${
-                    meta.highlight
+                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold transition-all ${meta.highlight
                       ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-[1.02]'
                       : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                  }`}>
+                    }`}>
                   {isFree ? 'Get Started' : 'Subscribe Now'}
                   <ChevronRight size={16} />
                 </Link>
@@ -595,7 +593,7 @@ function CTA() {
           Ready to reach your customers?
         </h2>
         <p className="text-lg text-green-100 mb-10 max-w-xl mx-auto">
-          Join 2,000+ businesses already using BulkSend to grow their customer engagement on WhatsApp.
+          Join 2,000+ businesses already using NexBotix to grow their customer engagement on WhatsApp.
         </p>
         <Link
           to="/signup"
@@ -614,7 +612,7 @@ import { useSEO } from '@/hooks/useSEO';
 /* ─────────────── Page ─────────────── */
 export function HomePage() {
   useSEO({
-    title: 'WhatsApp Bulk Messenger - Send Messages at Scale',
+    title: 'NexBotix - Send Messages at Scale',
     description: 'Bulk WhatsApp messaging tool. Upload contacts, select templates, and launch campaigns instantly without coding.',
     keywords: 'whatsapp bulk sender, whatsapp marketing, bulk messaging, whatsapp api',
     url: 'https://bulksender.todayintech.in/'

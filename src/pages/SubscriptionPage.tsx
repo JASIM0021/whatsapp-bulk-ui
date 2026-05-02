@@ -532,7 +532,7 @@ export function SubscriptionPage() {
           key: rzpData.keyId,
           amount: rzpData.amount,
           currency: rzpData.currency,
-          name: 'BulkSend',
+          name: 'NexBotix',
           description: rzpData.description,
           order_id: rzpData.orderId,
           prefill: {

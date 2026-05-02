@@ -2,8 +2,8 @@ import { useSEO } from '@/hooks/useSEO';
 
 export function PrivacyPolicy() {
   useSEO({
-    title: 'Privacy Policy - WhatsApp Bulk Messenger',
-    description: 'Learn how we collect, use, and protect your personal information when you use WhatsApp Bulk Messenger.',
+    title: 'Privacy Policy - NexBotix',
+    description: 'Learn how we collect, use, and protect your personal information when you use NexBotix.',
     url: 'https://bulksender.todayintech.in/privacy'
   });
 
@@ -25,7 +25,7 @@ export function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">1. Introduction</h2>
             <p className="text-gray-600 leading-relaxed">
-              BulkSend ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our WhatsApp Bulk Messaging service ("Service"). Please read this policy carefully. By using the Service, you consent to the data practices described in this policy.
+              NexBotix ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our WhatsApp Bulk Messaging service ("Service"). Please read this policy carefully. By using the Service, you consent to the data practices described in this policy.
             </p>
           </section>
 

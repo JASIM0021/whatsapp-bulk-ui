@@ -2,8 +2,8 @@ import { useSEO } from '@/hooks/useSEO';
 
 export function RefundPolicy() {
   useSEO({
-    title: 'Refund Policy - WhatsApp Bulk Messenger',
-    description: 'Read the refund policy for WhatsApp Bulk Messenger.',
+    title: 'Refund Policy - NexBotix',
+    description: 'Read the refund policy for NexBotix.',
     url: 'https://bulksender.todayintech.in/refund'
   });
 
@@ -26,14 +26,14 @@ export function RefundPolicy() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">1. Overview</h2>
             <p className="text-gray-600 leading-relaxed">
-              At BulkSend, we want you to be completely satisfied with your subscription. This Refund Policy outlines the terms under which refunds are granted for paid subscription plans. Please read this policy carefully before making a purchase.
+              At NexBotix, we want you to be completely satisfied with your subscription. This Refund Policy outlines the terms under which refunds are granted for paid subscription plans. Please read this policy carefully before making a purchase.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">2. Free Trial</h2>
             <p className="text-gray-600 leading-relaxed">
-              BulkSend offers a free trial of 5 bulk messages to all new users at no cost. No credit card is required for the free trial, and no charges will be made until you choose to upgrade to a paid plan. We encourage all users to fully test the Service during the free trial before purchasing a subscription.
+              NexBotix offers a free trial of 5 bulk messages to all new users at no cost. No credit card is required for the free trial, and no charges will be made until you choose to upgrade to a paid plan. We encourage all users to fully test the Service during the free trial before purchasing a subscription.
             </p>
           </section>
 
@@ -46,7 +46,7 @@ export function RefundPolicy() {
               <li>You request a refund within <strong>7 days</strong> of your initial paid subscription purchase.</li>
               <li>You have not used more than <strong>5 messages</strong> on the paid plan since purchasing.</li>
               <li>The request is for your <strong>first-time purchase</strong> only (not renewal or plan upgrade).</li>
-              <li>A technical issue caused by BulkSend prevented you from using the Service.</li>
+              <li>A technical issue caused by NexBotix prevented you from using the Service.</li>
             </ul>
           </section>
 
@@ -89,7 +89,7 @@ export function RefundPolicy() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">6. Refund Processing</h2>
             <p className="text-gray-600 leading-relaxed">
-              Approved refunds will be processed to your original payment method within <strong>7–10 business days</strong>, depending on your bank or payment provider. BulkSend uses PayU as its payment processor; refund timelines may vary based on PayU and your bank's processing time. We are not responsible for delays caused by your bank or payment provider.
+              Approved refunds will be processed to your original payment method within <strong>7–10 business days</strong>, depending on your bank or payment provider. NexBotix uses PayU as its payment processor; refund timelines may vary based on PayU and your bank's processing time. We are not responsible for delays caused by your bank or payment provider.
             </p>
           </section>
 
@@ -103,7 +103,7 @@ export function RefundPolicy() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">8. Service Disruptions</h2>
             <p className="text-gray-600 leading-relaxed">
-              In the event of a significant service outage or disruption caused solely by BulkSend's infrastructure (not WhatsApp or third-party providers), we may offer a pro-rated credit or extension of your subscription period at our discretion. We do not issue refunds for disruptions caused by WhatsApp, Meta Platforms, payment processors, or internet infrastructure outside our control.
+              In the event of a significant service outage or disruption caused solely by NexBotix's infrastructure (not WhatsApp or third-party providers), we may offer a pro-rated credit or extension of your subscription period at our discretion. We do not issue refunds for disruptions caused by WhatsApp, Meta Platforms, payment processors, or internet infrastructure outside our control.
             </p>
           </section>
 

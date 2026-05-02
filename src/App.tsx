@@ -78,7 +78,7 @@ function App() {
       const now = Date.now();
       if (now - lastHeartbeat < HEARTBEAT_INTERVAL) return;
       lastHeartbeat = now;
-      apiFetch(API_ENDPOINTS.security.heartbeat, { method: 'POST' }).catch(() => {});
+      apiFetch(API_ENDPOINTS.security.heartbeat, { method: 'POST' }).catch(() => { });
     };
 
     // Send on mount (page open/refresh counts as activity)
@@ -260,7 +260,7 @@ function App() {
             <div className="flex items-center gap-2.5 shrink-0">
               <img src="/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
               <div>
-                <h1 className="text-sm font-bold text-gray-900 leading-tight">WhatsApp Bulk Messenger</h1>
+                <h1 className="text-sm font-bold text-gray-900 leading-tight">NexBotix</h1>
                 <p className="text-[11px] text-gray-400">Send bulk messages efficiently</p>
               </div>
             </div>
@@ -340,13 +340,12 @@ function App() {
               {/* Subscription badge */}
               <button
                 onClick={() => navigate('/subscription')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  !user?.subscription?.isActive
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${!user?.subscription?.isActive
                     ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
                     : user?.subscription?.plan === 'free'
-                    ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                    : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                }`}
+                      ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                      : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                  }`}
               >
                 <Crown size={13} />
                 <span className="capitalize">
@@ -396,11 +395,10 @@ function App() {
                 {/* WA status dot */}
                 <div
                   data-tour="step-connect"
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-medium border ${
-                    isWhatsAppConnected
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-medium border ${isWhatsAppConnected
                       ? 'bg-green-50 text-green-700 border-green-200'
                       : 'bg-gray-100 text-gray-500 border-gray-200'
-                  }`}
+                    }`}
                 >
                   <div className={`w-1.5 h-1.5 rounded-full ${isWhatsAppConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
                   {isWhatsAppConnected ? 'Connected' : 'Disconnected'}
@@ -523,8 +521,8 @@ function App() {
                       {user?.subscription?.isActive && user.subscription.plan === 'free'
                         ? ` · ${user.subscription.messagesUsed}/${user.subscription.messageLimit} msgs`
                         : user?.subscription?.isActive
-                        ? ` · ${user?.subscription?.daysLeft}d left`
-                        : ' · Expired'}
+                          ? ` · ${user?.subscription?.daysLeft}d left`
+                          : ' · Expired'}
                     </p>
                   </div>
                 </div>
@@ -574,7 +572,7 @@ function App() {
               {/* Help */}
               <button
                 onClick={() => {
-                  localStorage.removeItem('bulksend_tour_completed');
+                  localStorage.removeItem('nexbotix_tour_completed');
                   setShowTour(true);
                   setTimeout(() => setShowTour(false), 100);
                   setMobileTab('send');
@@ -787,7 +785,7 @@ function App() {
       {/* Help button to replay tour — desktop only */}
       <button
         onClick={() => {
-          localStorage.removeItem('bulksend_tour_completed');
+          localStorage.removeItem('nexbotix_tour_completed');
           setShowTour(true);
           setTimeout(() => setShowTour(false), 100);
         }}
@@ -803,9 +801,8 @@ function App() {
           {/* Send tab */}
           <button
             onClick={() => setMobileTab('send')}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
-              mobileTab === 'send' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${mobileTab === 'send' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'
+              }`}
           >
             <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'send' ? 'bg-primary-50' : ''}`}>
               <MessageSquare size={19} strokeWidth={mobileTab === 'send' ? 2.5 : 1.8} />
@@ -816,9 +813,8 @@ function App() {
           {/* Contacts tab */}
           <button
             onClick={() => handleMobileTab('contacts')}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
-              mobileTab === 'contacts' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${mobileTab === 'contacts' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'
+              }`}
           >
             <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'contacts' ? 'bg-primary-50' : ''}`}>
               <BookUser size={19} strokeWidth={mobileTab === 'contacts' ? 2.5 : 1.8} />
@@ -829,9 +825,8 @@ function App() {
           {/* Schedule tab */}
           <button
             onClick={() => handleMobileTab('schedule')}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
-              mobileTab === 'schedule' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${mobileTab === 'schedule' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+              }`}
           >
             <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'schedule' ? 'bg-blue-50' : ''}`}>
               <CalendarClock size={19} strokeWidth={mobileTab === 'schedule' ? 2.5 : 1.8} />
@@ -853,9 +848,8 @@ function App() {
           {/* More tab */}
           <button
             onClick={() => setMobileTab(mobileTab === 'more' ? 'send' : 'more')}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
-              mobileTab === 'more' ? 'text-gray-700' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${mobileTab === 'more' ? 'text-gray-700' : 'text-gray-400 hover:text-gray-600'
+              }`}
           >
             <div className={`p-1.5 rounded-xl transition-colors ${mobileTab === 'more' ? 'bg-gray-100' : ''}`}>
               <MoreHorizontal size={19} strokeWidth={mobileTab === 'more' ? 2.5 : 1.8} />

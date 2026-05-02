@@ -9,10 +9,10 @@ export function AboutPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-sm font-semibold text-green-400 tracking-wide uppercase mb-3">Our Story</p>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
-            About BulkSend
+            About NexBotix
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            We built BulkSend because businesses deserve a smarter, simpler way to reach their customers on WhatsApp — without the complexity or the cost.
+            We built NexBotix because businesses deserve a smarter, simpler way to reach their customers on WhatsApp — without the complexity or the cost.
           </p>
         </div>
       </div>
@@ -26,10 +26,10 @@ export function AboutPage() {
               Turn every WhatsApp conversation into a growth opportunity
             </h2>
             <p className="text-gray-400 leading-relaxed mb-4">
-              BulkSend started as a solution to a simple problem: business owners were spending hours manually sending the same message to hundreds of contacts. We knew there had to be a better way.
+              NexBotix started as a solution to a simple problem: business owners were spending hours manually sending the same message to hundreds of contacts. We knew there had to be a better way.
             </p>
             <p className="text-gray-400 leading-relaxed">
-              Today, BulkSend combines bulk messaging, AI-powered auto-replies, and intelligent scheduling into a single platform — so you can focus on growing your business, not copy-pasting messages.
+              Today, NexBotix combines bulk messaging, AI-powered auto-replies, and intelligent scheduling into a single platform — so you can focus on growing your business, not copy-pasting messages.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -108,7 +108,7 @@ export function AboutPage() {
             Ready to get started?
           </h2>
           <p className="text-green-100 mb-8">
-            Join 2,000+ businesses already using BulkSend to grow on WhatsApp.
+            Join 2,000+ businesses already using NexBotix to grow on WhatsApp.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link

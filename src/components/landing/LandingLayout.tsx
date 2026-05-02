@@ -29,9 +29,9 @@ function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <img src="/icon-192.png" alt="WhatsApp Bulk Messenger" className="w-9 h-9 rounded-xl object-contain" />
+            <img src="/icon-192.png" alt="NexBotix" className="w-9 h-9 rounded-xl object-contain" />
             <span className="text-lg font-bold text-white tracking-tight">
-              Bulk<span className="text-green-400">Send</span>
+              Nex<span className="text-green-400">Botix</span>
             </span>
           </Link>
 
@@ -129,9 +129,9 @@ function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
-              <img src="/icon-192.png" alt="WhatsApp Bulk Messenger" className="w-9 h-9 rounded-xl object-contain" />
+              <img src="/icon-192.png" alt="NexBotix" className="w-9 h-9 rounded-xl object-contain" />
               <span className="text-lg font-bold text-white tracking-tight">
-                Bulk<span className="text-green-400">Send</span>
+                Nex<span className="text-green-400">Botix</span>
               </span>
             </div>
             <p className="text-sm leading-relaxed text-gray-500">
@@ -177,7 +177,7 @@ function Footer() {
 
         <div className="mt-16 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-600">
-            &copy; {new Date().getFullYear()} BulkSend. All rights reserved.
+            &copy; {new Date().getFullYear()} NexBotix. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link to="/privacy" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Privacy</Link>

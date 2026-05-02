@@ -19,10 +19,10 @@ export function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>(
     location.pathname === '/signup' ? 'signup' : 'login'
   );
-  
+
   useSEO({
-    title: mode === 'login' ? 'Sign In - WhatsApp Bulk Messenger' : 'Sign Up - WhatsApp Bulk Messenger',
-    description: mode === 'login' ? 'Sign in to access your WhatsApp Bulk Messenger dashboard.' : 'Create a new account on WhatsApp Bulk Messenger and get started with free messages today.',
+    title: mode === 'login' ? 'Sign In - NexBotix' : 'Sign Up - NexBotix',
+    description: mode === 'login' ? 'Sign in to access your NexBotix dashboard.' : 'Create a new account on NexBotix and get started with free messages today.',
     url: mode === 'login' ? 'https://bulksender.todayintech.in/login' : 'https://bulksender.todayintech.in/signup'
   });
 
@@ -295,10 +295,10 @@ export function LoginPage() {
   // ── Left panel ───────────────────────────────────────────────────────
   const LeftPanel = ({ title, subtitle }: { title: string; subtitle: string }) => (
     <div className="hidden lg:flex flex-col justify-between w-1/2 bg-green-600 p-12 text-white">
-      <div className="flex items-center gap-3">
-        <img src="/icon-192.png" alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
-        <span className="text-2xl font-bold">WhatsApp Bulk Sender</span>
-      </div>
+      <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <img src="/icon-192.png" alt="NexBotix" className="w-10 h-10 rounded-xl object-contain" />
+        <span className="text-2xl font-bold">NexBotix</span>
+      </Link>
       <div>
         <h2 className="text-4xl font-bold mb-4 leading-tight">{title}</h2>
         <p className="text-green-100 text-lg">{subtitle}</p>
@@ -514,10 +514,10 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex">
       <div className="hidden lg:flex flex-col justify-between w-1/2 bg-green-600 p-12 text-white">
-        <div className="flex items-center gap-3">
-          <img src="/icon-192.png" alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
-          <span className="text-2xl font-bold">WhatsApp Bulk Sender</span>
-        </div>
+        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <img src="/icon-192.png" alt="NexBotix" className="w-10 h-10 rounded-xl object-contain" />
+          <span className="text-2xl font-bold">NexBotix</span>
+        </Link>
         <div>
           <h2 className="text-4xl font-bold mb-4 leading-tight">
             Reach thousands of customers<br />with a single click
@@ -541,10 +541,10 @@ export function LoginPage() {
             <ArrowLeft size={16} /> Back to home
           </Link>
 
-          <div className="flex lg:hidden items-center gap-2 mb-8 justify-center">
-            <img src="/icon-192.png" alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
-            <span className="text-xl font-bold text-gray-900">WhatsApp Bulk Sender</span>
-          </div>
+            <Link to="/" className="flex lg:hidden items-center gap-2 mb-8 justify-center hover:opacity-80 transition-opacity">
+              <img src="/icon-192.png" alt="NexBotix" className="w-10 h-10 rounded-xl object-contain" />
+              <span className="text-xl font-bold text-gray-900">NexBotix</span>
+            </Link>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             {/* Tabs */}

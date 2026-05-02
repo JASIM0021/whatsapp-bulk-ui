@@ -35,7 +35,7 @@ const TOUR_STEPS: TourStep[] = [
   },
 ];
 
-const TOUR_STORAGE_KEY = 'bulksend_tour_completed';
+const TOUR_STORAGE_KEY = 'nexbotix_tour_completed';
 
 interface TourGuideProps {
   forceShow?: boolean;

@@ -2,8 +2,8 @@ import { useSEO } from '@/hooks/useSEO';
 
 export function TermsConditions() {
   useSEO({
-    title: 'Terms & Conditions - WhatsApp Bulk Messenger',
-    description: 'Read the terms and conditions for using WhatsApp Bulk Messenger.',
+    title: 'Terms & Conditions - NexBotix',
+    description: 'Read the terms and conditions for using NexBotix.',
     url: 'https://bulksender.todayintech.in/terms'
   });
 
@@ -25,14 +25,14 @@ export function TermsConditions() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">1. Acceptance of Terms</h2>
             <p className="text-gray-600 leading-relaxed">
-              By accessing or using BulkSend ("the Service"), you agree to be bound by these Terms and Conditions ("Terms"). If you disagree with any part of these terms, you may not access the Service. These Terms apply to all visitors, users, and others who access or use the Service.
+              By accessing or using NexBotix ("the Service"), you agree to be bound by these Terms and Conditions ("Terms"). If you disagree with any part of these terms, you may not access the Service. These Terms apply to all visitors, users, and others who access or use the Service.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">2. Description of Service</h2>
             <p className="text-gray-600 leading-relaxed">
-              BulkSend is a web-based platform that enables users to send bulk messages through WhatsApp. The Service provides tools for contact management, message templating, media attachments, and delivery tracking. The Service requires users to authenticate with their own WhatsApp account.
+              NexBotix is a web-based platform that enables users to send bulk messages through WhatsApp. The Service provides tools for contact management, message templating, media attachments, and delivery tracking. The Service requires users to authenticate with their own WhatsApp account.
             </p>
           </section>
 
@@ -65,14 +65,14 @@ export function TermsConditions() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">5. WhatsApp Compliance</h2>
             <p className="text-gray-600 leading-relaxed">
-              Users are solely responsible for ensuring their use of this Service complies with WhatsApp's Terms of Service and Business Policy. BulkSend is not affiliated with, endorsed by, or sponsored by WhatsApp or Meta Platforms, Inc. You acknowledge that misuse may result in your WhatsApp account being restricted or banned by WhatsApp, for which BulkSend bears no responsibility.
+              Users are solely responsible for ensuring their use of this Service complies with WhatsApp's Terms of Service and Business Policy. NexBotix is not affiliated with, endorsed by, or sponsored by WhatsApp or Meta Platforms, Inc. You acknowledge that misuse may result in your WhatsApp account being restricted or banned by WhatsApp, for which NexBotix bears no responsibility.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">6. Message Content</h2>
             <p className="text-gray-600 leading-relaxed">
-              You are solely responsible for the content of messages sent through the Service. BulkSend does not monitor, review, or filter message content. You represent and warrant that you have all necessary rights and permissions to send messages and use any content (including images and media) uploaded to the Service.
+              You are solely responsible for the content of messages sent through the Service. NexBotix does not monitor, review, or filter message content. You represent and warrant that you have all necessary rights and permissions to send messages and use any content (including images and media) uploaded to the Service.
             </p>
           </section>
 
@@ -93,14 +93,14 @@ export function TermsConditions() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">9. Limitation of Liability</h2>
             <p className="text-gray-600 leading-relaxed">
-              To the fullest extent permitted by law, BulkSend shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or business opportunities. Our total liability for any claims arising from the Service shall not exceed the amount paid by you to BulkSend in the twelve months preceding the claim.
+              To the fullest extent permitted by law, NexBotix shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or business opportunities. Our total liability for any claims arising from the Service shall not exceed the amount paid by you to NexBotix in the twelve months preceding the claim.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">10. Intellectual Property</h2>
             <p className="text-gray-600 leading-relaxed">
-              The Service and its original content, features, and functionality are owned by BulkSend and are protected by international copyright, trademark, and other intellectual property laws. You retain ownership of all content and data you upload to the Service.
+              The Service and its original content, features, and functionality are owned by NexBotix and are protected by international copyright, trademark, and other intellectual property laws. You retain ownership of all content and data you upload to the Service.
             </p>
           </section>
 
