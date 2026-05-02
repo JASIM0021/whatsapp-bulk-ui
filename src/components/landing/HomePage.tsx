@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '@/config/api';
 import {
   Upload,
   Users,
@@ -17,6 +19,7 @@ import {
   MessageSquareWarning,
   UserX,
   Timer,
+  Globe,
 } from 'lucide-react';
 
 /* ─────────────── Hero ─────────────── */
@@ -425,114 +428,154 @@ function HowItWorks() {
 }
 
 /* ─────────────── Pricing ─────────────── */
+const PLAN_META: Record<string, { name: string; desc: string; features: string[]; highlight?: boolean }> = {
+  free:            { name: 'Free Trial', desc: 'Perfect for trying things out',   features: ['Send up to 10 messages total','Basic templates','CSV/Excel upload','WhatsApp QR connect'] },
+  starter:         { name: 'Starter',   desc: 'Great for small teams',           features: ['1,000 messages/month','All templates + custom','CSV/Excel upload','Basic support','API access'] },
+  starter_yearly:  { name: 'Starter',   desc: 'Great for small teams',           features: ['1,000 messages/month','All templates + custom','CSV/Excel upload','Basic support','API access'] },
+  growth:          { name: 'Growth',    desc: 'For growing businesses',           features: ['5,000 messages/month','Image & media attachments','Message scheduling','Delivery analytics','Priority support','API access'], highlight: true },
+  growth_yearly:   { name: 'Growth',    desc: 'For growing businesses',           features: ['5,000 messages/month','Image & media attachments','Message scheduling','Delivery analytics','Priority support','API access'], highlight: true },
+  business:        { name: 'Business',  desc: 'High-volume sending',              features: ['15,000 messages/month','Everything in Growth','Advanced automation','Bulk import up to 10K','Early access to features','Priority support'] },
+  business_yearly: { name: 'Business',  desc: 'High-volume sending',              features: ['15,000 messages/month','Everything in Growth','Advanced automation','Bulk import up to 10K','Early access to features','Priority support'] },
+};
+
 function Pricing() {
-  const plans = [
-    {
-      name: 'Free Trial',
-      price: 'Free',
-      period: '10 messages',
-      desc: 'Perfect for trying things out',
-      features: ['Send up to 10 messages total', 'Basic templates', 'CSV/Excel upload', 'WhatsApp QR connect'],
-      cta: 'Get Started',
-      highlight: false,
-    },
-    {
-      name: 'Starter',
-      price: '₹599',
-      period: '/month',
-      desc: 'Great for small teams',
-      features: ['1,000 messages/month', 'All templates + custom', 'CSV/Excel upload', 'Basic support', 'API access'],
-      cta: 'Start Free Trial',
-      highlight: false,
-    },
-    {
-      name: 'Growth',
-      price: '₹1,299',
-      period: '/month',
-      desc: 'For growing businesses',
-      features: ['5,000 messages/month', 'Image & media attachments', 'Message scheduling', 'Delivery analytics', 'Priority support', 'API access'],
-      cta: 'Start Free Trial',
-      highlight: true,
-    },
-    {
-      name: 'Business',
-      price: '₹1,999',
-      period: '/month',
-      desc: 'High-volume sending',
-      features: ['15,000 messages/month', 'Everything in Growth', 'Advanced automation', 'Bulk import up to 10K', 'Early access to features', 'Priority support'],
-      cta: 'Start Free Trial',
-      highlight: false,
-    },
-  ];
+  const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
+  const [livePricing, setLivePricing] = useState<Record<string, { amount: number; messageLimit: number }> | null>(null);
+  const [currency, setCurrency] = useState({ symbol: '₹', isIndia: true, rate: 1 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/subscription/plans`)
+      .then(r => r.json())
+      .then(d => { if (d.success && d.data) setLivePricing(d.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+
+    // Support ?testCurrency=US in the browser URL for local dev testing
+    const testCountry = new URLSearchParams(window.location.search).get('testCurrency');
+    const currencyUrl = `${API_BASE_URL}/api/payment/currency${testCountry ? `?country=${testCountry}` : ''}`;
+    fetch(currencyUrl)
+      .then(r => r.json())
+      .then(d => { if (d.success && d.data) setCurrency({ symbol: d.data.symbol, isIndia: d.data.isIndia, rate: d.data.exchangeRate }); })
+      .catch(() => {});
+  }, []);
+
+  const fmt = (inr: number) =>
+    currency.isIndia ? `₹${inr.toLocaleString('en-IN')}` : `$${(inr * currency.rate).toFixed(2)}`;
+
+  const displayKeys = billing === 'yearly'
+    ? ['free', 'starter_yearly', 'growth_yearly', 'business_yearly']
+    : ['free', 'starter', 'growth', 'business'];
 
   return (
     <section id="pricing" className="bg-white py-24 sm:py-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        {/* Header */}
+        <div className="text-center max-w-2xl mx-auto mb-10">
           <p className="text-sm font-semibold text-green-600 tracking-wide uppercase mb-3">Pricing</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
             Simple, transparent pricing
           </h2>
-          <p className="text-lg text-gray-500">
-            Start free, upgrade when you need more. No hidden fees, ever.
-          </p>
-          <p className="text-sm text-green-600 font-medium mt-2">Annual billing available — save ~17%</p>
+          <p className="text-lg text-gray-500">Start free, upgrade when you need more. No hidden fees, ever.</p>
+          {!currency.isIndia && (
+            <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full">
+              <Globe size={13} className="text-blue-500" />
+              <span className="text-xs font-medium text-blue-700">Prices shown in USD for your region</span>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-6 max-w-6xl mx-auto">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative rounded-2xl p-8 flex flex-col ${
-                plan.highlight
+        {/* Billing toggle */}
+        <div className="flex items-center justify-center gap-3 mb-12">
+          <button onClick={() => setBilling('monthly')} className={`text-sm font-semibold transition-colors ${billing === 'monthly' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>Monthly</button>
+          <button type="button" onClick={() => setBilling(b => b === 'monthly' ? 'yearly' : 'monthly')}
+            className={`relative inline-flex h-6 w-11 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${billing === 'yearly' ? 'bg-green-500' : 'bg-gray-300'}`}>
+            <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${billing === 'yearly' ? 'translate-x-5' : 'translate-x-0'}`} />
+          </button>
+          <button onClick={() => setBilling('yearly')} className={`text-sm font-semibold transition-colors ${billing === 'yearly' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+            Yearly <span className="ml-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">Save ~17%</span>
+          </button>
+        </div>
+
+        {/* Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          {displayKeys.map((key) => {
+            const meta = PLAN_META[key]; if (!meta) return null;
+            const isFree = key === 'free';
+            const liveData = livePricing?.[key];
+            const rawAmount = liveData?.amount ?? 0;
+            const msgLimit = liveData?.messageLimit ?? 10;
+
+            return (
+              <div key={key} className={`relative rounded-2xl p-8 flex flex-col transition-all duration-300 ${
+                meta.highlight
                   ? 'bg-gradient-to-b from-gray-900 to-gray-950 text-white border-2 border-green-500/30 shadow-2xl shadow-green-500/10 scale-[1.02]'
                   : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg'
-              } transition-all duration-300`}
-            >
-              {plan.highlight && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-xs font-bold text-white tracking-wide shadow-lg">
-                  MOST POPULAR
-                </div>
-              )}
-
-              <div className="mb-6">
-                <h3 className={`text-lg font-bold mb-1 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
-                  {plan.name}
-                </h3>
-                <p className={`text-sm ${plan.highlight ? 'text-gray-400' : 'text-gray-500'}`}>{plan.desc}</p>
-              </div>
-
-              <div className="flex items-baseline gap-1 mb-8">
-                <span className={`text-4xl font-extrabold tracking-tight ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
-                  {plan.price}
-                </span>
-                {plan.period && (
-                  <span className={`text-base ${plan.highlight ? 'text-gray-400' : 'text-gray-500'}`}>{plan.period}</span>
+              }`}>
+                {meta.highlight && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-xs font-bold text-white tracking-wide shadow-lg whitespace-nowrap">
+                    MOST POPULAR
+                  </div>
                 )}
+
+                {/* Name */}
+                <div className="mb-6">
+                  <h3 className={`text-lg font-bold mb-1 ${meta.highlight ? 'text-white' : 'text-gray-900'}`}>{meta.name}</h3>
+                  <p className={`text-sm ${meta.highlight ? 'text-gray-400' : 'text-gray-500'}`}>{meta.desc}</p>
+                </div>
+
+                {/* Price */}
+                <div className="mb-2 min-h-[56px]">
+                  {loading && !isFree ? (
+                    <div className="h-10 w-28 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-4xl font-extrabold tracking-tight ${meta.highlight ? 'text-white' : 'text-gray-900'}`}>
+                        {isFree ? 'Free' : fmt(rawAmount)}
+                      </span>
+                      {!isFree && (
+                        <span className={`text-base ${meta.highlight ? 'text-gray-400' : 'text-gray-500'}`}>
+                          /{billing === 'yearly' ? 'yr' : 'mo'}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {isFree && <p className={`text-xs mt-0.5 ${meta.highlight ? 'text-gray-400' : 'text-gray-500'}`}>{msgLimit} messages</p>}
+                  {!isFree && billing === 'yearly' && !loading && rawAmount > 0 && (
+                    <p className={`text-xs mt-0.5 font-medium ${meta.highlight ? 'text-green-400' : 'text-green-600'}`}>
+                      ≈ {fmt(Math.round(rawAmount / 12))}/month
+                    </p>
+                  )}
+                  {!currency.isIndia && !isFree && !loading && rawAmount > 0 && (
+                    <p className={`text-xs mt-0.5 flex items-center gap-1 ${meta.highlight ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <Globe size={10} />≈ ₹{rawAmount.toLocaleString('en-IN')} INR
+                    </p>
+                  )}
+                </div>
+
+                {/* Features */}
+                <ul className="space-y-3 mb-8 flex-1 mt-6">
+                  {meta.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2.5">
+                      <Check size={16} className={`mt-0.5 flex-shrink-0 ${meta.highlight ? 'text-green-400' : 'text-green-600'}`} />
+                      <span className={`text-sm ${meta.highlight ? 'text-gray-300' : 'text-gray-600'}`}>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA */}
+                <Link to={isFree ? '/signup' : '/subscription'}
+                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold transition-all ${
+                    meta.highlight
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-[1.02]'
+                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                  }`}>
+                  {isFree ? 'Get Started' : 'Subscribe Now'}
+                  <ChevronRight size={16} />
+                </Link>
               </div>
-
-              <ul className="space-y-3 mb-8 flex-1">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2.5">
-                    <Check size={16} className={`mt-0.5 flex-shrink-0 ${plan.highlight ? 'text-green-400' : 'text-green-600'}`} />
-                    <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                to="/signup"
-                className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold transition-all ${
-                  plan.highlight
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40'
-                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                }`}
-              >
-                {plan.cta}
-                <ChevronRight size={16} />
-              </Link>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

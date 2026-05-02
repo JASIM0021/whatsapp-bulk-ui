@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
-import { Check, Crown, Zap, Shield, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X, Code, Copy, ChevronDown, ChevronUp, Trash2, Plus, ExternalLink } from 'lucide-react';
+import { Check, Crown, Zap, Shield, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X, Code, Copy, ChevronDown, ChevronUp, Trash2, Plus, ExternalLink, Globe } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 
 interface SubscriptionInfo {
@@ -175,6 +175,14 @@ interface ValidatePromoResponse {
   finalAmount: number;
   discountAmount: number;
   message?: string;
+}
+
+interface CurrencyInfo {
+  country: string;
+  currency: string;   // "INR" | "USD"
+  symbol: string;     // "₹" | "$"
+  exchangeRate: number; // multiplier from INR
+  isIndia: boolean;
 }
 
 // ─── Code example tabs ────────────────────────────────────────────────────────
@@ -373,15 +381,32 @@ export function SubscriptionPage() {
   const [newKeyValue, setNewKeyValue] = useState<string | null>(null);
   const [newKeyName, setNewKeyName] = useState('');
   const [copiedKey, setCopiedKey] = useState(false);
+  const [currencyInfo, setCurrencyInfo] = useState<CurrencyInfo>({
+    country: 'IN', currency: 'INR', symbol: '₹', exchangeRate: 1, isIndia: true,
+  });
+
+  // Helper: convert INR price → display string in user's currency
+  const formatPrice = (inrAmount: number) => {
+    if (currencyInfo.isIndia) return `₹${inrAmount.toLocaleString('en-IN')}`;
+    const usd = inrAmount * currencyInfo.exchangeRate;
+    return `$${usd.toFixed(2)}`;
+  };
 
   useEffect(() => {
     fetchData();
     fetchApiKeys();
-    // Fetch live pricing (public endpoint, no auth needed)
+    // Fetch live pricing
     fetch(API_ENDPOINTS.subscription.plans)
       .then(r => r.json())
       .then(data => { if (data.success && data.data) setLivePricing(data.data); })
       .catch(() => {});
+    // Detect user's currency — support ?testCurrency=US for local dev testing
+    const testCountry = new URLSearchParams(window.location.search).get('testCurrency');
+    const currencyUrl = `${API_ENDPOINTS.subscription.currency}${testCountry ? `?country=${testCountry}` : ''}`;
+    fetch(currencyUrl)
+      .then(r => r.json())
+      .then(data => { if (data.success && data.data) setCurrencyInfo(data.data); })
+      .catch(() => {}); // keep default INR on failure
   }, []);
 
   const fetchApiKeys = async () => {
@@ -489,7 +514,7 @@ export function SubscriptionPage() {
     try {
       const res = await apiFetch(API_ENDPOINTS.subscription.initiate, {
         method: 'POST',
-        body: JSON.stringify({ plan, promoCode: appliedPromo }),
+        body: JSON.stringify({ plan, promoCode: appliedPromo, currency: currencyInfo.currency }),
       });
       const data = await res.json();
       if (!data.success) {
@@ -712,12 +737,21 @@ export function SubscriptionPage() {
                 <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
                 <div className="mt-2 mb-1">
                   <span className="text-4xl font-extrabold text-gray-900">
-                    {displayPrice === 0 ? 'Free' : `₹${displayPrice.toLocaleString()}`}
+                    {displayPrice === 0 ? 'Free' : formatPrice(displayPrice)}
                   </span>
                   {displayPrice > 0 && (
                     <span className="text-gray-500 text-sm">{billing === 'yearly' ? '/year' : '/month'}</span>
                   )}
                 </div>
+                {/* Show USD badge for international */}
+                {!currencyInfo.isIndia && displayPrice > 0 && (
+                  <div className="flex items-center gap-1 mb-1">
+                    <Globe size={11} className="text-blue-500" />
+                    <span className="text-xs text-blue-600 font-medium">
+                      ≈ ₹{displayPrice.toLocaleString('en-IN')} INR
+                    </span>
+                  </div>
+                )}
                 <p className="text-xs text-gray-400 mb-4">{plan.id === 'free' ? `${freeMsgLimit} messages` : plan.msgLimit}</p>
 
                 <ul className="flex-1 space-y-3 mb-6">
@@ -746,7 +780,7 @@ export function SubscriptionPage() {
                             <div>
                               <span className="text-xs font-semibold text-green-700">{promoValidation.code} applied!</span>
                               <p className="text-xs text-green-600 mt-0.5">
-                                ₹{promoValidation.discountAmount} off — Pay <strong>₹{promoValidation.finalAmount.toLocaleString()}</strong> instead of ₹{promoValidation.originalAmount.toLocaleString()}
+                                {formatPrice(promoValidation.discountAmount)} off — Pay <strong>{formatPrice(promoValidation.finalAmount)}</strong> instead of {formatPrice(promoValidation.originalAmount)}
                               </p>
                             </div>
                             <button onClick={clearPromo} className="ml-2 text-green-500 hover:text-green-700 shrink-0">

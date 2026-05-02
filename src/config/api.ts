@@ -54,6 +54,7 @@ export const API_ENDPOINTS = {
     history: `${API_BASE_URL}/api/payment/history`,
     plans: `${API_BASE_URL}/api/subscription/plans`,
     validatePromo: `${API_BASE_URL}/api/payment/validate-promo`,
+    currency: `${API_BASE_URL}/api/payment/currency`,
   },
   admin: {
     stats: `${API_BASE_URL}/api/admin/stats`,
