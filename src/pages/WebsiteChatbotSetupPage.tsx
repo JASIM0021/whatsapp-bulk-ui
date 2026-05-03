@@ -101,6 +101,8 @@ export function WebsiteChatbotSetupPage() {
     finally { setCrawling(false); }
   };
 
+  const crawlText = crawling ? 'Crawling full domain...' : 'Crawl Website';
+
   const scriptTag = `<script src="${BASE}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}"></script>`;
 
   const copyScript = () => {
@@ -230,10 +232,10 @@ export function WebsiteChatbotSetupPage() {
                     <button onClick={crawl} disabled={crawling}
                       className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 text-sm font-medium rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors whitespace-nowrap">
                       {crawling ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                      Auto-fill
+                      {crawlText}
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1"><span className="text-blue-500">💡</span> Auto-fill extracts context directly from your website.</p>
+                  <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1"><span className="text-blue-500">💡</span> Crawls your entire domain, all pages, and generates an AI-powered summary with reference URLs.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

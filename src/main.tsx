@@ -68,7 +68,7 @@ function AppRoutes() {
 
   useEffect(() => {
     const s = document.createElement('script');
-    s.src = 'http://localhost:4000/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
+    s.src = 'https://nexbotix.todayintech.in/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
     s.async = true;
     document.body.appendChild(s);
     return () => { document.body.removeChild(s); };
