@@ -71,8 +71,10 @@ function AppRoutes() {
     s.src = 'https://nexbotix.todayintech.in/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
     s.async = true;
     document.body.appendChild(s);
-    return () => { document.body.removeChild(s); };
-  }, [])
+    return () => {
+      document.body.removeChild(s);
+    };
+  }, []);
   return (
     <Routes>
       {/* Public landing pages */}

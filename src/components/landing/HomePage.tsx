@@ -425,18 +425,23 @@ function HowItWorks() {
 }
 
 /* ─────────────── Pricing ─────────────── */
-const PLAN_META: Record<string, { name: string; desc: string; features: string[]; highlight?: boolean }> = {
+const PLAN_META: Record<string, { name: string; desc: string; features: string[]; highlight?: boolean; isIndividual?: boolean }> = {
   free: { name: 'Free Trial', desc: 'Perfect for trying things out', features: ['Send up to 10 messages total', 'Basic templates', 'CSV/Excel upload', 'WhatsApp QR connect'] },
-  starter: { name: 'Starter', desc: 'Great for small teams', features: ['1,000 messages/month', 'All templates + custom', 'CSV/Excel upload', 'Basic support', 'API access'] },
-  starter_yearly: { name: 'Starter', desc: 'Great for small teams', features: ['1,000 messages/month', 'All templates + custom', 'CSV/Excel upload', 'Basic support', 'API access'] },
-  growth: { name: 'Growth', desc: 'For growing businesses', features: ['5,000 messages/month', 'Image & media attachments', 'Message scheduling', 'Delivery analytics', 'Priority support', 'API access'], highlight: true },
-  growth_yearly: { name: 'Growth', desc: 'For growing businesses', features: ['5,000 messages/month', 'Image & media attachments', 'Message scheduling', 'Delivery analytics', 'Priority support', 'API access'], highlight: true },
-  business: { name: 'Business', desc: 'High-volume sending', features: ['15,000 messages/month', 'Everything in Growth', 'Advanced automation', 'Bulk import up to 10K', 'Early access to features', 'Priority support'] },
-  business_yearly: { name: 'Business', desc: 'High-volume sending', features: ['15,000 messages/month', 'Everything in Growth', 'Advanced automation', 'Bulk import up to 10K', 'Early access to features', 'Priority support'] },
+  whatsapp: { name: 'WhatsApp Service', desc: 'WhatsApp Bulk + Auto-reply Bot', features: ['1,000 messages/month', 'All templates + custom', 'Message scheduling', 'WhatsApp AI Bot included', 'Email Service (Free)'], highlight: true, isIndividual: true },
+  whatsapp_yearly: { name: 'WhatsApp Service', desc: 'WhatsApp Bulk + Auto-reply Bot', features: ['1,000 messages/month', 'All templates + custom', 'Message scheduling', 'WhatsApp AI Bot included', 'Email Service (Free)'], highlight: true, isIndividual: true },
+  chatbot: { name: 'Website Chatbot', desc: 'Embeddable AI Widget', features: ['Unlimited conversations', 'Custom AI Chatbot', 'Lead generation & capture', 'Custom brand styling', 'Email Service (Free)'], isIndividual: true },
+  chatbot_yearly: { name: 'Website Chatbot', desc: 'Embeddable AI Widget', features: ['Unlimited conversations', 'Custom AI Chatbot', 'Lead generation & capture', 'Custom brand styling', 'Email Service (Free)'], isIndividual: true },
+  starter: { name: 'Starter All-Access', desc: 'Great for small teams', features: ['WhatsApp + Chatbot + Email', '1,000 messages/month', 'All templates + custom', 'Basic support', 'API access'] },
+  starter_yearly: { name: 'Starter All-Access', desc: 'Great for small teams', features: ['WhatsApp + Chatbot + Email', '1,000 messages/month', 'All templates + custom', 'Basic support', 'API access'] },
+  growth: { name: 'Growth All-Access', desc: 'For growing businesses', features: ['WhatsApp + Chatbot + Email', '5,000 messages/month', 'Message scheduling', 'Detailed analytics', 'Priority support'], highlight: true },
+  growth_yearly: { name: 'Growth All-Access', desc: 'For growing businesses', features: ['WhatsApp + Chatbot + Email', '5,000 messages/month', 'Message scheduling', 'Detailed analytics', 'Priority support'], highlight: true },
+  business: { name: 'Business All-Access', desc: 'High-volume sending', features: ['WhatsApp + Chatbot + Email', '15,000 messages/month', 'Advanced automation', 'Bulk import up to 10K', 'Priority support'] },
+  business_yearly: { name: 'Business All-Access', desc: 'High-volume sending', features: ['WhatsApp + Chatbot + Email', '15,000 messages/month', 'Advanced automation', 'Bulk import up to 10K', 'Priority support'] },
 };
 
 function Pricing() {
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
+  const [planType, setPlanType] = useState<'individual' | 'all-access'>('individual');
   const [livePricing, setLivePricing] = useState<Record<string, { amount: number; messageLimit: number }> | null>(null);
   const [currency, setCurrency] = useState({ symbol: '₹', isIndia: true, rate: 1 });
   const [loading, setLoading] = useState(true);
@@ -460,9 +465,9 @@ function Pricing() {
   const fmt = (inr: number) =>
     currency.isIndia ? `₹${inr.toLocaleString('en-IN')}` : `$${(inr * currency.rate).toFixed(2)}`;
 
-  const displayKeys = billing === 'yearly'
-    ? ['free', 'starter_yearly', 'growth_yearly', 'business_yearly']
-    : ['free', 'starter', 'growth', 'business'];
+  const displayKeys = planType === 'individual'
+    ? (billing === 'yearly' ? ['whatsapp_yearly', 'chatbot_yearly'] : ['whatsapp', 'chatbot'])
+    : (billing === 'yearly' ? ['free', 'starter_yearly', 'growth_yearly', 'business_yearly'] : ['free', 'starter', 'growth', 'business']);
 
   return (
     <section id="pricing" className="bg-white py-24 sm:py-32">
@@ -482,6 +487,28 @@ function Pricing() {
           )}
         </div>
 
+        {/* Plan Type toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex bg-gray-100 p-1 rounded-xl">
+            <button
+              onClick={() => setPlanType('individual')}
+              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                planType === 'individual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Individual Services
+            </button>
+            <button
+              onClick={() => setPlanType('all-access')}
+              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                planType === 'all-access' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              All-Access Bundles
+            </button>
+          </div>
+        </div>
+
         {/* Billing toggle */}
         <div className="flex items-center justify-center gap-3 mb-12">
           <button onClick={() => setBilling('monthly')} className={`text-sm font-semibold transition-colors ${billing === 'monthly' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>Monthly</button>
@@ -495,7 +522,7 @@ function Pricing() {
         </div>
 
         {/* Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${planType === 'all-access' ? 'lg:grid-cols-4' : 'max-w-3xl mx-auto'} gap-6`}>
           {displayKeys.map((key) => {
             const meta = PLAN_META[key]; if (!meta) return null;
             const isFree = key === 'free';

@@ -12,6 +12,7 @@ interface SubscriptionInfo {
   daysLeft: number;
   messagesUsed: number;
   messageLimit: number;
+  enabledServices?: string[];
 }
 
 interface PayUFormData {
@@ -68,6 +69,47 @@ interface PaymentRecord {
   createdAt: string;
 }
 
+const individualServices = [
+  {
+    id: 'whatsapp',
+    monthlyId: 'whatsapp_monthly',
+    yearlyId: 'whatsapp_yearly',
+    name: 'WhatsApp Service',
+    monthlyPrice: 699,
+    yearlyPrice: 6990,
+    msgLimit: '1,000 messages/month',
+    features: [
+      '1,000 WhatsApp messages per month',
+      'All WhatsApp templates',
+      'Message scheduling',
+      'WhatsApp AI Bot',
+      'Email Service (Free)',
+    ],
+    icon: Zap,
+    color: 'from-green-500 to-green-600',
+    btnClass: 'bg-green-600 hover:bg-green-700',
+  },
+  {
+    id: 'chatbot',
+    monthlyId: 'chatbot_monthly',
+    yearlyId: 'chatbot_yearly',
+    name: 'Website Chatbot',
+    monthlyPrice: 699,
+    yearlyPrice: 6990,
+    msgLimit: 'Unlimited conversations',
+    features: [
+      'Custom AI Chatbot',
+      'Embed on any website',
+      'Lead generation & capture',
+      'Custom brand styling',
+      'Email Service (Free)',
+    ],
+    icon: Code,
+    color: 'from-sky-500 to-sky-600',
+    btnClass: 'bg-sky-600 hover:bg-sky-700',
+  }
+];
+
 const plans = [
   {
     id: 'free',
@@ -91,34 +133,32 @@ const plans = [
     id: 'starter',
     monthlyId: 'starter',
     yearlyId: 'starter_yearly',
-    name: 'Starter',
+    name: 'Starter All-Access',
     monthlyPrice: 599,
     yearlyPrice: 5990,
     msgLimit: '1,000 messages/month',
     features: [
+      'WhatsApp + Chatbot + Email',
       '1,000 messages per month',
       'All templates + custom',
-      'File upload (Excel/CSV)',
-      'WhatsApp QR connect',
       'Basic support',
       'API access',
     ],
     icon: Zap,
-    color: 'from-sky-500 to-sky-600',
-    btnClass: 'bg-sky-600 hover:bg-sky-700',
+    color: 'from-indigo-500 to-indigo-600',
+    btnClass: 'bg-indigo-600 hover:bg-indigo-700',
   },
   {
     id: 'growth',
     monthlyId: 'growth',
     yearlyId: 'growth_yearly',
-    name: 'Growth',
+    name: 'Growth All-Access',
     monthlyPrice: 1299,
     yearlyPrice: 12990,
     msgLimit: '5,000 messages/month',
     features: [
+      'WhatsApp + Chatbot + Email',
       '5,000 messages per month',
-      'All templates + custom',
-      'Image & media attachments',
       'Message scheduling',
       'Detailed analytics',
       'Priority support',
@@ -133,16 +173,15 @@ const plans = [
     id: 'business',
     monthlyId: 'business',
     yearlyId: 'business_yearly',
-    name: 'Business',
+    name: 'Business All-Access',
     monthlyPrice: 1999,
     yearlyPrice: 19990,
     msgLimit: '15,000 messages/month',
     features: [
+      'WhatsApp + Chatbot + Email',
       '15,000 messages per month',
-      'Everything in Growth',
       'Advanced automation',
       'Bulk import up to 10K',
-      'Early access to features',
       'Priority support',
       'API access',
     ],
@@ -375,6 +414,7 @@ export function SubscriptionPage() {
   const [promoLoading, setPromoLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
+  const [planType, setPlanType] = useState<'individual' | 'all-access'>('individual');
   const [apiKeys, setApiKeys] = useState<APIKeyInfo[]>([]);
   const [apiKeysLoading, setApiKeysLoading] = useState(false);
   const [creatingKey, setCreatingKey] = useState(false);
@@ -660,7 +700,29 @@ export function SubscriptionPage() {
 
         {/* Pricing Cards */}
         <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">Choose Your Plan</h1>
-        <p className="text-gray-500 text-center mb-6">Unlock the full power of WhatsApp Bulk Messaging</p>
+        <p className="text-gray-500 text-center mb-6">Build your perfect marketing stack</p>
+
+        {/* Plan Type toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex bg-gray-100 p-1 rounded-xl">
+            <button
+              onClick={() => setPlanType('individual')}
+              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                planType === 'individual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Individual Services
+            </button>
+            <button
+              onClick={() => setPlanType('all-access')}
+              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                planType === 'all-access' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              All-Access Bundles
+            </button>
+          </div>
+        </div>
 
         {/* Billing toggle */}
         <div className="flex items-center justify-center gap-3 mb-10">
@@ -690,8 +752,8 @@ export function SubscriptionPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {plans.map((plan) => {
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${planType === 'all-access' ? 'md:grid-cols-4' : 'max-w-3xl mx-auto'} gap-4 mb-8`}>
+          {(planType === 'all-access' ? plans : individualServices).map((plan) => {
             const Icon = plan.icon;
             const activePlanId = billing === 'yearly' && plan.id !== 'free' ? plan.yearlyId : plan.monthlyId;
             const isCurrent = (subscription?.plan === plan.monthlyId || subscription?.plan === plan.yearlyId) && subscription?.isActive;

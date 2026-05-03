@@ -308,7 +308,7 @@ function App() {
                 >
                   <CalendarClock size={17} />
                 </button>
-                {user?.subscription?.isActive && (
+                {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('whatsapp') && (
                   <button
                     onClick={() => navigate('/bot')}
                     title="AI Chatbot"
@@ -317,7 +317,7 @@ function App() {
                     <Bot size={17} />
                   </button>
                 )}
-                {user?.subscription?.isActive && (
+                {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('chatbot') && (
                   <button
                     onClick={() => navigate('/website-chatbot')}
                     title="Website Chatbot"
@@ -343,14 +343,16 @@ function App() {
                   </button>
                 )}
                 {/* ── Email Channel Switch ── */}
-                <button
-                  onClick={() => navigate('/email')}
-                  title="Switch to Email Channel"
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 ml-1 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-xs font-semibold border border-blue-200"
-                >
-                  <Mail size={14} />
-                  <span className="hidden sm:inline">Email</span>
-                </button>
+                {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('email') && (
+                  <button
+                    onClick={() => navigate('/email')}
+                    title="Switch to Email Channel"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 ml-1 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-xs font-semibold border border-blue-200"
+                  >
+                    <Mail size={14} />
+                    <span className="hidden sm:inline">Email</span>
+                  </button>
+                )}
               </div>
 
               <div className="w-px h-5 bg-gray-200 mx-1" />

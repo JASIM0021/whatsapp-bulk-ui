@@ -22,7 +22,7 @@ export function DashboardPage() {
       hoverBorder: 'hover:border-green-300',
       iconBg: 'bg-green-100',
       path: '/whatsapp',
-      isPremium: false,
+      dbId: 'whatsapp',
     },
     {
       id: 'email',
@@ -34,7 +34,7 @@ export function DashboardPage() {
       hoverBorder: 'hover:border-blue-300',
       iconBg: 'bg-blue-100',
       path: '/email',
-      isPremium: true,
+      dbId: 'email',
     },
     {
       id: 'website-chatbot',
@@ -46,7 +46,7 @@ export function DashboardPage() {
       hoverBorder: 'hover:border-purple-300',
       iconBg: 'bg-purple-100',
       path: '/website-chatbot',
-      isPremium: true,
+      dbId: 'chatbot',
     }
   ];
 
@@ -96,7 +96,7 @@ export function DashboardPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {services.map((service) => {
-            const isLocked = service.isPremium && (!user?.subscription?.isActive || user?.subscription?.plan === 'free');
+            const isLocked = !user?.subscription?.isActive || (user.subscription.plan === 'free' ? service.dbId !== 'whatsapp' : !user.subscription.enabledServices?.includes(service.dbId));
             return (
               <div 
                 key={service.id}

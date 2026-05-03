@@ -9,6 +9,7 @@ interface SubscriptionInfo {
   daysLeft: number;
   messagesUsed: number;
   messageLimit: number;
+  enabledServices?: string[];
 }
 
 interface UserInfo {
