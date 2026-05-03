@@ -69,7 +69,22 @@ interface PaymentRecord {
   createdAt: string;
 }
 
-const individualServices = [
+interface PlanInfo {
+  id: string;
+  monthlyId: string;
+  yearlyId: string;
+  name: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  msgLimit: string;
+  features: string[];
+  icon: React.ElementType;
+  color: string;
+  btnClass: string;
+  popular?: boolean;
+}
+
+const individualServices: PlanInfo[] = [
   {
     id: 'whatsapp',
     monthlyId: 'whatsapp_monthly',
@@ -110,7 +125,7 @@ const individualServices = [
   }
 ];
 
-const plans = [
+const plans: PlanInfo[] = [
   {
     id: 'free',
     monthlyId: 'free',
