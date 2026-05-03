@@ -46,7 +46,7 @@ export function WebsiteChatbotSetupPage() {
   const [serviceInput, setServiceInput] = useState('');
   const [activeTab, setActiveTab] = useState<'setup' | 'customize' | 'leads' | 'embed'>('setup');
   const [embedPlatform, setEmbedPlatform] = useState<'html' | 'react' | 'agent'>('html');
-
+  const BASE = typeof window !== 'undefined' ? window.location.origin : 'https://yourdomain.com';
   useEffect(() => {
     (async () => {
       try {
@@ -101,7 +101,7 @@ export function WebsiteChatbotSetupPage() {
     finally { setCrawling(false); }
   };
 
-  const scriptTag = `<script src="${API_BASE_URL}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}"></script>`;
+  const scriptTag = `<script src="${BASE}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}"></script>`;
 
   const copyScript = () => {
     navigator.clipboard.writeText(scriptTag);
@@ -158,7 +158,7 @@ export function WebsiteChatbotSetupPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             {/* Live toggle */}
             <div className="flex items-center mr-2">
@@ -170,16 +170,15 @@ export function WebsiteChatbotSetupPage() {
                 </span>
               </label>
             </div>
-            
+
             <button onClick={() => navigate('/website-chatbot/leads')}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors shadow-sm">
               <Users size={16} className="text-gray-400" /> Leads
             </button>
-            
+
             <button onClick={save} disabled={saving}
-              className={`flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-lg shadow-sm transition-all ${
-                saved ? 'bg-green-100 text-green-700' : 'bg-gray-900 text-white hover:bg-black'
-              } disabled:opacity-70`}>
+              className={`flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-lg shadow-sm transition-all ${saved ? 'bg-green-100 text-green-700' : 'bg-gray-900 text-white hover:bg-black'
+                } disabled:opacity-70`}>
               {saving ? <Loader2 size={16} className="animate-spin" /> : saved ? <Check size={16} /> : <Save size={16} />}
               {saved ? 'Saved!' : 'Save Changes'}
             </button>
@@ -192,11 +191,10 @@ export function WebsiteChatbotSetupPage() {
             const isActive = activeTab === t.id;
             return (
               <button key={t.id} onClick={() => setActiveTab(t.id)}
-                className={`pb-3 text-sm font-semibold transition-colors border-b-2 whitespace-nowrap ${
-                  isActive 
-                    ? 'border-green-500 text-green-700' 
+                className={`pb-3 text-sm font-semibold transition-colors border-b-2 whitespace-nowrap ${isActive
+                    ? 'border-green-500 text-green-700'
                     : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
-                }`}>
+                  }`}>
                 {t.label}
               </button>
             );
@@ -209,7 +207,7 @@ export function WebsiteChatbotSetupPage() {
         {/* SETUP TAB */}
         {activeTab === 'setup' && (
           <div className="grid grid-cols-1 gap-6">
-            
+
             {/* Bot Identity */}
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center gap-3">
@@ -330,7 +328,7 @@ export function WebsiteChatbotSetupPage() {
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
                 </label>
               </div>
-              
+
               {config.enableLeadCapture && (
                 <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5 animate-in slide-in-from-top-2 fade-in duration-200">
                   <div className="sm:col-span-2">
@@ -354,13 +352,13 @@ export function WebsiteChatbotSetupPage() {
                     <div className="flex items-center gap-1.5 mb-1 group relative w-fit">
                       <label className="text-sm font-medium text-gray-700">Webhook URL (Advanced)</label>
                       <Info size={14} className="text-gray-400 cursor-pointer hover:text-green-600 transition-colors" />
-                      
+
                       {/* Hover Tooltip */}
                       <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-10 before:content-[''] before:absolute before:top-full before:left-4 before:border-4 before:border-transparent before:border-t-gray-900">
                         <p className="font-semibold mb-1 text-green-400">Webhook Payload Details</p>
                         <p className="opacity-90 mb-2">A POST request with a JSON body will be sent to this URL whenever a new lead is captured.</p>
                         <div className="bg-gray-800 p-2 rounded text-[10px] font-mono text-gray-300 overflow-x-auto whitespace-pre">
-{`{
+                          {`{
   "name": "John Doe",
   "email": "john@example.com",
   "phone": "1234567890",
@@ -423,7 +421,7 @@ export function WebsiteChatbotSetupPage() {
         {/* CUSTOMIZE TAB */}
         {activeTab === 'customize' && (
           <div className="flex flex-col lg:flex-row gap-8 items-start">
-            
+
             {/* Left: Controls */}
             <div className="w-full lg:w-[45%] space-y-6 flex-shrink-0">
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -503,7 +501,7 @@ export function WebsiteChatbotSetupPage() {
             <div className="w-full lg:w-[55%] sticky top-6">
               <div className="bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden shadow-inner relative flex flex-col items-center justify-center" style={{ height: '600px' }}>
                 <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.6))] bg-[length:20px_20px]"></div>
-                
+
                 <div className="z-10 text-center space-y-4 text-gray-400 select-none">
                   <Globe size={48} className="mx-auto opacity-20" />
                   <p className="text-sm font-medium tracking-widest uppercase">Your Website</p>
@@ -537,17 +535,17 @@ export function WebsiteChatbotSetupPage() {
                     <div className="self-start max-w-[85%] bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-2.5 text-[13px] text-gray-700 shadow-sm leading-relaxed">
                       Sure thing! We specialize in custom software solutions tailored to your needs. What specific challenges are you looking to solve?
                     </div>
-                    
+
                     {/* Simulated Lead Form if enabled */}
                     {config.enableLeadCapture && (
-                       <div className="w-full mt-4 bg-white border border-gray-200 rounded-xl p-4 shadow-sm animate-in fade-in slide-in-from-bottom-2">
-                         <p className="text-xs font-semibold text-gray-800 mb-3 text-center">Please leave your details</p>
-                         <div className="space-y-2">
-                           <input disabled placeholder="Name" className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs" />
-                           <input disabled placeholder="Email" className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs" />
-                           <button disabled className="w-full py-2 rounded-lg text-xs font-bold transition-colors opacity-90 mt-2" style={{ backgroundColor: config.primaryColor, color: config.iconColor }}>Submit</button>
-                         </div>
-                       </div>
+                      <div className="w-full mt-4 bg-white border border-gray-200 rounded-xl p-4 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+                        <p className="text-xs font-semibold text-gray-800 mb-3 text-center">Please leave your details</p>
+                        <div className="space-y-2">
+                          <input disabled placeholder="Name" className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs" />
+                          <input disabled placeholder="Email" className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs" />
+                          <button disabled className="w-full py-2 rounded-lg text-xs font-bold transition-colors opacity-90 mt-2" style={{ backgroundColor: config.primaryColor, color: config.iconColor }}>Submit</button>
+                        </div>
+                      </div>
                     )}
                   </div>
                   {/* Input Area */}
@@ -655,7 +653,7 @@ export function WebsiteChatbotSetupPage() {
 export default function App() {
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = '${API_BASE_URL}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}';
+    script.src = '${BASE}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}';
     script.async = true;
     document.body.appendChild(script);
     
@@ -669,7 +667,7 @@ export default function App() {
   );
 }`}</pre>
                       <button onClick={() => {
-                        navigator.clipboard.writeText(`import { useEffect } from 'react';\n\nexport default function App() {\n  useEffect(() => {\n    const script = document.createElement('script');\n    script.src = '${API_BASE_URL}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}';\n    script.async = true;\n    document.body.appendChild(script);\n    \n    return () => {\n      document.body.removeChild(script);\n    };\n  }, []);\n\n  return (\n    // Your app content\n  );\n}`);
+                        navigator.clipboard.writeText(`import { useEffect } from 'react';\n\nexport default function App() {\n  useEffect(() => {\n    const script = document.createElement('script');\n    script.src = '${BASE}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}';\n    script.async = true;\n    document.body.appendChild(script);\n    \n    return () => {\n      document.body.removeChild(script);\n    };\n  }, []);\n\n  return (\n    // Your app content\n  );\n}`);
                         setCopied(true); setTimeout(() => setCopied(false), 2000);
                       }} className="absolute top-3 right-3 p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors backdrop-blur-sm">
                         {copied ? <Check size={16} /> : <Copy size={16} />}
@@ -682,18 +680,18 @@ export default function App() {
                     <p className="text-sm text-gray-600 mb-4">Building with an AI coding assistant (like Cursor, Windsurf, or GitHub Copilot)? Just copy this prompt and paste it into your agent's chat!</p>
                     <div className="relative group">
                       <pre className="bg-green-50 border border-green-200 text-green-900 rounded-xl p-5 text-sm overflow-x-auto whitespace-pre-wrap leading-relaxed shadow-inner font-mono text-xs">
-{`Please install the NexBotix customer support chatbot on my website. 
+                        {`Please install the NexBotix customer support chatbot on my website. 
 
 To do this, you need to inject the following script tag just before the closing </body> tag of my main layout/HTML file:
 
-<script src="${API_BASE_URL}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}"></script>
+<script src="${BASE}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}"></script>
 
 If this is a React/Next.js app, please use a useEffect hook in the root layout to append the script to document.body, and make sure to clean it up in the return function.
 
 Do not change the src URL, it contains my unique API key.`}
                       </pre>
                       <button onClick={() => {
-                        navigator.clipboard.writeText(`Please install the NexBotix customer support chatbot on my website. \n\nTo do this, you need to inject the following script tag just before the closing </body> tag of my main layout/HTML file:\n\n<script src="${API_BASE_URL}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}"></script>\n\nIf this is a React/Next.js app, please use a useEffect hook in the root layout to append the script to document.body, and make sure to clean it up in the return function.\n\nDo not change the src URL, it contains my unique API key.`);
+                        navigator.clipboard.writeText(`Please install the NexBotix customer support chatbot on my website. \n\nTo do this, you need to inject the following script tag just before the closing </body> tag of my main layout/HTML file:\n\n<script src="${BASE}/api/website-chatbot/script?apikey=${apiKey || 'YOUR_API_KEY'}"></script>\n\nIf this is a React/Next.js app, please use a useEffect hook in the root layout to append the script to document.body, and make sure to clean it up in the return function.\n\nDo not change the src URL, it contains my unique API key.`);
                         setCopied(true); setTimeout(() => setCopied(false), 2000);
                       }} className="absolute top-4 right-4 p-2 bg-green-200 hover:bg-green-300 text-green-800 rounded-lg transition-colors">
                         {copied ? <Check size={16} /> : <Copy size={16} />}
@@ -711,7 +709,7 @@ Do not change the src URL, it contains my unique API key.`}
                 <h3 className="font-semibold text-gray-900">Security Check</h3>
               </div>
               <div className="p-6">
-                <p className="text-sm text-gray-600 mb-4">Ensure your website's domain is allowed to use this chatbot. Go to the <button onClick={()=>setActiveTab('setup')} className="text-green-600 hover:underline font-medium">Setup tab</button> and check the <strong>Domain Whitelist</strong> section.</p>
+                <p className="text-sm text-gray-600 mb-4">Ensure your website's domain is allowed to use this chatbot. Go to the <button onClick={() => setActiveTab('setup')} className="text-green-600 hover:underline font-medium">Setup tab</button> and check the <strong>Domain Whitelist</strong> section.</p>
                 {config.whitelistedDomains.length > 0 ? (
                   <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-3 rounded-lg border border-green-200 font-medium">
                     <Check size={16} className="text-green-500" /> Restricted to {config.whitelistedDomains.length} domain(s)

@@ -4,6 +4,7 @@
 //               SSE endpoints connect directly to backend (Vercel proxy doesn't support streaming)
 const isDevelopment = import.meta.env.DEV;
 
+
 // Trim any trailing slash from the backend URL to prevent double-slash paths
 // (e.g. "https://api.example.com/" + "/api/send" → "https://api.example.com//api/send"
 //  which triggers a Go 301 redirect that converts POST → GET → 405)
@@ -83,39 +84,39 @@ export const API_ENDPOINTS = {
     cancel: (id: string) => `${API_BASE_URL}/api/schedule/${id}`,
   },
   apiKeys: {
-    list:   `${API_BASE_URL}/api/apikeys`,
+    list: `${API_BASE_URL}/api/apikeys`,
     create: `${API_BASE_URL}/api/apikeys`,
     revoke: (id: string) => `${API_BASE_URL}/api/apikeys/${id}`,
   },
   bot: {
-    get:             `${API_BASE_URL}/api/bot`,
-    upsert:          `${API_BASE_URL}/api/bot`,
-    detectionLogs:   `${API_BASE_URL}/api/bot/detection-logs`,
-    detectionStats:  `${API_BASE_URL}/api/bot/detection-stats`,
+    get: `${API_BASE_URL}/api/bot`,
+    upsert: `${API_BASE_URL}/api/bot`,
+    detectionLogs: `${API_BASE_URL}/api/bot/detection-logs`,
+    detectionStats: `${API_BASE_URL}/api/bot/detection-stats`,
   },
   security: {
-    settings:  `${API_BASE_URL}/api/settings/security`,
+    settings: `${API_BASE_URL}/api/settings/security`,
     heartbeat: `${API_BASE_URL}/api/activity/heartbeat`,
   },
   // ── Email (Omnichannel) ───────────────────────────────────────────────
   email: {
-    smtp:           `${API_BASE_URL}/api/email/smtp`,
-    smtpTest:       `${API_BASE_URL}/api/email/smtp/test`,
-    send:           `${SSE_BASE_URL}/api/email/send`,      // SSE — direct to backend
-    schedule:       `${API_BASE_URL}/api/email/schedule`,
+    smtp: `${API_BASE_URL}/api/email/smtp`,
+    smtpTest: `${API_BASE_URL}/api/email/smtp/test`,
+    send: `${SSE_BASE_URL}/api/email/send`,      // SSE — direct to backend
+    schedule: `${API_BASE_URL}/api/email/schedule`,
     cancelSchedule: (id: string) => `${API_BASE_URL}/api/email/schedule/${id}`,
-    templates:      `${API_BASE_URL}/api/email/templates`,
+    templates: `${API_BASE_URL}/api/email/templates`,
     deleteTemplate: (id: string) => `${API_BASE_URL}/api/email/templates/${id}`,
-    bot:            `${API_BASE_URL}/api/email/bot`,
-    copyBot:        `${API_BASE_URL}/api/email/bot/copy-from-whatsapp`,
+    bot: `${API_BASE_URL}/api/email/bot`,
+    copyBot: `${API_BASE_URL}/api/email/bot/copy-from-whatsapp`,
   },
   // ── Website Chatbot ───────────────────────────────────────────────────
   websiteChatbot: {
-    config:     `${API_BASE_URL}/api/website-chatbot/config`,
-    crawl:      `${API_BASE_URL}/api/website-chatbot/crawl`,
-    script:     `${API_BASE_URL}/api/website-chatbot/script`,
-    chat:       `${API_BASE_URL}/api/website-chatbot/chat`,
-    leads:      `${API_BASE_URL}/api/website-chatbot/leads`,
+    config: `${API_BASE_URL}/api/website-chatbot/config`,
+    crawl: `${API_BASE_URL}/api/website-chatbot/crawl`,
+    script: `${API_BASE_URL}/api/website-chatbot/script`,
+    chat: `${API_BASE_URL}/api/website-chatbot/chat`,
+    leads: `${API_BASE_URL}/api/website-chatbot/leads`,
     submitLead: `${API_BASE_URL}/api/website-chatbot/leads/submit`,
   },
   health: `${API_BASE_URL}/api/health`,
