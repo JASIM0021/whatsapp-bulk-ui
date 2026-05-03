@@ -19,6 +19,11 @@ export const API_BASE_URL = isDevelopment
 // These endpoints MUST connect directly to the backend server.
 export const SSE_BASE_URL = rawBackendUrl || API_BASE_URL;
 
+// Full backend URL for the website chatbot embed script.
+// The widget is loaded on external websites so it CANNOT use relative URLs.
+// Falls back to the current origin in dev, but MUST be set via VITE_BACKEND_URL in production.
+export const WIDGET_BASE_URL = rawBackendUrl || (isDevelopment ? 'http://localhost:4000' : (typeof window !== 'undefined' ? window.location.origin : ''));
+
 
 export const API_ENDPOINTS = {
   whatsapp: {

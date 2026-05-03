@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch, API_ENDPOINTS, API_BASE_URL } from '@/config/api';
+import { apiFetch, API_ENDPOINTS, WIDGET_BASE_URL } from '@/config/api';
 import { Globe, Loader2, Save, RefreshCw, Copy, Check, Users, ArrowLeft, Bot, MessageSquare, ShieldCheck, Mail, Palette, Layout, MessageCircle, Info } from 'lucide-react';
 import { WebsiteChatbotLeadsPage } from './WebsiteChatbotLeadsPage';
 
@@ -46,7 +46,7 @@ export function WebsiteChatbotSetupPage() {
   const [serviceInput, setServiceInput] = useState('');
   const [activeTab, setActiveTab] = useState<'setup' | 'customize' | 'leads' | 'embed'>('setup');
   const [embedPlatform, setEmbedPlatform] = useState<'html' | 'react' | 'agent'>('html');
-  const BASE = typeof window !== 'undefined' ? window.location.origin : 'https://yourdomain.com';
+  const BASE = WIDGET_BASE_URL;
   useEffect(() => {
     (async () => {
       try {

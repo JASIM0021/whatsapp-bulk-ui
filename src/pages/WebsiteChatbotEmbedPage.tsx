@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch, API_ENDPOINTS, API_BASE_URL } from '@/config/api';
+import { apiFetch, API_ENDPOINTS, WIDGET_BASE_URL } from '@/config/api';
 import { ArrowLeft, Copy, Check } from 'lucide-react';
 
 function CodeBlock({ code }: { code: string }) {
@@ -27,7 +27,7 @@ export function WebsiteChatbotEmbedPage() {
     }).catch(() => {});
   }, []);
 
-  const scriptSrc = `${API_BASE_URL}/api/website-chatbot/script?apikey=${apiKey}`;
+  const scriptSrc = `${WIDGET_BASE_URL}/api/website-chatbot/script?apikey=${apiKey}`;
 
   const snippets = {
     html: `<!-- Add before </body> -->
