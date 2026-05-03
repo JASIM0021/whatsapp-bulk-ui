@@ -49,7 +49,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          setUser(data.data);
+          const userData = data.data;
+          if (userData?.subscription) {
+            const plan = userData.subscription.plan;
+            const isAllAccess = ['monthly', 'yearly', 'starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'unlimited_monthly', 'unlimited_yearly'].includes(plan);
+            if (isAllAccess && (!userData.subscription.enabledServices || userData.subscription.enabledServices.length === 0)) {
+              userData.subscription.enabledServices = ['whatsapp', 'chatbot', 'email'];
+            }
+          }
+          setUser(userData);
           setToken(stored);
         } else {
           localStorage.removeItem('auth_token');
@@ -64,15 +72,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await apiFetch(API_ENDPOINTS.auth.login, {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Login failed');
-    localStorage.setItem('auth_token', data.data.token);
-    setToken(data.data.token);
-    setUser(data.data.user);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.auth.login, {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+
+      const userData = data.data.user;
+      if (userData?.subscription) {
+        const plan = userData.subscription.plan;
+        const isAllAccess = ['monthly', 'yearly', 'starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'unlimited_monthly', 'unlimited_yearly'].includes(plan);
+        if (isAllAccess && (!userData.subscription.enabledServices || userData.subscription.enabledServices.length === 0)) {
+          userData.subscription.enabledServices = ['whatsapp', 'chatbot', 'email'];
+        }
+      }
+
+      localStorage.setItem('auth_token', data.data.token);
+      setToken(data.data.token);
+      setUser(userData);
+    } catch (err: any) {
+      throw err;
+    }
   };
 
   const register = async (email: string, password: string, name: string) => {
@@ -82,12 +104,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Registration failed');
+    const userData = data.data.user;
+    if (userData?.subscription) {
+      const plan = userData.subscription.plan;
+      const isAllAccess = ['monthly', 'yearly', 'starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'unlimited_monthly', 'unlimited_yearly'].includes(plan);
+      if (isAllAccess && (!userData.subscription.enabledServices || userData.subscription.enabledServices.length === 0)) {
+        userData.subscription.enabledServices = ['whatsapp', 'chatbot', 'email'];
+      }
+    }
     localStorage.setItem('auth_token', data.data.token);
     setToken(data.data.token);
-    setUser(data.data.user);
+    setUser(userData);
   };
 
   const loginWithToken = (tok: string, userData: UserInfo) => {
+    if (userData?.subscription) {
+      const plan = userData.subscription.plan;
+      const isAllAccess = ['monthly', 'yearly', 'starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'unlimited_monthly', 'unlimited_yearly'].includes(plan);
+      if (isAllAccess && (!userData.subscription.enabledServices || userData.subscription.enabledServices.length === 0)) {
+        userData.subscription.enabledServices = ['whatsapp', 'chatbot', 'email'];
+      }
+    }
     localStorage.setItem('auth_token', tok);
     setToken(tok);
     setUser(userData);
