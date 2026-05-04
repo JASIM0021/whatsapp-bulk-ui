@@ -18,6 +18,11 @@ import {
   UserX,
   Timer,
   Globe,
+  Bot,
+  MessageCircle,
+  Mail,
+  CalendarClock,
+  MailCheck,
 } from 'lucide-react';
 
 /* ─────────────── Hero ─────────────── */
@@ -334,6 +339,41 @@ function Features() {
       desc: 'Trigger WhatsApp messages programmatically — send OTPs, order alerts, and automated workflows via REST API.',
       color: 'from-yellow-500 to-amber-600',
       shadow: 'shadow-yellow-500/20',
+    },
+    {
+      icon: Bot,
+      title: 'WhatsApp AI Bot',
+      desc: 'AI-powered auto-reply bot for WhatsApp. Detect intent, answer FAQs, and hand off to human agents when needed.',
+      color: 'from-green-500 to-emerald-600',
+      shadow: 'shadow-green-500/20',
+    },
+    {
+      icon: MessageCircle,
+      title: 'Website Chatbot Widget',
+      desc: 'Embed a live AI chatbot on your website. Capture leads, answer visitors 24/7, and customize the widget to match your brand.',
+      color: 'from-purple-500 to-violet-600',
+      shadow: 'shadow-purple-500/20',
+    },
+    {
+      icon: Mail,
+      title: 'Email Campaigns',
+      desc: 'Send bulk HTML email campaigns with templates, attachments, and contact segmentation. Schedule or send instantly.',
+      color: 'from-blue-500 to-sky-600',
+      shadow: 'shadow-blue-500/20',
+    },
+    {
+      icon: CalendarClock,
+      title: 'Email & Message Scheduling',
+      desc: 'Schedule WhatsApp and email campaigns for the perfect time. Set it and forget it — messages sent automatically.',
+      color: 'from-orange-500 to-amber-600',
+      shadow: 'shadow-orange-500/20',
+    },
+    {
+      icon: MailCheck,
+      title: 'Email Auto-Reply Bot',
+      desc: 'IMAP-based email auto-responder with AI. Configurable business identity, automatic replies, and sync settings from WhatsApp bot.',
+      color: 'from-indigo-500 to-blue-600',
+      shadow: 'shadow-indigo-500/20',
     },
   ];
 
