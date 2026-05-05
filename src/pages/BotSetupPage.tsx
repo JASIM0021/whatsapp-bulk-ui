@@ -53,6 +53,8 @@ export function BotSetupPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [aiDetectionExpanded, setAiDetectionExpanded] = useState(false);
   const [handoffExpanded, setHandoffExpanded] = useState(false);
+  const [maxMessagesDraft, setMaxMessagesDraft] = useState('30');
+  const [minResponseTimeDraft, setMinResponseTimeDraft] = useState('2');
 
   const isActive = user?.subscription?.isActive ?? false;
   const isFree = user?.subscription?.plan === 'free';
@@ -81,6 +83,9 @@ export function BotSetupPage() {
             humanAgentPhone: d.humanAgentPhone ?? '',
             enableAutoHandoff: d.enableAutoHandoff ?? false,
           });
+          // Sync draft states with loaded config
+          setMaxMessagesDraft(String(d.maxMessagesPerHour ?? 30));
+          setMinResponseTimeDraft(String(d.minResponseTimeSeconds ?? 2));
         }
       } catch {
         // no config yet — use empty
@@ -97,6 +102,18 @@ export function BotSetupPage() {
   };
 
   const handleSave = async () => {
+    // Commit any draft values before saving
+    const maxMsgParsed = parseInt(maxMessagesDraft);
+    const maxMsgValidated = !isNaN(maxMsgParsed) ? Math.max(1, Math.min(100, maxMsgParsed)) : 30;
+    const minRespParsed = parseInt(minResponseTimeDraft);
+    const minRespValidated = !isNaN(minRespParsed) ? Math.max(1, Math.min(60, minRespParsed)) : 2;
+
+    const finalConfig = {
+      ...config,
+      maxMessagesPerHour: maxMsgValidated,
+      minResponseTimeSeconds: minRespValidated,
+    };
+
     const hasCustomPrompt = config.customSystemPrompt.trim() !== '';
     if (!hasCustomPrompt && (!config.businessName.trim() || !config.description.trim())) {
       showToast('Business name and description are required (or enter a custom system prompt)', false);
@@ -109,16 +126,22 @@ export function BotSetupPage() {
       const res = await apiFetch(API_ENDPOINTS.bot.upsert, {
         method: 'POST',
         body: JSON.stringify({
-          ...config,
+          ...finalConfig,
           services: cleanServices,
         }),
       });
       const json = await res.json();
       if (json.success) {
         showToast('Bot configuration saved!', true);
-        if (json.data?.services) {
-          setConfig(prev => ({ ...prev, services: json.data.services.length ? json.data.services : [''] }));
-        }
+        // Update config and sync drafts
+        setConfig(prev => ({
+          ...prev,
+          maxMessagesPerHour: maxMsgValidated,
+          minResponseTimeSeconds: minRespValidated,
+          services: json.data?.services?.length ? json.data.services : prev.services,
+        }));
+        setMaxMessagesDraft(String(maxMsgValidated));
+        setMinResponseTimeDraft(String(minRespValidated));
       } else {
         showToast(json.error || 'Failed to save', false);
       }
@@ -130,6 +153,18 @@ export function BotSetupPage() {
   };
 
   const handleToggle = async () => {
+    // Commit any draft values before toggling
+    const maxMsgParsed = parseInt(maxMessagesDraft);
+    const maxMsgValidated = !isNaN(maxMsgParsed) ? Math.max(1, Math.min(100, maxMsgParsed)) : 30;
+    const minRespParsed = parseInt(minResponseTimeDraft);
+    const minRespValidated = !isNaN(minRespParsed) ? Math.max(1, Math.min(60, minRespParsed)) : 2;
+
+    const finalConfig = {
+      ...config,
+      maxMessagesPerHour: maxMsgValidated,
+      minResponseTimeSeconds: minRespValidated,
+    };
+
     const hasCustomPrompt = config.customSystemPrompt.trim() !== '';
     if (!hasCustomPrompt && (!config.businessName.trim() || !config.description.trim())) {
       showToast('Save your business info (or enter a custom system prompt) before enabling the bot', false);
@@ -142,11 +177,14 @@ export function BotSetupPage() {
       const cleanServices = config.services.map(s => s.trim()).filter(Boolean);
       const res = await apiFetch(API_ENDPOINTS.bot.upsert, {
         method: 'POST',
-        body: JSON.stringify({ ...config, isEnabled: newEnabled, services: cleanServices }),
+        body: JSON.stringify({ ...finalConfig, isEnabled: newEnabled, services: cleanServices }),
       });
       const json = await res.json();
       if (json.success) {
         showToast(newEnabled ? 'Bot enabled — auto-replies are active' : 'Bot disabled — auto-replies stopped', newEnabled);
+        // Sync drafts after successful toggle
+        setMaxMessagesDraft(String(maxMsgValidated));
+        setMinResponseTimeDraft(String(minRespValidated));
       } else {
         // Revert on failure
         setConfig(prev => ({ ...prev, isEnabled: !newEnabled }));
@@ -493,8 +531,14 @@ export function BotSetupPage() {
                         type="number"
                         min="1"
                         max="100"
-                        value={config.maxMessagesPerHour || 30}
-                        onChange={e => setConfig(prev => ({ ...prev, maxMessagesPerHour: Math.max(1, Math.min(100, parseInt(e.target.value) || 30)) }))}
+                        value={maxMessagesDraft}
+                        onChange={e => setMaxMessagesDraft(e.target.value)}
+                        onBlur={e => {
+                          const parsed = parseInt(e.target.value);
+                          const validated = !isNaN(parsed) ? Math.max(1, Math.min(100, parsed)) : 30;
+                          setConfig(prev => ({ ...prev, maxMessagesPerHour: validated }));
+                          setMaxMessagesDraft(String(validated));
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                       />
                       <p className="text-xs text-gray-500 mt-1">Flag contact if they send more messages than this in one hour</p>
@@ -508,8 +552,14 @@ export function BotSetupPage() {
                         type="number"
                         min="1"
                         max="60"
-                        value={config.minResponseTimeSeconds || 2}
-                        onChange={e => setConfig(prev => ({ ...prev, minResponseTimeSeconds: Math.max(1, Math.min(60, parseInt(e.target.value) || 2)) }))}
+                        value={minResponseTimeDraft}
+                        onChange={e => setMinResponseTimeDraft(e.target.value)}
+                        onBlur={e => {
+                          const parsed = parseInt(e.target.value);
+                          const validated = !isNaN(parsed) ? Math.max(1, Math.min(60, parsed)) : 2;
+                          setConfig(prev => ({ ...prev, minResponseTimeSeconds: validated }));
+                          setMinResponseTimeDraft(String(validated));
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                       />
                       <p className="text-xs text-gray-500 mt-1">Flag if average time between messages is less than this (need 3+ messages)</p>
