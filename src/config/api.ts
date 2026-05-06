@@ -46,6 +46,9 @@ export const API_ENDPOINTS = {
     resetPassword: `${API_BASE_URL}/api/auth/reset-password`,
     login: `${API_BASE_URL}/api/auth/login`,
     me: `${API_BASE_URL}/api/auth/me`,
+    sessions: `${API_BASE_URL}/api/auth/sessions`,
+    logout: `${API_BASE_URL}/api/auth/logout`,
+    logoutAll: `${API_BASE_URL}/api/auth/logout-all`,
   },
   templates: {
     list: `${API_BASE_URL}/api/templates`,

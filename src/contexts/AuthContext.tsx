@@ -130,10 +130,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(userData);
   };
 
-  const logout = () => {
-    localStorage.removeItem('auth_token');
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      // Call the logout API to revoke the current session
+      await apiFetch(API_ENDPOINTS.auth.logout, {
+        method: 'POST',
+      });
+    } catch (err) {
+      console.error('Logout API call failed:', err);
+      // Continue with local logout even if API call fails
+    } finally {
+      // Always clear local storage and state
+      localStorage.removeItem('auth_token');
+      setToken(null);
+      setUser(null);
+    }
   };
 
   return (
