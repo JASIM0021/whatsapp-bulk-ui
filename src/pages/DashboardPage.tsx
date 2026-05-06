@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User } from 'lucide-react';
+import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock } from 'lucide-react';
 
 export function DashboardPage() {
   const { user, logout } = useAuth();
@@ -74,7 +74,13 @@ export function DashboardPage() {
               <span className="text-sm font-semibold capitalize">{user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'Free'}</span>
             </button>
             <div className="w-px h-6 bg-gray-200"></div>
-            <div className="flex items-center gap-2 pl-1 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate('/security')}>
+            <button onClick={() => navigate('/sessions')} title="Active Sessions" className="p-2 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+              <Globe size={18} />
+            </button>
+            <button onClick={() => navigate('/security')} title="Security Settings" className="p-2 rounded-lg text-gray-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+              <Lock size={18} />
+            </button>
+            <div className="flex items-center gap-2 pl-1">
               <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center text-white shadow-md">
                 <User size={16} />
               </div>

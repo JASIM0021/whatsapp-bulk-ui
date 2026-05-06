@@ -26,6 +26,7 @@ import { WebsiteChatbotSetupPage } from './pages/WebsiteChatbotSetupPage'
 import { WebsiteChatbotLeadsPage } from './pages/WebsiteChatbotLeadsPage'
 import { WebsiteChatbotEmbedPage } from './pages/WebsiteChatbotEmbedPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { SessionsPage } from './pages/SessionsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -109,6 +110,9 @@ function AppRoutes() {
       } />
       <Route path="/security" element={
         <ProtectedRoute><SecurityPage /></ProtectedRoute>
+      } />
+      <Route path="/sessions" element={
+        <ProtectedRoute><SessionsPage /></ProtectedRoute>
       } />
       <Route path="/email" element={
         <ProtectedRoute>

@@ -131,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
+    apiFetch(API_ENDPOINTS.auth.logout, { method: 'POST' }).catch(() => {});
     localStorage.removeItem('auth_token');
     setToken(null);
     setUser(null);
