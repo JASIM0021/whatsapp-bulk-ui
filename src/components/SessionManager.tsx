@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -137,7 +137,7 @@ export default function SessionManager() {
           </div>
         ) : (
           <div className="space-y-3">
-            {sessions.map((session, index) => (
+            {sessions.map((session) => (
               <div
                 key={session.id}
                 className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
