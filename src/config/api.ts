@@ -49,6 +49,7 @@ export const API_ENDPOINTS = {
     sessions: `${API_BASE_URL}/api/auth/sessions`,
     logout: `${API_BASE_URL}/api/auth/logout`,
     logoutAll: `${API_BASE_URL}/api/auth/logout-all`,
+    googleLogin: `${API_BASE_URL}/api/auth/google`,
   },
   templates: {
     list: `${API_BASE_URL}/api/templates`,
