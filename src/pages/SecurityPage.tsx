@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, ArrowLeft, Clock, ToggleLeft, ToggleRight, Loader, Info } from 'lucide-react';
+import { Shield, ArrowLeft, Clock, ToggleLeft, ToggleRight, Loader, Info, Globe, ChevronRight } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 
 export function SecurityPage() {
@@ -125,6 +125,23 @@ export function SecurityPage() {
             </button>
           </div>
         </div>
+
+        {/* Active sessions link */}
+        <button
+          onClick={() => navigate('/sessions')}
+          className="w-full bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center justify-between hover:border-indigo-300 hover:shadow-md transition-all group"
+        >
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0">
+              <Globe size={18} className="text-indigo-600" />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-gray-900">Active Sessions</p>
+              <p className="text-sm text-gray-500 mt-0.5">View and manage devices logged in to your account</p>
+            </div>
+          </div>
+          <ChevronRight size={18} className="text-gray-400 group-hover:text-indigo-600 shrink-0 transition-colors" />
+        </button>
 
         {/* Info box */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
