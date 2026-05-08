@@ -21,6 +21,9 @@ export function LoginPage() {
     location.pathname === '/signup' ? 'signup' : 'login'
   );
 
+  // After login, redirect back to where the user came from (e.g. /check-chatbot)
+  const redirectTo: string = (location.state as { redirect?: string })?.redirect || '/app';
+
   useSEO({
     title: mode === 'login' ? 'Sign In - NexBotix' : 'Sign Up - NexBotix',
     description: mode === 'login' ? 'Sign in to access your NexBotix dashboard.' : 'Create a new account on NexBotix and get started with free messages today.',
@@ -114,7 +117,7 @@ export function LoginPage() {
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Google login failed');
         loginWithToken(data.data.token, data.data.user);
-        navigate('/app');
+        navigate(redirectTo);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Google login failed');
       } finally {
@@ -131,7 +134,7 @@ export function LoginPage() {
     setIsLoading(true);
     try {
       await login(email, password);
-      navigate('/app');
+      navigate(redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid credentials');
     } finally {
@@ -180,7 +183,7 @@ export function LoginPage() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Invalid code');
       loginWithToken(data.data.token, data.data.user);
-      navigate('/app');
+      navigate(redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {

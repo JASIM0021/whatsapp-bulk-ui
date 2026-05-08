@@ -28,6 +28,8 @@ import { WebsiteChatbotLeadsPage } from './pages/WebsiteChatbotLeadsPage'
 import { WebsiteChatbotEmbedPage } from './pages/WebsiteChatbotEmbedPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SessionsPage } from './pages/SessionsPage'
+import { CheckChatbotPage } from './pages/CheckChatbotPage'
+import { ChatbotDemoPage } from './pages/ChatbotDemoPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -87,6 +89,10 @@ function AppRoutes() {
       <Route path="/docs" element={<LandingLayout><DevDocsPage /></LandingLayout>} />
       <Route path="/contact" element={<LandingLayout><ContactPage /></LandingLayout>} />
       <Route path="/about" element={<LandingLayout><AboutPage /></LandingLayout>} />
+
+      {/* Public chatbot demo tool (no auth required) */}
+      <Route path="/check-chatbot" element={<CheckChatbotPage />} />
+      <Route path="/demo/:id" element={<ChatbotDemoPage />} />
 
       {/* Login / Signup */}
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />

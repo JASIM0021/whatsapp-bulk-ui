@@ -29,6 +29,11 @@ import {
   Settings,
   History,
   Tag,
+  Bot,
+  Globe,
+  Copy,
+  Loader2,
+  ExternalLink,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -58,7 +63,7 @@ interface AdminUser {
   };
 }
 
-type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos';
+type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos';
 
 interface Invoice {
   id: string;
@@ -1644,6 +1649,229 @@ function UserActivityModal({ open, user, onClose }: {
   );
 }
 
+/* ─── Chatbot Demos Tab ─── */
+interface ChatbotDemo {
+  id: string;
+  websiteUrl: string;
+  businessName: string;
+  description: string;
+  services: string[];
+  primaryColor: string;
+  isAdminCreated: boolean;
+  viewCount: number;
+  pagesCrawled: number;
+  status: string;
+  leadEmail?: string;
+  leadWhatsApp?: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+function ChatbotDemosTab() {
+  const [demos, setDemos] = useState<ChatbotDemo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [url, setUrl] = useState('');
+  const [leadEmail, setLeadEmail] = useState('');
+  const [leadWhatsApp, setLeadWhatsApp] = useState('');
+  const [error, setError] = useState('');
+  const [copiedId, setCopiedId] = useState('');
+
+  const frontendBase = typeof window !== 'undefined' ? window.location.origin : '';
+
+  const loadDemos = async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.adminChatbotDemo.list);
+      const data = await res.json();
+      if (data.success) setDemos(data.data || []);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadDemos(); }, []);
+
+  const handleCreate = async () => {
+    if (!url.trim()) return;
+    setError('');
+    setCreating(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.adminChatbotDemo.create, {
+        method: 'POST',
+        body: JSON.stringify({ websiteUrl: url.trim(), leadEmail: leadEmail.trim(), leadWhatsApp: leadWhatsApp.trim() }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to create demo');
+      setUrl('');
+      setLeadEmail('');
+      setLeadWhatsApp('');
+      await loadDemos();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to create demo');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this demo? The link will stop working.')) return;
+    try {
+      await apiFetch(API_ENDPOINTS.adminChatbotDemo.delete(id), { method: 'DELETE' });
+      setDemos(d => d.filter(x => x.id !== id));
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCopy = (id: string) => {
+    const link = `${frontendBase}/demo/${id}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(''), 2000);
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Chatbot Demo Links</h2>
+        <p className="text-sm text-gray-500">Create shareable demo links for potential clients. Each link generates a live chatbot demo trained on their website.</p>
+      </div>
+
+      {/* Create form */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+        <h3 className="font-medium text-gray-900 flex items-center gap-2">
+          <Bot size={16} className="text-green-600" /> Create New Demo Link
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Client Website URL *</label>
+            <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg focus-within:border-green-500">
+              <Globe size={14} className="text-gray-400 shrink-0" />
+              <input
+                type="url"
+                placeholder="https://client-website.com"
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleCreate()}
+                className="flex-1 text-sm outline-none bg-transparent"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Lead Alert Email (optional)</label>
+            <input
+              type="email"
+              placeholder="client@email.com"
+              value={leadEmail}
+              onChange={e => setLeadEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-green-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Lead Alert WhatsApp (optional)</label>
+            <input
+              type="tel"
+              placeholder="+91 98765 43210"
+              value={leadWhatsApp}
+              onChange={e => setLeadWhatsApp(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-green-500"
+            />
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={handleCreate}
+              disabled={creating || !url.trim()}
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              {creating ? <Loader2 size={14} className="animate-spin" /> : <Bot size={14} />}
+              {creating ? 'Creating…' : 'Create Demo'}
+            </button>
+          </div>
+        </div>
+        {error && <p className="text-xs text-red-600 flex items-center gap-1"><X size={12} />{error}</p>}
+        {creating && (
+          <p className="text-xs text-gray-500 flex items-center gap-1.5">
+            <Loader2 size={12} className="animate-spin" /> Crawling website and training bot… this takes 15–30 seconds.
+          </p>
+        )}
+      </div>
+
+      {/* Demos list */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <RefreshCw size={20} className="animate-spin text-gray-400" />
+          </div>
+        ) : demos.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <Bot size={32} className="mx-auto mb-2 text-gray-300" />
+            <p className="text-sm">No demos created yet. Create one above to get started.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {demos.map(demo => {
+              const isExpired = new Date(demo.expiresAt) < new Date();
+              const demoLink = `${frontendBase}/demo/${demo.id}`;
+              return (
+                <div key={demo.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: demo.primaryColor || '#16a34a' }}>
+                        <Bot size={16} className="text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">{demo.businessName || 'Unnamed Business'}</p>
+                        <a href={demo.websiteUrl} target="_blank" rel="noreferrer" className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 truncate">
+                          <Globe size={10} />
+                          {demo.websiteUrl.replace(/^https?:\/\//, '')}
+                        </a>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs text-gray-500">{demo.pagesCrawled} pages · {demo.services?.length || 0} services</span>
+                          <span className="text-xs text-gray-500">{demo.viewCount} views</span>
+                          {isExpired && <span className="text-xs text-red-500 font-medium">Expired</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href={demoLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Open demo"
+                      >
+                        <ExternalLink size={15} />
+                      </a>
+                      <button
+                        onClick={() => handleCopy(demo.id)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-green-700 hover:bg-green-50 border border-gray-200 rounded-lg transition-colors"
+                      >
+                        {copiedId === demo.id ? <CheckCircle2 size={13} className="text-green-600" /> : <Copy size={13} />}
+                        {copiedId === demo.id ? 'Copied!' : 'Copy Link'}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(demo.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete demo"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Admin Panel ─── */
 export function AdminPanel() {
   const { user } = useAuth();
@@ -1676,6 +1904,7 @@ export function AdminPanel() {
     { id: 'plans', label: 'Plans', icon: Settings },
     { id: 'promos', label: 'Promos', icon: Tag },
     { id: 'email', label: 'Email', icon: Mail },
+    { id: 'demos', label: 'Chatbot Demos', icon: Bot },
   ];
 
   return (
@@ -1730,6 +1959,7 @@ export function AdminPanel() {
         {tab === 'plans' && <PlansTab />}
         {tab === 'promos' && <PromosTab />}
         {tab === 'email' && <EmailTab />}
+        {tab === 'demos' && <ChatbotDemosTab />}
       </div>
     </div>
   );

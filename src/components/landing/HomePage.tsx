@@ -73,14 +73,12 @@ function Hero() {
                 Start Free Trial
                 <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
               </Link>
-              <a
-                href="https://wa.me/917679349780?text=Hi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-gray-300 border border-gray-700 rounded-2xl hover:bg-white/5 hover:border-gray-600 transition-all"
+              <Link
+                to="/check-chatbot"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-gray-300 border border-gray-700 rounded-2xl hover:bg-white/5 hover:border-green-500 hover:text-green-400 transition-all"
               >
-                Try WhatsApp Bot Now
-              </a>
+                Check Your AI Chatbot
+              </Link>
             </div>
 
             {/* Social proof */}

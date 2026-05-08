@@ -129,6 +129,19 @@ export const API_ENDPOINTS = {
     submitLead: `${API_BASE_URL}/api/website-chatbot/leads/submit`,
   },
   health: `${API_BASE_URL}/api/health`,
+  // ── Chatbot Demo (public marketing tool) ─────────────────────────────────
+  chatbotDemo: {
+    check: `${API_BASE_URL}/api/chatbot-demo/check`, // requires JWT
+    get: (id: string) => `${API_BASE_URL}/api/public/chatbot-demo/${id}`,
+    update: (id: string) => `${API_BASE_URL}/api/public/chatbot-demo/${id}`,
+    chat: (id: string) => `${API_BASE_URL}/api/public/chatbot-demo/${id}/chat`,
+    lead: (id: string) => `${API_BASE_URL}/api/public/chatbot-demo/${id}/lead`,
+  },
+  adminChatbotDemo: {
+    list: `${API_BASE_URL}/api/admin/chatbot-demos`,
+    create: `${API_BASE_URL}/api/admin/chatbot-demos`,
+    delete: (id: string) => `${API_BASE_URL}/api/admin/chatbot-demos/${id}`,
+  },
 };
 
 /**

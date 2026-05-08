@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock } from 'lucide-react';
+import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles } from 'lucide-react';
 
 export function DashboardPage() {
   const { user, logout } = useAuth();
@@ -142,7 +142,31 @@ export function DashboardPage() {
           })}
         </div>
         
-        {/* Quick Stats or Additional Info could go here */}
+        {/* Check Your AI Chatbot Demo */}
+        <div
+          onClick={() => navigate('/check-chatbot')}
+          className="mt-8 cursor-pointer group relative overflow-hidden rounded-2xl border-2 border-orange-200 bg-gradient-to-r from-orange-50 via-amber-50 to-yellow-50 hover:border-orange-400 shadow-sm hover:shadow-md transition-all duration-300"
+        >
+          <div className="px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <div className="w-14 h-14 shrink-0 rounded-2xl bg-orange-100 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
+              <Bot size={28} className="text-orange-600" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-lg font-bold text-gray-900">Check Your AI Chatbot</h3>
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full">
+                  <Sparkles size={10} /> Free
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 leading-relaxed max-w-xl">
+                Enter your website URL and instantly see how an AI chatbot would answer questions about your business. Share the live demo link with potential clients.
+              </p>
+            </div>
+            <div className="shrink-0 flex items-center gap-2 text-orange-600 font-semibold text-sm group-hover:translate-x-1 transition-transform">
+              Try Demo <ChevronRight size={18} />
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );
