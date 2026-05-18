@@ -18,6 +18,7 @@ import { ManualContactEntry } from '@/components/ManualContactEntry';
 import { SavedContactsDrawer } from '@/components/SavedContactsDrawer';
 import { WhatsAppContactsDrawer } from '@/components/WhatsAppContactsDrawer';
 import { ScheduledJobsDrawer } from '@/components/ScheduledJobsDrawer';
+import { BackgroundJobsPanel, BgJob } from '@/components/BackgroundJobsPanel';
 import './App.css';
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
   const [showScheduledJobs, setShowScheduledJobs] = useState(false);
   const [scheduleToast, setScheduleToast] = useState('');
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
+  const [bgJobs, setBgJobs] = useState<BgJob[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [showTour, setShowTour] = useState(false);
   const [mobileTab, setMobileTab] = useState<'send' | 'contacts' | 'schedule' | 'more'>('send');
@@ -88,6 +90,56 @@ function App() {
     events.forEach(evt => window.addEventListener(evt, sendHeartbeat, { passive: true }));
     return () => events.forEach(evt => window.removeEventListener(evt, sendHeartbeat));
   }, [isAuthenticated, isLoading]);
+
+  // Poll active background jobs every 3 seconds
+  useEffect(() => {
+    const running = bgJobs.filter(j => j.status === 'running');
+    if (running.length === 0) return;
+
+    const poll = async () => {
+      for (const job of running) {
+        try {
+          const res = await apiFetch(API_ENDPOINTS.whatsapp.bgJobStatus(job.id));
+          const json = await res.json();
+          if (json.success && json.data) {
+            setBgJobs(prev => prev.map(j =>
+              j.id === job.id
+                ? { ...j, sent: json.data.sent, failed: json.data.failed, total: json.data.total, status: json.data.status }
+                : j
+            ));
+          }
+        } catch { /* ignore */ }
+      }
+    };
+
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [bgJobs]);
+
+  const handleWorkInBackground = (jobId: string) => {
+    setBgJobs(prev => [...prev, {
+      id: jobId,
+      total: selectedContacts.length,
+      sent: 0,
+      failed: 0,
+      status: 'running',
+      startedAt: new Date(),
+    }]);
+    setShowSendProgress(false);
+    setScheduleToast("Sending in background! We'll email you when it's done — no worries.");
+    setTimeout(() => setScheduleToast(''), 7000);
+  };
+
+  const handleStopBgJob = async (id: string) => {
+    try {
+      await apiFetch(API_ENDPOINTS.whatsapp.bgJobStop(id), { method: 'DELETE' });
+      setBgJobs(prev => prev.map(j => j.id === id ? { ...j, status: 'stopped' } : j));
+    } catch { /* ignore */ }
+  };
+
+  const handleDismissBgJob = (id: string) => {
+    setBgJobs(prev => prev.filter(j => j.id !== id));
+  };
 
   // Save contacts to the user's persistent contacts book (fire-and-forget)
   const saveContactsToBook = useCallback(async (contactsToSave: Contact[]) => {
@@ -249,9 +301,9 @@ function App() {
   const selectedCount = selectedContacts.length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="flex-none bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           {/* Desktop header */}
           <div className="hidden md:flex items-center justify-between gap-4">
@@ -458,298 +510,420 @@ function App() {
       </header>
 
       {/* Subscription Banners */}
-      {user?.subscription && !user.subscription.isActive && (
-        <div className="bg-red-600 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <p className="text-xs sm:text-sm font-medium">
-              Your subscription has expired. Upgrade now to continue.
-            </p>
-            <button
-              onClick={() => navigate('/subscription')}
-              className="px-3 sm:px-4 py-1.5 bg-white text-red-600 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-50 transition-colors shrink-0"
-            >
-              Upgrade Now
-            </button>
-          </div>
-        </div>
-      )}
-      {user?.subscription?.isActive && user.subscription.plan === 'free' && (
-        <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <p className="text-xs sm:text-sm font-medium">
-              Free trial — {user.subscription.messageLimit - user.subscription.messagesUsed} of {user.subscription.messageLimit} messages remaining. Upgrade for unlimited access.
-            </p>
-            <button
-              onClick={() => navigate('/subscription')}
-              className="px-3 sm:px-4 py-1.5 bg-white text-amber-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-amber-50 transition-colors shrink-0"
-            >
-              View Plans
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-24 md:pb-8">
-
-        {/* ── Mobile: More tab ── */}
-        {mobileTab === 'more' && (
-          <div className="md:hidden space-y-3">
-            {/* ── Email Channel Switch card ── */}
-            <button
-              onClick={() => navigate('/email')}
-              className="w-full flex items-center justify-between px-4 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 text-white transition-all active:scale-[0.98]"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Mail size={20} className="text-white" />
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-sm leading-none">Email Channel</p>
-                  <p className="text-blue-200 text-xs mt-0.5">Bulk email campaigns</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 bg-white/20 rounded-lg px-3 py-1.5">
-                <span className="text-xs font-semibold">Open</span>
-                <ChevronRight size={14} />
-              </div>
-            </button>
-
-            {/* User card */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-              <div className="px-4 py-4 flex items-center gap-3 border-b border-gray-100">
-                <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                  <User size={20} className="text-primary-600" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{user?.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-                </div>
-              </div>
-
-              {/* Subscription */}
+      <div className="flex-none">
+        {user?.subscription && !user.subscription.isActive && (
+          <div className="bg-red-600 text-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <p className="text-xs sm:text-sm font-medium">
+                Your subscription has expired. Upgrade now to continue.
+              </p>
               <button
                 onClick={() => navigate('/subscription')}
-                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                className="px-3 sm:px-4 py-1.5 bg-white text-red-600 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-50 transition-colors shrink-0"
               >
-                <div className="flex items-center gap-3">
-                  <Crown size={18} className="text-amber-500" />
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-gray-800">Subscription</p>
-                    <p className="text-xs text-gray-500 capitalize">
-                      {user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'Free'}
-                      {user?.subscription?.isActive && user.subscription.plan === 'free'
-                        ? ` · ${user.subscription.messagesUsed}/${user.subscription.messageLimit} msgs`
-                        : user?.subscription?.isActive
-                          ? ` · ${user?.subscription?.daysLeft}d left`
-                          : ' · Expired'}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight size={16} className="text-gray-400" />
-              </button>
-
-              {/* Bot */}
-              {user?.subscription?.isActive && (
-                <>
-                  <button
-                    onClick={() => navigate('/bot')}
-                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Bot size={18} className="text-indigo-500" />
-                      <p className="text-sm font-medium text-gray-800">AI Chatbot</p>
-                    </div>
-                    <ChevronRight size={16} className="text-gray-400" />
-                  </button>
-                  <button
-                    onClick={() => navigate('/website-chatbot')}
-                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Globe size={18} className="text-green-500" />
-                      <p className="text-sm font-medium text-gray-800">Website Chatbot</p>
-                    </div>
-                    <ChevronRight size={16} className="text-gray-400" />
-                  </button>
-                </>
-              )}
-
-              {/* Security */}
-              <button
-                onClick={() => navigate('/security')}
-                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Lock size={18} className="text-slate-500" />
-                  <p className="text-sm font-medium text-gray-800">Security</p>
-                </div>
-                <ChevronRight size={16} className="text-gray-400" />
-              </button>
-
-              {/* Admin */}
-              {user?.role === 'admin' && (
-                <button
-                  onClick={() => navigate('/admin')}
-                  className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Shield size={18} className="text-purple-500" />
-                    <p className="text-sm font-medium text-gray-800">Admin Panel</p>
-                  </div>
-                  <ChevronRight size={16} className="text-gray-400" />
-                </button>
-              )}
-
-              {/* Help */}
-              <button
-                onClick={() => {
-                  localStorage.removeItem('nexbotix_tour_completed');
-                  setShowTour(true);
-                  setTimeout(() => setShowTour(false), 100);
-                  setMobileTab('send');
-                }}
-                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <HelpCircle size={18} className="text-green-500" />
-                  <p className="text-sm font-medium text-gray-800">Help & Tour</p>
-                </div>
-                <ChevronRight size={16} className="text-gray-400" />
+                Upgrade Now
               </button>
             </div>
-
-            {/* Logout */}
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-red-50 text-red-600 rounded-2xl border border-red-100 font-medium text-sm hover:bg-red-100 transition-colors"
-            >
-              <LogOut size={17} />
-              Log Out
-            </button>
           </div>
         )}
+        {user?.subscription?.isActive && user.subscription.plan === 'free' && (
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <p className="text-xs sm:text-sm font-medium">
+                Free trial — {user.subscription.messageLimit - user.subscription.messagesUsed} of {user.subscription.messageLimit} messages remaining. Upgrade for unlimited access.
+              </p>
+              <button
+                onClick={() => navigate('/subscription')}
+                className="px-3 sm:px-4 py-1.5 bg-white text-amber-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-amber-50 transition-colors shrink-0"
+              >
+                View Plans
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
-        {/* ── Main workflow (Send tab on mobile, always on desktop) ── */}
-        <div className={`${mobileTab !== 'send' ? 'hidden md:block' : ''} space-y-4 sm:space-y-8`}>
-          {/* Step 1: Upload Contacts */}
-          <section data-tour="step-upload" className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-primary-700 font-bold text-sm sm:text-base">1</span>
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-xl font-semibold text-gray-900">Upload Contacts</h2>
-                  <p className="text-xs sm:text-sm text-gray-600">Upload Excel/CSV or add manually</p>
-                </div>
+      {/* Main Content Wrapper */}
+      <div className="flex-1 overflow-hidden min-h-0">
+
+        {/* ── Desktop two-column layout ── */}
+        <div className="hidden md:flex flex-1 h-full overflow-hidden min-h-0">
+
+          {/* LEFT: Contacts Panel */}
+          <div className="flex flex-col border-r border-gray-200 bg-white overflow-hidden" style={{ width: '58%' }}>
+
+            {/* Panel header */}
+            <div className="flex-none flex items-center gap-2 px-5 py-3 border-b border-gray-100">
+              <div className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">1</div>
+              <span className="text-sm font-semibold text-gray-800">Contacts</span>
+              {contacts.length > 0 && (
+                <span className="text-xs text-gray-400 ml-1">{selectedCount}/{contacts.length} selected</span>
+              )}
+              <div className="ml-auto flex items-center gap-2">
+                <button onClick={() => setShowSavedContacts(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors">
+                  <BookUser size={12} /> My Contacts
+                </button>
+                <button onClick={() => setShowWAContacts(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors">
+                  <Users size={12} /> WA Contacts
+                </button>
+                {contacts.length > 0 && (
+                  <button onClick={handleClearContacts} className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
+                    <Trash2 size={12} /> Clear
+                  </button>
+                )}
               </div>
-              {/* Contact source buttons */}
+            </div>
+
+            {/* Compact file upload */}
+            <div className="flex-none px-5 py-3 border-b border-gray-100" data-tour="step-upload">
+              <FileUpload onFileUpload={handleFileUpload} isLoading={isFileUploading} compact />
+            </div>
+
+            {/* Collapsible manual entry */}
+            <div className="flex-none border-b border-gray-100 px-5 py-0.5">
+              <ManualContactEntry onAdd={handleManualAdd} collapsible />
+            </div>
+
+            {/* Contact table (scrollable) */}
+            <div className="flex-1 overflow-y-auto">
+              {contacts.length > 0 ? (
+                <ContactsTable contacts={contacts} selection={selection} onSelectionChange={setSelection} />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center px-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                    <UploadIcon size={28} className="text-gray-300" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">No contacts yet</h3>
+                  <p className="text-xs text-gray-400">Upload a file or add contacts manually above</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: Compose Panel */}
+          <div className="flex flex-col bg-gray-50 overflow-hidden" style={{ width: '42%' }}>
+
+            {/* Panel header: step label + WA status */}
+            <div className="flex-none flex items-center gap-3 px-5 py-3 border-b border-gray-200 bg-white">
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowSavedContacts(true)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors"
-                >
-                  <BookUser size={16} />
-                  <span className="hidden sm:inline">My Contacts</span>
-                </button>
-                <button
-                  onClick={() => setShowWAContacts(true)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
-                  title="Import from WhatsApp"
-                >
-                  <Users size={16} />
-                  <span className="hidden sm:inline">WhatsApp Contacts</span>
-                </button>
+                <div className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">2</div>
+                <span className="text-sm font-semibold text-gray-800">Compose &amp; Send</span>
               </div>
-            </div>
-            <div className="space-y-4">
-              <FileUpload onFileUpload={handleFileUpload} isLoading={isFileUploading} />
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="px-3 bg-white text-xs text-gray-500 font-medium">OR</span>
-                </div>
-              </div>
-              <ManualContactEntry onAdd={handleManualAdd} />
-            </div>
-          </section>
-
-          {/* Step 2: Review & Select Contacts */}
-          {contacts.length > 0 && (
-            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-primary-700 font-bold text-sm sm:text-base">2</span>
+              <div className="ml-auto" data-tour="step-connect">
+                {isWhatsAppConnected ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-[11px] font-semibold text-green-700">WA Connected</span>
+                    </div>
+                    <button
+                      onClick={handleDisconnectWhatsApp}
+                      className="px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Disconnect
+                    </button>
                   </div>
-                  <div className="min-w-0">
-                    <h2 className="text-base sm:text-xl font-semibold text-gray-900">Review & Select</h2>
-                    <p className="text-xs sm:text-sm text-gray-600">
-                      {selectedCount} contact{selectedCount !== 1 ? 's' : ''} selected
-                    </p>
-                  </div>
-                </div>
-                <Button variant="secondary" size="sm" onClick={handleClearContacts}>
-                  <Trash2 className="sm:mr-2" size={16} />
-                  <span className="hidden sm:inline">Clear All</span>
-                </Button>
-              </div>
-              <ContactsTable contacts={contacts} selection={selection} onSelectionChange={setSelection} />
-            </section>
-          )}
-
-          {/* Step 3: Send Messages */}
-          {selectedCount > 0 && (
-            <section data-tour="step-compose" className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4 sm:mb-6">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-primary-700 font-bold text-sm sm:text-base">3</span>
-                  </div>
-                  <div>
-                    <h2 className="text-base sm:text-xl font-semibold text-gray-900">Compose & Send</h2>
-                    <p className="text-xs sm:text-sm text-gray-600">Create your message and send to selected contacts</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-center p-6 sm:p-8 border-2 border-dashed border-gray-300 rounded-lg">
-                <div className="text-center">
-                  <MessageSquare className="mx-auto mb-3 sm:mb-4 text-gray-400" size={40} />
-                  <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Ready to send messages</h3>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
-                    {selectedCount} contact{selectedCount !== 1 ? 's' : ''} selected
-                  </p>
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={() => setShowMessageComposer(true)}
-                    disabled={!isWhatsAppConnected}
-                    data-tour="step-send"
+                ) : (
+                  <button
+                    onClick={handleConnectWhatsApp}
+                    disabled={connectionStatus === 'connecting'}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 transition-colors"
                   >
-                    <MessageSquare className="mr-2" size={20} />
-                    Compose Message
-                  </Button>
-                  {!isWhatsAppConnected && (
-                    <p className="text-xs sm:text-sm text-red-600 mt-3">Please connect WhatsApp first</p>
-                  )}
-                </div>
+                    <Smartphone size={12} />
+                    {connectionStatus === 'connecting' ? 'Connecting…' : 'Connect WhatsApp'}
+                  </button>
+                )}
               </div>
-            </section>
-          )}
-
-          {/* Empty State */}
-          {contacts.length === 0 && (
-            <div className="text-center py-10 sm:py-16">
-              <UploadIcon className="mx-auto mb-4 text-gray-400" size={48} />
-              <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">No contacts uploaded</h3>
-              <p className="text-sm text-gray-600">Upload an Excel or CSV file to get started</p>
             </div>
-          )}
-        </div>{/* end workflow div */}
-      </main>
+
+            {/* Selected contacts indicator */}
+            {selectedCount > 0 ? (
+              <div className="flex-none px-5 py-2 bg-primary-50 border-b border-primary-100 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-primary-500 rounded-full" />
+                <span className="text-xs font-medium text-primary-700">{selectedCount} contact{selectedCount !== 1 ? 's' : ''} selected</span>
+              </div>
+            ) : (
+              <div className="flex-none px-5 py-2 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-amber-400 rounded-full" />
+                <span className="text-xs font-medium text-amber-700">Select contacts on the left to enable sending</span>
+              </div>
+            )}
+
+            {/* Inline composer */}
+            <div className="flex-1 overflow-y-auto" data-tour="step-compose">
+              <MessageComposer
+                inline
+                isOpen
+                onClose={() => {}}
+                onSend={handleSendMessages}
+                selectedCount={selectedCount}
+                isWhatsAppConnected={isWhatsAppConnected}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Mobile layout ── */}
+        <div className="md:hidden">
+          <div className="max-w-7xl mx-auto px-3 py-4 pb-24 space-y-4">
+
+            {/* Mobile: More tab */}
+            {mobileTab === 'more' && (
+              <div className="space-y-3">
+                {/* Email Channel Switch card */}
+                <button
+                  onClick={() => navigate('/email')}
+                  className="w-full flex items-center justify-between px-4 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 text-white transition-all active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                      <Mail size={20} className="text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-sm leading-none">Email Channel</p>
+                      <p className="text-blue-200 text-xs mt-0.5">Bulk email campaigns</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white/20 rounded-lg px-3 py-1.5">
+                    <span className="text-xs font-semibold">Open</span>
+                    <ChevronRight size={14} />
+                  </div>
+                </button>
+
+                {/* User card */}
+                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                  <div className="px-4 py-4 flex items-center gap-3 border-b border-gray-100">
+                    <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                      <User size={20} className="text-primary-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{user?.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                    </div>
+                  </div>
+
+                  {/* Subscription */}
+                  <button
+                    onClick={() => navigate('/subscription')}
+                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Crown size={18} className="text-amber-500" />
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-gray-800">Subscription</p>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'Free'}
+                          {user?.subscription?.isActive && user.subscription.plan === 'free'
+                            ? ` · ${user.subscription.messagesUsed}/${user.subscription.messageLimit} msgs`
+                            : user?.subscription?.isActive
+                              ? ` · ${user?.subscription?.daysLeft}d left`
+                              : ' · Expired'}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-400" />
+                  </button>
+
+                  {/* Bot */}
+                  {user?.subscription?.isActive && (
+                    <>
+                      <button
+                        onClick={() => navigate('/bot')}
+                        className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Bot size={18} className="text-indigo-500" />
+                          <p className="text-sm font-medium text-gray-800">AI Chatbot</p>
+                        </div>
+                        <ChevronRight size={16} className="text-gray-400" />
+                      </button>
+                      <button
+                        onClick={() => navigate('/website-chatbot')}
+                        className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Globe size={18} className="text-green-500" />
+                          <p className="text-sm font-medium text-gray-800">Website Chatbot</p>
+                        </div>
+                        <ChevronRight size={16} className="text-gray-400" />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Security */}
+                  <button
+                    onClick={() => navigate('/security')}
+                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Lock size={18} className="text-slate-500" />
+                      <p className="text-sm font-medium text-gray-800">Security</p>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-400" />
+                  </button>
+
+                  {/* Admin */}
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={() => navigate('/admin')}
+                      className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Shield size={18} className="text-purple-500" />
+                        <p className="text-sm font-medium text-gray-800">Admin Panel</p>
+                      </div>
+                      <ChevronRight size={16} className="text-gray-400" />
+                    </button>
+                  )}
+
+                  {/* Help */}
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('nexbotix_tour_completed');
+                      setShowTour(true);
+                      setTimeout(() => setShowTour(false), 100);
+                      setMobileTab('send');
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <HelpCircle size={18} className="text-green-500" />
+                      <p className="text-sm font-medium text-gray-800">Help &amp; Tour</p>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-400" />
+                  </button>
+                </div>
+
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-red-50 text-red-600 rounded-2xl border border-red-100 font-medium text-sm hover:bg-red-100 transition-colors"
+                >
+                  <LogOut size={17} />
+                  Log Out
+                </button>
+              </div>
+            )}
+
+            {/* Main workflow (Send tab) */}
+            <div className={mobileTab !== 'send' ? 'hidden' : 'space-y-4'}>
+              {/* Step 1: Upload Contacts */}
+              <section data-tour="step-upload" className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
+                      <span className="text-primary-700 font-bold text-sm">1</span>
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-gray-900">Upload Contacts</h2>
+                      <p className="text-xs text-gray-600">Upload Excel/CSV or add manually</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowSavedContacts(true)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors"
+                    >
+                      <BookUser size={16} />
+                    </button>
+                    <button
+                      onClick={() => setShowWAContacts(true)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      <Users size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <FileUpload onFileUpload={handleFileUpload} isLoading={isFileUploading} />
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-200" />
+                    </div>
+                    <div className="relative flex justify-center">
+                      <span className="px-3 bg-white text-xs text-gray-500 font-medium">OR</span>
+                    </div>
+                  </div>
+                  <ManualContactEntry onAdd={handleManualAdd} />
+                </div>
+              </section>
+
+              {/* Step 2: Review & Select Contacts */}
+              {contacts.length > 0 && (
+                <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-4 gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
+                        <span className="text-primary-700 font-bold text-sm">2</span>
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="text-base font-semibold text-gray-900">Review &amp; Select</h2>
+                        <p className="text-xs text-gray-600">
+                          {selectedCount} contact{selectedCount !== 1 ? 's' : ''} selected
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="secondary" size="sm" onClick={handleClearContacts}>
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
+                  <ContactsTable contacts={contacts} selection={selection} onSelectionChange={setSelection} />
+                </section>
+              )}
+
+              {/* Step 3: Send Messages */}
+              {selectedCount > 0 && (
+                <section data-tour="step-compose" className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
+                        <span className="text-primary-700 font-bold text-sm">3</span>
+                      </div>
+                      <div>
+                        <h2 className="text-base font-semibold text-gray-900">Compose &amp; Send</h2>
+                        <p className="text-xs text-gray-600">Create your message and send</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                    <div className="text-center">
+                      <MessageSquare className="mx-auto mb-3 text-gray-400" size={40} />
+                      <h3 className="text-base font-medium text-gray-900 mb-2">Ready to send messages</h3>
+                      <p className="text-xs text-gray-600 mb-4">
+                        {selectedCount} contact{selectedCount !== 1 ? 's' : ''} selected
+                      </p>
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={() => setShowMessageComposer(true)}
+                        disabled={!isWhatsAppConnected}
+                        data-tour="step-send"
+                      >
+                        <MessageSquare className="mr-2" size={20} />
+                        Compose Message
+                      </Button>
+                      {!isWhatsAppConnected && (
+                        <p className="text-xs text-red-600 mt-3">Please connect WhatsApp first</p>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* Empty State */}
+              {contacts.length === 0 && (
+                <div className="text-center py-10">
+                  <UploadIcon className="mx-auto mb-4 text-gray-400" size={48} />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts uploaded</h3>
+                  <p className="text-sm text-gray-600">Upload an Excel or CSV file to get started</p>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+      </div>{/* end main content wrapper */}
 
       {/* Modals */}
       <QRCodeModal
@@ -762,6 +936,7 @@ function App() {
         token={token}
       />
 
+      {/* Mobile modal composer */}
       <MessageComposer
         isOpen={showMessageComposer}
         onClose={() => setShowMessageComposer(false)}
@@ -774,6 +949,7 @@ function App() {
           isOpen={showSendProgress}
           onClose={() => setShowSendProgress(false)}
           onComplete={handleSendComplete}
+          onWorkInBackground={handleWorkInBackground}
           contacts={selectedContacts}
           messages={currentMessages}
         />
@@ -810,6 +986,13 @@ function App() {
           </button>
         </div>
       )}
+
+      {/* Background Jobs Panel */}
+      <BackgroundJobsPanel
+        jobs={bgJobs}
+        onStop={handleStopBgJob}
+        onDismiss={handleDismissBgJob}
+      />
 
       {/* Tour Guide */}
       <TourGuide forceShow={showTour} />

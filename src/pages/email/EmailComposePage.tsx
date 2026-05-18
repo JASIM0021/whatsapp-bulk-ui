@@ -4,6 +4,7 @@ import {
   CheckCircle2, AlertCircle, Loader2, Variable,
   X, Mail, ArrowRight, Sparkles, Eye, Code2, ChevronDown
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -58,25 +59,70 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
   const updateRow = (i: number, field: keyof EmailContact, val: string) =>
     setContacts(c => { const u = [...c]; u[i] = { ...u[i], [field]: val }; return u; });
 
+  const parseContactsFromRows = useCallback((rows: string[][]): EmailContact[] => {
+    if (rows.length === 0) return [];
+
+    // Email column aliases (case-insensitive)
+    const EMAIL_ALIASES = ['email', 'e-mail', 'email address', 'emailaddress', 'mail'];
+    const NAME_ALIASES  = ['name', 'full name', 'fullname', 'contact name', 'first name', 'firstname'];
+
+    // Try to detect header row by checking if the first row has a recognisable email column
+    const firstRow = rows[0].map(c => (c ?? '').toString().trim().toLowerCase());
+    const emailColIdx = firstRow.findIndex(h => EMAIL_ALIASES.includes(h));
+    const nameColIdx  = firstRow.findIndex(h => NAME_ALIASES.includes(h));
+
+    const hasHeader = emailColIdx !== -1;
+    const dataRows  = rows.slice(hasHeader ? 1 : 0);
+
+    // If no header found, fall back to first column = email, second = name
+    const eIdx = hasHeader ? emailColIdx : 0;
+    const nIdx = hasHeader ? (nameColIdx !== -1 ? nameColIdx : -1) : 1;
+
+    const parsed: EmailContact[] = [];
+    for (const row of dataRows) {
+      const email = (row[eIdx] ?? '').toString().trim();
+      const name  = nIdx >= 0 ? (row[nIdx] ?? '').toString().trim() : '';
+      if (email.includes('@')) parsed.push({ email, name: name || undefined });
+    }
+    return parsed;
+  }, []);
+
   const handleCSV = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     setCsvError('');
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const lines = (ev.target?.result as string).split('\n').map(l => l.trim()).filter(Boolean);
-      const hasHeader = lines[0]?.toLowerCase().includes('email');
-      const parsed: EmailContact[] = [];
-      for (const line of lines.slice(hasHeader ? 1 : 0)) {
-        const parts = line.split(/[,\t;]/);
-        const email = (parts[0] || '').trim();
-        if (email.includes('@')) parsed.push({ email, name: (parts[1] || '').trim() });
-      }
-      if (!parsed.length) { setCsvError('No valid emails found'); return; }
-      setContacts(parsed);
-    };
-    reader.readAsText(file);
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+
+    if (ext === 'xlsx' || ext === 'xls') {
+      // Excel file — use xlsx library
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const wb = XLSX.read(ev.target?.result, { type: 'array' });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const rows: string[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as string[][];
+          const parsed = parseContactsFromRows(rows);
+          if (!parsed.length) { setCsvError('No valid email addresses found. Make sure a column is labelled "Email".'); return; }
+          setContacts(parsed);
+        } catch {
+          setCsvError('Failed to read Excel file. Please try a CSV instead.');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      // CSV / TXT — plain text parsing
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const text = (ev.target?.result as string) ?? '';
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        const rows: string[][] = lines.map(l => l.split(/[,\t;]/));
+        const parsed = parseContactsFromRows(rows);
+        if (!parsed.length) { setCsvError('No valid email addresses found. Make sure a column is labelled "Email".'); return; }
+        setContacts(parsed);
+      };
+      reader.readAsText(file);
+    }
     e.target.value = '';
-  }, []);
+  }, [parseContactsFromRows]);
 
   const useTemplate = (t: EmailTemplate) => { setSubject(t.subject); setBodyHtml(t.bodyHtml); setShowTemplates(false); };
 
@@ -187,7 +233,7 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
             {validCount > 0 && <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">{validCount}</span>}
           </div>
           <div className="flex gap-2">
-            <input type="file" accept=".csv,.txt" ref={fileRef} onChange={handleCSV} className="hidden" />
+            <input type="file" accept=".csv,.txt,.xlsx,.xls" ref={fileRef} onChange={handleCSV} className="hidden" />
             <button onClick={() => fileRef.current?.click()}
               className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-medium transition-colors">
               <Upload size={12} /><span className="hidden sm:inline">CSV</span><span className="sm:hidden">CSV</span>

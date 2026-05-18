@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { UserPlus, Trash2, PlusCircle } from 'lucide-react';
+import { UserPlus, Trash2, PlusCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Contact } from '@/types/contact';
 import { validateAndFormatPhone } from '@/lib/validation';
 
 interface ManualContactEntryProps {
   onAdd: (contacts: Contact[]) => void;
+  collapsible?: boolean;
 }
 
 interface Row {
@@ -12,9 +13,10 @@ interface Row {
   phone: string;
 }
 
-export function ManualContactEntry({ onAdd }: ManualContactEntryProps) {
+export function ManualContactEntry({ onAdd, collapsible }: ManualContactEntryProps) {
   const [rows, setRows] = useState<Row[]>([{ name: '', phone: '' }]);
   const [error, setError] = useState('');
+  const [expanded, setExpanded] = useState(false);
 
   const updateRow = (index: number, field: keyof Row, value: string) => {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
@@ -52,7 +54,90 @@ export function ManualContactEntry({ onAdd }: ManualContactEntryProps) {
     onAdd(contacts);
     setRows([{ name: '', phone: '' }]);
     setError('');
+    if (collapsible) setExpanded(false);
   };
+
+  if (collapsible) {
+    return (
+      <div>
+        {/* Toggle button */}
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="w-full flex items-center gap-2 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          <UserPlus size={15} className="text-primary-500 shrink-0" />
+          <span>Add contacts manually</span>
+          {expanded ? (
+            <ChevronUp size={14} className="ml-auto text-gray-400" />
+          ) : (
+            <ChevronDown size={14} className="ml-auto text-gray-400" />
+          )}
+        </button>
+
+        {expanded && (
+          <div className="pb-3 space-y-3">
+            {/* Column headers */}
+            <div className="grid grid-cols-[1fr_1fr_36px] gap-2 px-1">
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Name (optional)</span>
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Phone *</span>
+              <span />
+            </div>
+
+            {/* Rows */}
+            <div className="space-y-2">
+              {rows.map((row, idx) => (
+                <div key={idx} className="grid grid-cols-[1fr_1fr_36px] gap-2 items-center">
+                  <input
+                    type="text"
+                    placeholder="John Doe"
+                    value={row.name}
+                    onChange={(e) => updateRow(idx, 'name', e.target.value)}
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="919876543210"
+                    value={row.phone}
+                    onChange={(e) => updateRow(idx, 'phone', e.target.value)}
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono"
+                  />
+                  <button
+                    onClick={() => removeRow(idx)}
+                    title="Remove row"
+                    className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {error && <p className="text-xs text-red-600">{error}</p>}
+
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-1">
+              <button
+                onClick={addRow}
+                className="inline-flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
+              >
+                <PlusCircle size={16} />
+                Add another row
+              </button>
+
+              <button
+                onClick={handleSubmit}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                <UserPlus size={16} />
+                Add to List
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">

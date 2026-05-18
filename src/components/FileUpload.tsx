@@ -4,9 +4,10 @@ import { Upload, FileSpreadsheet, Download, Lightbulb, ChevronDown, ChevronUp } 
 interface FileUploadProps {
   onFileUpload: (file: File) => void;
   isLoading?: boolean;
+  compact?: boolean;
 }
 
-export function FileUpload({ onFileUpload, isLoading }: FileUploadProps) {
+export function FileUpload({ onFileUpload, isLoading, compact }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [showTips, setShowTips] = useState(false);
 
@@ -48,6 +49,60 @@ export function FileUpload({ onFileUpload, isLoading }: FileUploadProps) {
       onFileUpload(e.target.files[0]);
     }
   };
+
+  if (compact) {
+    return (
+      <div
+        className={`flex items-center gap-3 px-4 py-2.5 border-2 border-dashed rounded-xl transition-colors ${
+          isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300 bg-gray-50/60'
+        }`}
+        onDragEnter={handleDragIn}
+        onDragLeave={handleDragOut}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <FileSpreadsheet size={18} className="text-gray-400 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-gray-700 truncate">
+            {isDragging ? 'Drop file here' : 'Upload .xlsx / .csv spreadsheet'}
+          </p>
+          <p className="text-[11px] text-gray-400">Drag & drop or browse — max 10MB</p>
+        </div>
+        <input
+          type="file"
+          id="file-upload-compact"
+          className="hidden"
+          accept=".xlsx,.xls,.csv"
+          onChange={handleFileSelect}
+          disabled={isLoading}
+        />
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href="/sample-contacts.xlsx"
+            download="sample-contacts.xlsx"
+            onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors whitespace-nowrap"
+          >
+            <Download size={12} /> Sample
+          </a>
+          <label
+            htmlFor="file-upload-compact"
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors whitespace-nowrap ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            {isLoading ? (
+              <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <Upload size={12} />
+            )}
+            {isLoading ? 'Processing…' : 'Browse'}
+          </label>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

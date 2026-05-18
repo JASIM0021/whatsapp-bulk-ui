@@ -33,6 +33,9 @@ export const API_ENDPOINTS = {
     disconnect: `${API_BASE_URL}/api/whatsapp/disconnect`,
     send: `${SSE_BASE_URL}/api/whatsapp/send`,         // SSE — direct to backend
     contacts: `${API_BASE_URL}/api/whatsapp/contacts`,
+    sendBg: `${API_BASE_URL}/api/whatsapp/send-bg`,
+    bgJobStatus: (id: string) => `${API_BASE_URL}/api/whatsapp/send-bg/${id}`,
+    bgJobStop: (id: string) => `${API_BASE_URL}/api/whatsapp/send-bg/${id}`,
   },
   upload: {
     contacts: `${API_BASE_URL}/api/upload`,

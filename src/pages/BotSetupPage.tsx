@@ -18,7 +18,7 @@ interface BotConfig {
   // AI Detection Settings
   enableAIDetection?: boolean;
   maxMessagesPerHour?: number;
-  minResponseTimeSeconds?: number;
+
   handoffKeywords?: string[];
   // Human Agent Settings
   humanAgentPhone?: string;
@@ -37,7 +37,7 @@ const EMPTY: BotConfig = {
   customSystemPrompt: '',
   enableAIDetection: true,  // Enable AI detection by default
   maxMessagesPerHour: 30,
-  minResponseTimeSeconds: 2,
+
   handoffKeywords: ['human', 'agent', 'talk to person', 'real human'],
   humanAgentPhone: '',
   enableAutoHandoff: false,
@@ -54,7 +54,7 @@ export function BotSetupPage() {
   const [aiDetectionExpanded, setAiDetectionExpanded] = useState(false);
   const [handoffExpanded, setHandoffExpanded] = useState(false);
   const [maxMessagesDraft, setMaxMessagesDraft] = useState('30');
-  const [minResponseTimeDraft, setMinResponseTimeDraft] = useState('2');
+
 
   const isActive = user?.subscription?.isActive ?? false;
   const isFree = user?.subscription?.plan === 'free';
@@ -78,14 +78,13 @@ export function BotSetupPage() {
             customSystemPrompt: d.customSystemPrompt ?? '',
             enableAIDetection: d.enableAIDetection ?? true,  // Default to true
             maxMessagesPerHour: d.maxMessagesPerHour ?? 30,
-            minResponseTimeSeconds: d.minResponseTimeSeconds ?? 2,
+
             handoffKeywords: d.handoffKeywords?.length ? d.handoffKeywords : ['human', 'agent', 'talk to person', 'real human'],
             humanAgentPhone: d.humanAgentPhone ?? '',
             enableAutoHandoff: d.enableAutoHandoff ?? false,
           });
           // Sync draft states with loaded config
           setMaxMessagesDraft(String(d.maxMessagesPerHour ?? 30));
-          setMinResponseTimeDraft(String(d.minResponseTimeSeconds ?? 2));
         }
       } catch {
         // no config yet — use empty
@@ -105,13 +104,10 @@ export function BotSetupPage() {
     // Commit any draft values before saving
     const maxMsgParsed = parseInt(maxMessagesDraft);
     const maxMsgValidated = !isNaN(maxMsgParsed) ? Math.max(1, Math.min(100, maxMsgParsed)) : 30;
-    const minRespParsed = parseInt(minResponseTimeDraft);
-    const minRespValidated = !isNaN(minRespParsed) ? Math.max(1, Math.min(60, minRespParsed)) : 2;
 
     const finalConfig = {
       ...config,
       maxMessagesPerHour: maxMsgValidated,
-      minResponseTimeSeconds: minRespValidated,
     };
 
     const hasCustomPrompt = config.customSystemPrompt.trim() !== '';
@@ -137,11 +133,9 @@ export function BotSetupPage() {
         setConfig(prev => ({
           ...prev,
           maxMessagesPerHour: maxMsgValidated,
-          minResponseTimeSeconds: minRespValidated,
           services: json.data?.services?.length ? json.data.services : prev.services,
         }));
         setMaxMessagesDraft(String(maxMsgValidated));
-        setMinResponseTimeDraft(String(minRespValidated));
       } else {
         showToast(json.error || 'Failed to save', false);
       }
@@ -156,13 +150,10 @@ export function BotSetupPage() {
     // Commit any draft values before toggling
     const maxMsgParsed = parseInt(maxMessagesDraft);
     const maxMsgValidated = !isNaN(maxMsgParsed) ? Math.max(1, Math.min(100, maxMsgParsed)) : 30;
-    const minRespParsed = parseInt(minResponseTimeDraft);
-    const minRespValidated = !isNaN(minRespParsed) ? Math.max(1, Math.min(60, minRespParsed)) : 2;
 
     const finalConfig = {
       ...config,
       maxMessagesPerHour: maxMsgValidated,
-      minResponseTimeSeconds: minRespValidated,
     };
 
     const hasCustomPrompt = config.customSystemPrompt.trim() !== '';
@@ -184,7 +175,6 @@ export function BotSetupPage() {
         showToast(newEnabled ? 'Bot enabled — auto-replies are active' : 'Bot disabled — auto-replies stopped', newEnabled);
         // Sync drafts after successful toggle
         setMaxMessagesDraft(String(maxMsgValidated));
-        setMinResponseTimeDraft(String(minRespValidated));
       } else {
         // Revert on failure
         setConfig(prev => ({ ...prev, isEnabled: !newEnabled }));
@@ -544,26 +534,6 @@ export function BotSetupPage() {
                       <p className="text-xs text-gray-500 mt-1">Flag contact if they send more messages than this in one hour</p>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Min Response Time (seconds)
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="60"
-                        value={minResponseTimeDraft}
-                        onChange={e => setMinResponseTimeDraft(e.target.value)}
-                        onBlur={e => {
-                          const parsed = parseInt(e.target.value);
-                          const validated = !isNaN(parsed) ? Math.max(1, Math.min(60, parsed)) : 2;
-                          setConfig(prev => ({ ...prev, minResponseTimeSeconds: validated }));
-                          setMinResponseTimeDraft(String(validated));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Flag if average time between messages is less than this (need 3+ messages)</p>
-                    </div>
                   </>
                 )}
               </div>
