@@ -87,9 +87,9 @@ function StepInput({
       <div className="flex flex-col gap-2">
         {draft.services.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-1">
-            {draft.services.map((s, i) => (
+            {draft.services.map((s) => (
               <span
-                key={i}
+                key={s}
                 className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 border border-green-200 text-green-700 text-xs font-medium rounded-full"
               >
                 {s}
@@ -198,7 +198,9 @@ function PreviewScreen({ draft, onDismiss }: { draft: BotDraft; onDismiss: () =>
     { role: 'user' as const, text: 'What services do you offer?' },
     {
       role: 'bot' as const,
-      text: `We offer ${draft.services.slice(0, 3).join(', ')}. Would you like more details or to book an appointment?`,
+      text: draft.services.length > 0
+        ? `We offer ${draft.services.slice(0, 3).join(', ')}. Would you like more details or to book an appointment?`
+        : `We'd love to help you! Would you like more details or to book an appointment?`,
     },
   ];
 
@@ -217,6 +219,7 @@ function PreviewScreen({ draft, onDismiss }: { draft: BotDraft; onDismiss: () =>
           </div>
           <button
             onClick={onDismiss}
+            aria-label="Close"
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
           >
             <X size={16} />
@@ -231,9 +234,9 @@ function PreviewScreen({ draft, onDismiss }: { draft: BotDraft; onDismiss: () =>
           <p className="text-gray-500 text-xs mt-1 leading-relaxed">{draft.description}</p>
           {draft.services.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">
-              {draft.services.map((s, i) => (
+              {draft.services.map((s) => (
                 <span
-                  key={i}
+                  key={s}
                   className="px-2.5 py-0.5 bg-green-50 border border-green-200 text-green-700 text-xs font-medium rounded-full"
                 >
                   {s}
@@ -314,7 +317,11 @@ export function BotOnboardingModal() {
 
   if (step === 5) {
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        onKeyDown={(e) => { if (e.key === 'Escape') dismiss(); }}
+        tabIndex={-1}
+      >
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={dismiss} />
         <PreviewScreen draft={draft} onDismiss={dismiss} />
       </div>
@@ -322,10 +329,14 @@ export function BotOnboardingModal() {
   }
 
   const TOTAL_STEPS = 4;
-  const progress = ((step - 1) / TOTAL_STEPS) * 100;
+  const progress = (step / TOTAL_STEPS) * 100;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      onKeyDown={(e) => { if (e.key === 'Escape') dismiss(); }}
+      tabIndex={-1}
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -333,7 +344,12 @@ export function BotOnboardingModal() {
       />
 
       {/* Modal card */}
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="botx-modal-title"
+        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
+      >
 
         {/* Header */}
         <div className="flex-none bg-gradient-to-r from-green-600 to-emerald-600 px-5 py-4">
@@ -343,12 +359,13 @@ export function BotOnboardingModal() {
                 <Bot size={18} className="text-white" />
               </div>
               <div>
-                <p className="text-white font-bold text-sm leading-tight">Build Your WhatsApp Bot</p>
+                <p id="botx-modal-title" className="text-white font-bold text-sm leading-tight">Build Your WhatsApp Bot</p>
                 <p className="text-green-100 text-xs">Free · 2 min · No signup needed yet</p>
               </div>
             </div>
             <button
               onClick={dismiss}
+              aria-label="Close"
               className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
             >
               <X size={16} />
