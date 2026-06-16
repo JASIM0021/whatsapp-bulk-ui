@@ -30,6 +30,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { SessionsPage } from './pages/SessionsPage'
 import { CheckChatbotPage } from './pages/CheckChatbotPage'
 import { ChatbotDemoPage } from './pages/ChatbotDemoPage'
+import { BotOnboardingModal } from './components/onboarding/BotOnboardingModal'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -80,8 +81,10 @@ function AppRoutes() {
     };
   }, []);
   return (
-    <Routes>
-      {/* Public landing pages */}
+    <>
+      <BotOnboardingModal />
+      <Routes>
+        {/* Public landing pages */}
       <Route path="/" element={<LandingLayout><HomePage /></LandingLayout>} />
       <Route path="/privacy" element={<LandingLayout><PrivacyPolicy /></LandingLayout>} />
       <Route path="/terms" element={<LandingLayout><TermsConditions /></LandingLayout>} />
@@ -150,9 +153,10 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
 
-      {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
 
