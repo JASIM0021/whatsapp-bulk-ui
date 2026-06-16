@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Mail, Lock, ArrowLeft, User, ShieldCheck, KeyRound } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, User, ShieldCheck, KeyRound, Bot } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
@@ -20,6 +20,15 @@ export function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>(
     location.pathname === '/signup' ? 'signup' : 'login'
   );
+
+  const hasBotDraft = (() => {
+    try {
+      const raw = localStorage.getItem('botx_bot_draft');
+      if (!raw) return false;
+      const d = JSON.parse(raw);
+      return !!d.completedAt && !!d.businessName;
+    } catch { return false; }
+  })();
 
   // After login, redirect back to where the user came from (e.g. /check-chatbot)
   const redirectTo: string = (location.state as { redirect?: string })?.redirect || '/app';
@@ -573,6 +582,17 @@ export function LoginPage() {
             <img src="/icon-192.png" alt="NexBotix" className="w-10 h-10 rounded-xl object-contain" />
             <span className="text-xl font-bold text-gray-900">NexBotix</span>
           </Link>
+
+          {hasBotDraft && (
+            <div className="w-full max-w-md mx-auto mb-4 flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Bot size={15} className="text-white" />
+              </div>
+              <p className="text-sm text-green-800 font-medium">
+                🤖 Your WhatsApp bot is ready — {mode === 'signup' ? 'sign up' : 'log in'} to activate it!
+              </p>
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             {/* Tabs */}
