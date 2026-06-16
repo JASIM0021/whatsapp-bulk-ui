@@ -61,14 +61,13 @@ export function useBotxOnboarding() {
     (window as any).__botxOpenOnboarding = () => {
       sessionStorage.removeItem(SKIP_KEY);
       setIsOpen(true);
-      if (messages.length === 0) {
-        setMessages([{ role: 'bot', text: "Hi! 👋 What's your business name?" }]);
-      }
+      setMessages([{ role: 'bot', text: "Hi! 👋 What's your business name?" }]);
+      setStep(1);
     };
     return () => {
       delete (window as any).__botxOpenOnboarding;
     };
-  }, [messages.length]);
+  }, []);
 
   const dismiss = useCallback(() => {
     sessionStorage.setItem(SKIP_KEY, '1');
@@ -89,14 +88,15 @@ export function useBotxOnboarding() {
 
     setMessages(prev => [...prev, { role: 'user', text: trimmed }]);
 
-    setDraft(prev => {
-      let updated = { ...prev };
-      if (step === 1) updated.businessName = trimmed;
-      if (step === 2) updated.description = trimmed;
-      if (step === 4) updated.website = trimmed;
-      saveDraft(updated);
-      return updated;
-    });
+    if (step !== 4) {
+      setDraft(prev => {
+        let updated = { ...prev };
+        if (step === 1) updated.businessName = trimmed;
+        if (step === 2) updated.description = trimmed;
+        saveDraft(updated);
+        return updated;
+      });
+    }
 
     if (step === 1) {
       addBotMessage(`Got it! Describe what ${trimmed} does in one sentence.`);
@@ -149,10 +149,9 @@ export function useBotxOnboarding() {
   const open = useCallback(() => {
     sessionStorage.removeItem(SKIP_KEY);
     setIsOpen(true);
-    if (messages.length === 0) {
-      setMessages([{ role: 'bot', text: "Hi! 👋 What's your business name?" }]);
-    }
-  }, [messages.length]);
+    setMessages([{ role: 'bot', text: "Hi! 👋 What's your business name?" }]);
+    setStep(1);
+  }, []);
 
   return {
     isOpen,
