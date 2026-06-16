@@ -73,12 +73,13 @@ function Hero() {
                 Start Free Trial
                 <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
               </Link>
-              <Link
-                to="/check-chatbot"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-gray-300 border border-gray-700 rounded-2xl hover:bg-white/5 hover:border-green-500 hover:text-green-400 transition-all"
+              <button
+                onClick={() => (window as any).__botxOpenOnboarding?.()}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-green-400 border border-green-500/40 rounded-2xl hover:bg-green-500/10 hover:border-green-400 transition-all"
               >
-                Check Your AI Chatbot
-              </Link>
+                🤖 Build My Bot Free
+                <ArrowRight size={18} />
+              </button>
             </div>
 
             {/* Social proof */}
