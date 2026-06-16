@@ -64,6 +64,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
+  const applyBotDraft = async (tok: string) => {
+    const raw = localStorage.getItem('botx_bot_draft');
+    if (!raw) return;
+    try {
+      const draft = JSON.parse(raw);
+      if (!draft.completedAt) return;
+      await fetch(API_ENDPOINTS.bot.upsert, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tok}`,
+        },
+        body: JSON.stringify({
+          businessName: draft.businessName || '',
+          description: draft.description || '',
+          website: draft.website || '',
+          services: Array.isArray(draft.services) ? draft.services : [],
+          bookingLink: '',
+          productLink: '',
+          isEnabled: false,
+          excludedNumbers: [],
+          customSystemPrompt: '',
+        }),
+      });
+      localStorage.removeItem('botx_bot_draft');
+    } catch {
+      // Non-critical — silently ignore
+    }
+  };
+
   const login = async (email: string, password: string) => {
     try {
       const res = await apiFetch(API_ENDPOINTS.auth.login, {
@@ -74,10 +104,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) throw new Error(data.error || 'Login failed');
 
       const userData = data.data.user;
+      const tok = data.data.token;
 
-      localStorage.setItem('auth_token', data.data.token);
-      setToken(data.data.token);
+      localStorage.setItem('auth_token', tok);
+      setToken(tok);
       setUser(userData);
+      await applyBotDraft(tok);
     } catch (err: any) {
       throw err;
     }
@@ -91,15 +123,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Registration failed');
     const userData = data.data.user;
-    localStorage.setItem('auth_token', data.data.token);
-    setToken(data.data.token);
+    const tok = data.data.token;
+    localStorage.setItem('auth_token', tok);
+    setToken(tok);
     setUser(userData);
+    await applyBotDraft(tok);
   };
 
   const loginWithToken = (tok: string, userData: UserInfo) => {
     localStorage.setItem('auth_token', tok);
     setToken(tok);
     setUser(userData);
+    applyBotDraft(tok); // fire-and-forget
   };
 
   const logout = async () => {
