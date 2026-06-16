@@ -275,13 +275,13 @@ function PreviewScreen({ draft, onDismiss }: { draft: BotDraft; onDismiss: () =>
 
       <div className="flex-none px-5 py-4 border-t border-gray-100 space-y-2">
         <button
-          onClick={() => navigate('/signup')}
+          onClick={() => { onDismiss(); navigate('/signup'); }}
           className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-600/25 transition-all"
         >
           Activate My Bot <ArrowRight size={16} />
         </button>
         <button
-          onClick={() => navigate('/login')}
+          onClick={() => { onDismiss(); navigate('/login'); }}
           className="w-full text-center text-sm text-gray-500 hover:text-gray-700 transition-colors py-1"
         >
           Already have an account? Log in
