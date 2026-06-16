@@ -463,31 +463,55 @@ function HowItWorks() {
 }
 
 /* ─────────────── Pricing ─────────────── */
-const PLAN_META: Record<string, { name: string; desc: string; features: string[]; highlight?: boolean; isIndividual?: boolean }> = {
-  free: { name: 'Free Trial', desc: 'Perfect for trying things out', features: ['Send up to 10 messages total', 'Basic templates', 'CSV/Excel upload', 'WhatsApp QR connect'] },
-  whatsapp: { name: 'WhatsApp Service', desc: 'WhatsApp Bulk + Auto-reply Bot', features: ['1,000 messages/month', 'All templates + custom', 'Message scheduling', 'WhatsApp AI Bot included', 'Email Service (Free)'], highlight: true, isIndividual: true },
-  whatsapp_yearly: { name: 'WhatsApp Service', desc: 'WhatsApp Bulk + Auto-reply Bot', features: ['1,000 messages/month', 'All templates + custom', 'Message scheduling', 'WhatsApp AI Bot included', 'Email Service (Free)'], highlight: true, isIndividual: true },
-  chatbot: { name: 'Website Chatbot', desc: 'Embeddable AI Widget', features: ['Unlimited conversations', 'Custom AI Chatbot', 'Lead generation & capture', 'Custom brand styling', 'Email Service (Free)'], isIndividual: true },
-  chatbot_yearly: { name: 'Website Chatbot', desc: 'Embeddable AI Widget', features: ['Unlimited conversations', 'Custom AI Chatbot', 'Lead generation & capture', 'Custom brand styling', 'Email Service (Free)'], isIndividual: true },
-  starter: { name: 'Starter All-Access', desc: 'Great for small teams', features: ['WhatsApp + Chatbot + Email', '1,000 messages/month', 'All templates + custom', 'Basic support', 'API access'] },
-  starter_yearly: { name: 'Starter All-Access', desc: 'Great for small teams', features: ['WhatsApp + Chatbot + Email', '1,000 messages/month', 'All templates + custom', 'Basic support', 'API access'] },
-  growth: { name: 'Growth All-Access', desc: 'For growing businesses', features: ['WhatsApp + Chatbot + Email', '5,000 messages/month', 'Message scheduling', 'Detailed analytics', 'Priority support'], highlight: true },
-  growth_yearly: { name: 'Growth All-Access', desc: 'For growing businesses', features: ['WhatsApp + Chatbot + Email', '5,000 messages/month', 'Message scheduling', 'Detailed analytics', 'Priority support'], highlight: true },
-  business: { name: 'Business All-Access', desc: 'High-volume sending', features: ['WhatsApp + Chatbot + Email', '15,000 messages/month', 'Advanced automation', 'Bulk import up to 10K', 'Priority support'] },
-  business_yearly: { name: 'Business All-Access', desc: 'High-volume sending', features: ['WhatsApp + Chatbot + Email', '15,000 messages/month', 'Advanced automation', 'Bulk import up to 10K', 'Priority support'] },
-};
+interface PublicPlan {
+  plan: string;
+  name?: string;
+  description?: string;
+  amount: number;
+  messageLimit: number;
+  durationDays?: number;
+  services: string[];
+  features: string[];
+  isVisible: boolean;
+  isAdminOnly?: boolean;
+  displayOrder?: number;
+  highlight?: boolean;
+}
+
+function planBillingSuffix(p: PublicPlan): string {
+  const d = p.durationDays ?? 0;
+  if (d >= 365) return '/yr';
+  if (d >= 28) return '/mo';
+  if (d > 0) return `/${d}d`;
+  return '';
+}
+
+function defaultFeaturesFor(p: PublicPlan): string[] {
+  const out: string[] = [];
+  if (p.messageLimit === 0) out.push('Unlimited messages');
+  else out.push(`${p.messageLimit.toLocaleString()} messages/month`);
+  if (p.services.includes('whatsapp')) out.push('WhatsApp included');
+  if (p.services.includes('chatbot')) out.push('Website Chatbot included');
+  if (p.services.includes('email')) out.push('Email Service included');
+  return out;
+}
 
 function Pricing() {
-  const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
-  const [planType, setPlanType] = useState<'individual' | 'all-access'>('individual');
-  const [livePricing, setLivePricing] = useState<Record<string, { amount: number; messageLimit: number }> | null>(null);
+  const [plans, setPlans] = useState<PublicPlan[]>([]);
   const [currency, setCurrency] = useState({ symbol: '₹', isIndia: true, rate: 1 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/subscription/plans`)
       .then(r => r.json())
-      .then(d => { if (d.success && d.data) setLivePricing(d.data); })
+      .then(d => {
+        if (d.success && d.data) {
+          const arr = (Object.values(d.data) as PublicPlan[])
+            .filter(p => p && p.isVisible && !p.isAdminOnly)
+            .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.amount - b.amount);
+          setPlans(arr);
+        }
+      })
       .catch(() => { })
       .finally(() => setLoading(false));
 
@@ -503,20 +527,19 @@ function Pricing() {
   const fmt = (inr: number) =>
     currency.isIndia ? `₹${inr.toLocaleString('en-IN')}` : `$${(inr * currency.rate).toFixed(2)}`;
 
-  const displayKeys = planType === 'individual'
-    ? (billing === 'yearly' ? ['whatsapp_yearly', 'chatbot_yearly'] : ['whatsapp', 'chatbot'])
-    : (billing === 'yearly' ? ['free', 'starter_yearly', 'growth_yearly', 'business_yearly'] : ['free', 'starter', 'growth', 'business']);
+  const cols = plans.length >= 4 ? 'lg:grid-cols-4' : plans.length === 3 ? 'lg:grid-cols-3' : plans.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1';
+  const wrap = plans.length <= 2 ? 'max-w-3xl mx-auto' : '';
 
   return (
     <section id="pricing" className="bg-white py-24 sm:py-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
+        <div className="text-center max-w-2xl mx-auto mb-12">
           <p className="text-sm font-semibold text-green-600 tracking-wide uppercase mb-3">Pricing</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
             Simple, transparent pricing
           </h2>
-          <p className="text-lg text-gray-500">Start free, upgrade when you need more. No hidden fees, ever.</p>
+          <p className="text-lg text-gray-500">No hidden fees. Cancel anytime.</p>
           {!currency.isIndia && (
             <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full">
               <Globe size={13} className="text-blue-500" />
@@ -525,108 +548,71 @@ function Pricing() {
           )}
         </div>
 
-        {/* Plan Type toggle */}
-        <div className="flex justify-center mb-6">
-          <div className="inline-flex bg-gray-100 p-1 rounded-xl">
-            <button
-              onClick={() => setPlanType('individual')}
-              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                planType === 'individual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Individual Services
-            </button>
-            <button
-              onClick={() => setPlanType('all-access')}
-              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                planType === 'all-access' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              All-Access Bundles
-            </button>
-          </div>
-        </div>
-
-        {/* Billing toggle */}
-        <div className="flex items-center justify-center gap-3 mb-12">
-          <button onClick={() => setBilling('monthly')} className={`text-sm font-semibold transition-colors ${billing === 'monthly' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>Monthly</button>
-          <button type="button" onClick={() => setBilling(b => b === 'monthly' ? 'yearly' : 'monthly')}
-            className={`relative inline-flex h-6 w-11 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${billing === 'yearly' ? 'bg-green-500' : 'bg-gray-300'}`}>
-            <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${billing === 'yearly' ? 'translate-x-5' : 'translate-x-0'}`} />
-          </button>
-          <button onClick={() => setBilling('yearly')} className={`text-sm font-semibold transition-colors ${billing === 'yearly' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
-            Yearly <span className="ml-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">Save ~17%</span>
-          </button>
-        </div>
-
         {/* Cards */}
-        <div className={`grid grid-cols-1 sm:grid-cols-2 ${planType === 'all-access' ? 'lg:grid-cols-4' : 'max-w-3xl mx-auto'} gap-6`}>
-          {displayKeys.map((key) => {
-            const meta = PLAN_META[key]; if (!meta) return null;
-            const isFree = key === 'free';
-            const liveData = livePricing?.[key];
-            const rawAmount = liveData?.amount ?? 0;
-            const msgLimit = liveData?.messageLimit ?? 10;
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${cols} ${wrap} gap-6`}>
+          {loading && plans.length === 0 && (
+            <div className="col-span-full text-center text-gray-400 text-sm py-16">Loading plans…</div>
+          )}
+          {plans.map((plan) => {
+            const isFree = plan.amount === 0;
+            const features = plan.features.length > 0 ? plan.features : defaultFeaturesFor(plan);
 
             return (
-              <div key={key} className={`relative rounded-2xl p-8 flex flex-col transition-all duration-300 ${meta.highlight
+              <div key={plan.plan} className={`relative rounded-2xl p-8 flex flex-col transition-all duration-300 ${plan.highlight
                 ? 'bg-gradient-to-b from-gray-900 to-gray-950 text-white border-2 border-green-500/30 shadow-2xl shadow-green-500/10 scale-[1.02]'
                 : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg'
                 }`}>
-                {meta.highlight && (
+                {plan.highlight && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-xs font-bold text-white tracking-wide shadow-lg whitespace-nowrap">
-                    MOST POPULAR
+                    BEST VALUE
                   </div>
                 )}
 
                 {/* Name */}
                 <div className="mb-6">
-                  <h3 className={`text-lg font-bold mb-1 ${meta.highlight ? 'text-white' : 'text-gray-900'}`}>{meta.name}</h3>
-                  <p className={`text-sm ${meta.highlight ? 'text-gray-400' : 'text-gray-500'}`}>{meta.desc}</p>
+                  <h3 className={`text-lg font-bold mb-1 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>{plan.name || plan.plan}</h3>
+                  {plan.description && (
+                    <p className={`text-sm ${plan.highlight ? 'text-gray-400' : 'text-gray-500'}`}>{plan.description}</p>
+                  )}
                 </div>
 
                 {/* Price */}
                 <div className="mb-2 min-h-[56px]">
-                  {loading && !isFree ? (
-                    <div className="h-10 w-28 bg-gray-200 rounded animate-pulse" />
-                  ) : (
-                    <div className="flex items-baseline gap-1">
-                      <span className={`text-4xl font-extrabold tracking-tight ${meta.highlight ? 'text-white' : 'text-gray-900'}`}>
-                        {isFree ? 'Free' : fmt(rawAmount)}
+                  <div className="flex items-baseline gap-1">
+                    <span className={`text-4xl font-extrabold tracking-tight ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
+                      {isFree ? 'Free' : fmt(plan.amount)}
+                    </span>
+                    {!isFree && (
+                      <span className={`text-base ${plan.highlight ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {planBillingSuffix(plan)}
                       </span>
-                      {!isFree && (
-                        <span className={`text-base ${meta.highlight ? 'text-gray-400' : 'text-gray-500'}`}>
-                          /{billing === 'yearly' ? 'yr' : 'mo'}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {isFree && <p className={`text-xs mt-0.5 ${meta.highlight ? 'text-gray-400' : 'text-gray-500'}`}>{msgLimit} messages</p>}
-                  {!isFree && billing === 'yearly' && !loading && rawAmount > 0 && (
-                    <p className={`text-xs mt-0.5 font-medium ${meta.highlight ? 'text-green-400' : 'text-green-600'}`}>
-                      ≈ {fmt(Math.round(rawAmount / 12))}/month
+                    )}
+                  </div>
+                  {!isFree && (plan.durationDays ?? 0) >= 365 && plan.amount > 0 && (
+                    <p className={`text-xs mt-0.5 font-medium ${plan.highlight ? 'text-green-400' : 'text-green-600'}`}>
+                      ≈ {fmt(Math.round(plan.amount / 12))}/month
                     </p>
                   )}
-                  {!currency.isIndia && !isFree && !loading && rawAmount > 0 && (
-                    <p className={`text-xs mt-0.5 flex items-center gap-1 ${meta.highlight ? 'text-gray-500' : 'text-gray-400'}`}>
-                      <Globe size={10} />≈ ₹{rawAmount.toLocaleString('en-IN')} INR
+                  {!currency.isIndia && !isFree && plan.amount > 0 && (
+                    <p className={`text-xs mt-0.5 flex items-center gap-1 ${plan.highlight ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <Globe size={10} />≈ ₹{plan.amount.toLocaleString('en-IN')} INR
                     </p>
                   )}
                 </div>
 
                 {/* Features */}
                 <ul className="space-y-3 mb-8 flex-1 mt-6">
-                  {meta.features.map((f) => (
+                  {features.map((f) => (
                     <li key={f} className="flex items-start gap-2.5">
-                      <Check size={16} className={`mt-0.5 flex-shrink-0 ${meta.highlight ? 'text-green-400' : 'text-green-600'}`} />
-                      <span className={`text-sm ${meta.highlight ? 'text-gray-300' : 'text-gray-600'}`}>{f}</span>
+                      <Check size={16} className={`mt-0.5 flex-shrink-0 ${plan.highlight ? 'text-green-400' : 'text-green-600'}`} />
+                      <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>{f}</span>
                     </li>
                   ))}
                 </ul>
 
                 {/* CTA */}
                 <Link to={isFree ? '/signup' : '/subscription'}
-                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold transition-all ${meta.highlight
+                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold transition-all ${plan.highlight
                     ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-[1.02]'
                     : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}>

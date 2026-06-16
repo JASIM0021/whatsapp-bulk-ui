@@ -103,8 +103,8 @@ export function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {services.map((service) => {
             const plan = user?.subscription?.plan || 'free';
-            const isAllAccess = ['monthly', 'yearly', 'starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'unlimited_monthly', 'unlimited_yearly'].includes(plan);
-            const isLocked = !user?.subscription?.isActive || (plan === 'free' ? service.dbId !== 'whatsapp' : (!isAllAccess && !user.subscription.enabledServices?.includes(service.dbId)));
+            const enabled = user?.subscription?.enabledServices ?? [];
+            const isLocked = !user?.subscription?.isActive || (plan === 'free' ? service.dbId !== 'whatsapp' : !enabled.includes(service.dbId));
             return (
               <div 
                 key={service.id}

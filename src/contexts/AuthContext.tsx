@@ -50,13 +50,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data.success) {
           const userData = data.data;
-          if (userData?.subscription) {
-            const plan = userData.subscription.plan;
-            const isAllAccess = ['monthly', 'yearly', 'starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'unlimited_monthly', 'unlimited_yearly'].includes(plan);
-            if (isAllAccess && (!userData.subscription.enabledServices || userData.subscription.enabledServices.length === 0)) {
-              userData.subscription.enabledServices = ['whatsapp', 'chatbot', 'email'];
-            }
-          }
           setUser(userData);
           setToken(stored);
         } else {
@@ -81,13 +74,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) throw new Error(data.error || 'Login failed');
 
       const userData = data.data.user;
-      if (userData?.subscription) {
-        const plan = userData.subscription.plan;
-        const isAllAccess = ['monthly', 'yearly', 'starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'unlimited_monthly', 'unlimited_yearly'].includes(plan);
-        if (isAllAccess && (!userData.subscription.enabledServices || userData.subscription.enabledServices.length === 0)) {
-          userData.subscription.enabledServices = ['whatsapp', 'chatbot', 'email'];
-        }
-      }
 
       localStorage.setItem('auth_token', data.data.token);
       setToken(data.data.token);
@@ -105,26 +91,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Registration failed');
     const userData = data.data.user;
-    if (userData?.subscription) {
-      const plan = userData.subscription.plan;
-      const isAllAccess = ['monthly', 'yearly', 'starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'unlimited_monthly', 'unlimited_yearly'].includes(plan);
-      if (isAllAccess && (!userData.subscription.enabledServices || userData.subscription.enabledServices.length === 0)) {
-        userData.subscription.enabledServices = ['whatsapp', 'chatbot', 'email'];
-      }
-    }
     localStorage.setItem('auth_token', data.data.token);
     setToken(data.data.token);
     setUser(userData);
   };
 
   const loginWithToken = (tok: string, userData: UserInfo) => {
-    if (userData?.subscription) {
-      const plan = userData.subscription.plan;
-      const isAllAccess = ['monthly', 'yearly', 'starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'unlimited_monthly', 'unlimited_yearly'].includes(plan);
-      if (isAllAccess && (!userData.subscription.enabledServices || userData.subscription.enabledServices.length === 0)) {
-        userData.subscription.enabledServices = ['whatsapp', 'chatbot', 'email'];
-      }
-    }
     localStorage.setItem('auth_token', tok);
     setToken(tok);
     setUser(userData);

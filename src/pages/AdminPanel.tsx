@@ -85,8 +85,17 @@ interface Invoice {
 
 interface PlanConfigData {
   plan: string;
+  name?: string;
+  description?: string;
   amount: number;
   messageLimit: number;
+  durationDays?: number;
+  services: string[];
+  features: string[];
+  isVisible: boolean;
+  isAdminOnly?: boolean;
+  displayOrder?: number;
+  highlight?: boolean;
 }
 
 interface ActivityData {
@@ -275,10 +284,11 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
   const [saving, setSaving] = useState(false);
 
   // Plan update state
-  const [planToSet, setPlanToSet] = useState('starter');
+  const [planToSet, setPlanToSet] = useState('monthly');
   const [planDays, setPlanDays] = useState('');
   const [planSaving, setPlanSaving] = useState(false);
   const [planMsg, setPlanMsg] = useState('');
+  const [planOptions, setPlanOptions] = useState<PlanConfigData[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -286,10 +296,18 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
       setRole(user.role as 'user' | 'admin');
       setError('');
       setPlanMsg('');
-      setPlanToSet(user.subscription?.plan || 'starter');
+      setPlanToSet(user.subscription?.plan || 'monthly');
       setPlanDays('');
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!open) return;
+    apiFetch(API_ENDPOINTS.admin.plans)
+      .then(r => r.json())
+      .then(d => { if (d.success) setPlanOptions(d.data || []); })
+      .catch(() => { /* ignore */ });
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -389,34 +407,29 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
           </p>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: 'free',               label: 'Free Trial' },
-                { value: 'starter',            label: 'Starter Monthly' },
-                { value: 'starter_yearly',     label: 'Starter Yearly' },
-                { value: 'growth',             label: 'Growth Monthly' },
-                { value: 'growth_yearly',      label: 'Growth Yearly' },
-                { value: 'business',           label: 'Business Monthly' },
-                { value: 'business_yearly',    label: 'Business Yearly' },
-                { value: 'monthly',            label: 'Legacy Monthly' },
-                { value: 'yearly',             label: 'Legacy Yearly' },
-                { value: 'unlimited_monthly',  label: '∞ Unlimited Monthly' },
-                { value: 'unlimited_yearly',   label: '∞ Unlimited Yearly' },
-              ].map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setPlanToSet(value)}
-                  className={`py-2 rounded-lg text-xs font-medium border transition-colors ${
-                    planToSet === value
-                      ? value.startsWith('unlimited')
-                        ? 'bg-purple-50 border-purple-400 text-purple-700'
-                        : 'bg-amber-50 border-amber-300 text-amber-700'
-                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+              {planOptions.map(p => {
+                const value = p.plan;
+                const label = p.name || value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPlanToSet(value)}
+                    className={`py-2 rounded-lg text-xs font-medium border transition-colors ${
+                      planToSet === value
+                        ? p.isAdminOnly
+                          ? 'bg-purple-50 border-purple-400 text-purple-700'
+                          : 'bg-amber-50 border-amber-300 text-amber-700'
+                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+              {planOptions.length === 0 && (
+                <p className="col-span-2 text-xs text-gray-400 text-center py-4">Loading plans…</p>
+              )}
             </div>
             <div className="flex gap-2 items-center">
               <input
@@ -1091,52 +1104,146 @@ function InvoicesTab() {
 }
 
 /* ─── Plans Tab ─── */
+const ALL_SERVICES = ['whatsapp', 'chatbot', 'email'] as const;
+
+interface PlanFormState {
+  plan: string;
+  name: string;
+  description: string;
+  amount: string;
+  messageLimit: string;
+  durationDays: string;
+  services: string[];
+  features: string;
+  isVisible: boolean;
+  isAdminOnly: boolean;
+  displayOrder: string;
+  highlight: boolean;
+}
+
+const emptyForm = (): PlanFormState => ({
+  plan: '',
+  name: '',
+  description: '',
+  amount: '0',
+  messageLimit: '0',
+  durationDays: '30',
+  services: [],
+  features: '',
+  isVisible: true,
+  isAdminOnly: false,
+  displayOrder: '0',
+  highlight: false,
+});
+
+const formFromPlan = (p: PlanConfigData): PlanFormState => ({
+  plan: p.plan,
+  name: p.name ?? '',
+  description: p.description ?? '',
+  amount: String(p.amount),
+  messageLimit: String(p.messageLimit),
+  durationDays: String(p.durationDays ?? 30),
+  services: p.services ?? [],
+  features: (p.features ?? []).join('\n'),
+  isVisible: !!p.isVisible,
+  isAdminOnly: !!p.isAdminOnly,
+  displayOrder: String(p.displayOrder ?? 0),
+  highlight: !!p.highlight,
+});
+
 function PlansTab() {
-  const [planConfigs, setPlanConfigs] = useState<PlanConfigData[]>([]);
-  const [editValues, setEditValues] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState<string | null>(null);
-  const [saved, setSaved] = useState<string | null>(null);
+  const [plans, setPlans] = useState<PlanConfigData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<{ mode: 'create' | 'edit'; form: PlanFormState } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await apiFetch(API_ENDPOINTS.admin.plans);
-        const data = await res.json();
-        if (data.success) {
-          setPlanConfigs(data.data || []);
-          const vals: Record<string, string> = {};
-          for (const p of (data.data || []) as PlanConfigData[]) {
-            vals[p.plan] = p.plan === 'free' ? String(p.messageLimit) : String(p.amount);
-          }
-          setEditValues(vals);
-        }
-      } catch { /* ignore */ }
-      finally { setLoading(false); }
-    })();
-  }, []);
-
-  const handleSave = async (planName: string) => {
-    const val = parseFloat(editValues[planName] || '0');
-    if (isNaN(val) || val < 0) return;
-    setSaving(planName);
+  const load = async () => {
+    setLoading(true);
     try {
-      const body = planName === 'free'
-        ? { messageLimit: Math.floor(val) }
-        : { amount: val };
-      const res = await apiFetch(API_ENDPOINTS.admin.plan(planName), {
-        method: 'PUT',
+      const res = await apiFetch(API_ENDPOINTS.admin.plans);
+      const data = await res.json();
+      if (data.success) setPlans(data.data || []);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const startCreate = () => { setError(null); setEditing({ mode: 'create', form: emptyForm() }); };
+  const startEdit = (p: PlanConfigData) => { setError(null); setEditing({ mode: 'edit', form: formFromPlan(p) }); };
+  const closeModal = () => { setEditing(null); setError(null); };
+
+  const submitForm = async () => {
+    if (!editing) return;
+    const f = editing.form;
+    if (!f.plan.trim()) { setError('Plan ID is required'); return; }
+    const body = {
+      plan: f.plan.trim().toLowerCase(),
+      name: f.name,
+      description: f.description,
+      amount: parseFloat(f.amount) || 0,
+      messageLimit: parseInt(f.messageLimit) || 0,
+      durationDays: parseInt(f.durationDays) || 30,
+      services: f.services,
+      features: f.features.split('\n').map(s => s.trim()).filter(Boolean),
+      isVisible: f.isVisible,
+      isAdminOnly: f.isAdminOnly,
+      displayOrder: parseInt(f.displayOrder) || 0,
+      highlight: f.highlight,
+    };
+
+    setSaving(true);
+    setError(null);
+    try {
+      const url = editing.mode === 'create'
+        ? API_ENDPOINTS.admin.plans
+        : API_ENDPOINTS.admin.plan(body.plan);
+      const res = await apiFetch(url, {
+        method: editing.mode === 'create' ? 'POST' : 'PUT',
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (data.success) {
-        setSaved(planName);
-        setTimeout(() => setSaved(null), 2000);
-      } else {
-        alert(data.error || 'Failed to save');
+      if (!data.success) {
+        setError(data.error || 'Failed to save');
+        return;
       }
-    } catch { alert('Failed to save plan config'); }
-    finally { setSaving(null); }
+      await load();
+      closeModal();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to save plan');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const togglePlan = async (p: PlanConfigData, field: 'isVisible' | 'highlight') => {
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.plan(p.plan), {
+        method: 'PUT',
+        body: JSON.stringify({
+          amount: p.amount,
+          messageLimit: p.messageLimit,
+          [field]: !p[field],
+        }),
+      });
+      const data = await res.json();
+      if (data.success) load();
+      else alert(data.error || 'Failed to update');
+    } catch { alert('Failed to update plan'); }
+  };
+
+  const deletePlan = async (p: PlanConfigData) => {
+    if (!confirm(`Delete plan "${p.plan}"? This cannot be undone.`)) return;
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.plan(p.plan), { method: 'DELETE' });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Failed to delete');
+        return;
+      }
+      load();
+    } catch { alert('Failed to delete plan'); }
   };
 
   if (loading) return (
@@ -1145,56 +1252,190 @@ function PlansTab() {
     </div>
   );
 
-  const planMeta: Record<string, { label: string; description: string; prefix?: string; suffix: string }> = {
-    starter:         { label: 'Starter Monthly',  description: 'Starter plan monthly price',      prefix: '₹', suffix: '/month' },
-    starter_yearly:  { label: 'Starter Yearly',   description: 'Starter plan yearly price',       prefix: '₹', suffix: '/year' },
-    growth:          { label: 'Growth Monthly',   description: 'Growth plan monthly price',       prefix: '₹', suffix: '/month' },
-    growth_yearly:   { label: 'Growth Yearly',    description: 'Growth plan yearly price',        prefix: '₹', suffix: '/year' },
-    business:        { label: 'Business Monthly', description: 'Business plan monthly price',     prefix: '₹', suffix: '/month' },
-    business_yearly: { label: 'Business Yearly',  description: 'Business plan yearly price',      prefix: '₹', suffix: '/year' },
-    addon_messages:  { label: 'Msg Add-On',       description: '+1,000 messages add-on price',   prefix: '₹', suffix: '/pack' },
-    free:            { label: 'Free Trial',        description: 'Message limit for free trial',                suffix: ' messages' },
-    monthly:         { label: 'Legacy Monthly',   description: 'Legacy ₹500 grandfathered plan', prefix: '₹', suffix: '/month' },
-    yearly:          { label: 'Legacy Yearly',    description: 'Legacy ₹5K grandfathered plan',  prefix: '₹', suffix: '/year' },
-  };
-
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">Plan Pricing</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {['starter', 'starter_yearly', 'growth', 'growth_yearly', 'business', 'business_yearly', 'addon_messages', 'free', 'monthly', 'yearly'].map(planName => {
-          const meta = planMeta[planName];
-          if (!meta) return null;
-          const isSaved = saved === planName;
-          const isSaving = saving === planName;
-          return (
-            <div key={planName} className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 mb-1">{meta.label}</h3>
-              <p className="text-xs text-gray-500 mb-4">{meta.description}</p>
-              <div className="flex items-center gap-1 mb-3">
-                {meta.prefix && <span className="text-gray-500 text-sm">{meta.prefix}</span>}
-                <input
-                  type="number"
-                  value={editValues[planName] ?? ''}
-                  onChange={e => setEditValues(prev => ({ ...prev, [planName]: e.target.value }))}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                  min="0"
-                  step="1"
-                />
-                <span className="text-gray-500 text-sm">{meta.suffix}</span>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Plans</h2>
+          <p className="text-sm text-gray-500">Manage the subscription catalog. Visible non-admin plans show on the public pricing page.</p>
+        </div>
+        <button onClick={startCreate}
+          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg">
+          + Add Plan
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+            <tr>
+              <th className="px-3 py-2 text-left">Order</th>
+              <th className="px-3 py-2 text-left">ID</th>
+              <th className="px-3 py-2 text-left">Name</th>
+              <th className="px-3 py-2 text-right">Price (₹)</th>
+              <th className="px-3 py-2 text-right">Days</th>
+              <th className="px-3 py-2 text-right">Msg limit</th>
+              <th className="px-3 py-2 text-left">Services</th>
+              <th className="px-3 py-2 text-center">Visible</th>
+              <th className="px-3 py-2 text-center">Highlight</th>
+              <th className="px-3 py-2 text-center">Flags</th>
+              <th className="px-3 py-2 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {plans.map(p => (
+              <tr key={p.plan} className="hover:bg-gray-50">
+                <td className="px-3 py-2 text-gray-500">{p.displayOrder ?? 0}</td>
+                <td className="px-3 py-2 font-mono text-xs text-gray-700">{p.plan}</td>
+                <td className="px-3 py-2 text-gray-900">{p.name || <span className="text-gray-400 italic">—</span>}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{p.amount.toLocaleString()}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{p.durationDays ?? '-'}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{p.messageLimit === 0 ? '∞' : p.messageLimit.toLocaleString()}</td>
+                <td className="px-3 py-2 text-xs text-gray-600">{(p.services ?? []).join(', ') || <span className="text-gray-400">none</span>}</td>
+                <td className="px-3 py-2 text-center">
+                  <button onClick={() => togglePlan(p, 'isVisible')}
+                    className={`w-10 h-5 rounded-full ${p.isVisible ? 'bg-green-500' : 'bg-gray-300'} relative transition-colors`}>
+                    <span className={`absolute top-0.5 ${p.isVisible ? 'right-0.5' : 'left-0.5'} w-4 h-4 bg-white rounded-full transition-all`} />
+                  </button>
+                </td>
+                <td className="px-3 py-2 text-center">
+                  <button onClick={() => togglePlan(p, 'highlight')}
+                    className={`w-10 h-5 rounded-full ${p.highlight ? 'bg-amber-500' : 'bg-gray-300'} relative transition-colors`}>
+                    <span className={`absolute top-0.5 ${p.highlight ? 'right-0.5' : 'left-0.5'} w-4 h-4 bg-white rounded-full transition-all`} />
+                  </button>
+                </td>
+                <td className="px-3 py-2 text-center text-xs">
+                  {p.isAdminOnly && <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">admin-only</span>}
+                </td>
+                <td className="px-3 py-2 text-right space-x-1">
+                  <button onClick={() => startEdit(p)} className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded">Edit</button>
+                  <button onClick={() => deletePlan(p)} className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded">Delete</button>
+                </td>
+              </tr>
+            ))}
+            {plans.length === 0 && (
+              <tr><td colSpan={11} className="px-3 py-8 text-center text-gray-400">No plans yet — click "Add Plan" to create one.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {editing && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">{editing.mode === 'create' ? 'New Plan' : `Edit ${editing.form.plan}`}</h3>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <div className="p-5 space-y-4">
+              {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">{error}</div>}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Plan ID</label>
+                  <input type="text" value={editing.form.plan}
+                    disabled={editing.mode === 'edit'}
+                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, plan: e.target.value } }))}
+                    placeholder="lowercase_with_underscores"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono disabled:bg-gray-50 disabled:text-gray-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Display name</label>
+                  <input type="text" value={editing.form.name}
+                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, name: e.target.value } }))}
+                    placeholder="e.g. Monthly Unlimited"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                </div>
               </div>
-              <button onClick={() => handleSave(planName)} disabled={isSaving}
-                className={`w-full py-2 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${
-                  isSaved ? 'bg-green-500' : 'bg-green-600 hover:bg-green-700'
-                }`}>
-                {isSaved ? '✓ Saved!' : isSaving ? 'Saving...' : 'Save'}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                <input type="text" value={editing.form.description}
+                  onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, description: e.target.value } }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Price (₹)</label>
+                  <input type="number" min="0" step="1" value={editing.form.amount}
+                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, amount: e.target.value } }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Duration (days)</label>
+                  <input type="number" min="1" step="1" value={editing.form.durationDays}
+                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, durationDays: e.target.value } }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Msg limit (0 = ∞)</label>
+                  <input type="number" min="0" step="1" value={editing.form.messageLimit}
+                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, messageLimit: e.target.value } }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Display order</label>
+                  <input type="number" step="1" value={editing.form.displayOrder}
+                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, displayOrder: e.target.value } }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-2">Services included</label>
+                <div className="flex gap-4">
+                  {ALL_SERVICES.map(svc => (
+                    <label key={svc} className="flex items-center gap-1.5 text-sm">
+                      <input type="checkbox" checked={editing.form.services.includes(svc)}
+                        onChange={e => setEditing(s => s && ({
+                          ...s,
+                          form: {
+                            ...s.form,
+                            services: e.target.checked
+                              ? [...s.form.services, svc]
+                              : s.form.services.filter(x => x !== svc),
+                          },
+                        }))} />
+                      {svc}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Features (one per line)</label>
+                <textarea value={editing.form.features}
+                  onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, features: e.target.value } }))}
+                  rows={4}
+                  placeholder="Unlimited messages&#10;Priority support"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono" />
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={editing.form.isVisible}
+                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, isVisible: e.target.checked } }))} />
+                  Visible on pricing page
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={editing.form.highlight}
+                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, highlight: e.target.checked } }))} />
+                  Highlight
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={editing.form.isAdminOnly}
+                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, isAdminOnly: e.target.checked, isVisible: e.target.checked ? false : s.form.isVisible } }))} />
+                  Admin-only (never sold)
+                </label>
+              </div>
+            </div>
+            <div className="p-5 border-t border-gray-100 flex justify-end gap-2">
+              <button onClick={closeModal}
+                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+                Cancel
+              </button>
+              <button onClick={submitForm} disabled={saving}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">
+                {saving ? 'Saving…' : editing.mode === 'create' ? 'Create plan' : 'Save changes'}
               </button>
             </div>
-          );
-        })}
-      </div>
-      {planConfigs.length === 0 && !loading && (
-        <p className="text-sm text-gray-400">No plan configs found — defaults are in use.</p>
+          </div>
+        </div>
       )}
     </div>
   );

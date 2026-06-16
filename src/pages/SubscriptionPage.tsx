@@ -69,145 +69,53 @@ interface PaymentRecord {
   createdAt: string;
 }
 
-interface PlanInfo {
-  id: string;
-  monthlyId: string;
-  yearlyId: string;
+interface PublicPlan {
+  plan: string;
   name: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  msgLimit: string;
+  description: string;
+  amount: number;
+  messageLimit: number;
+  durationDays: number;
+  services: string[];
   features: string[];
-  icon: React.ElementType;
-  color: string;
-  btnClass: string;
-  popular?: boolean;
+  highlight: boolean;
+  isVisible: boolean;
+  isAdminOnly: boolean;
+  displayOrder: number;
 }
 
-const individualServices: PlanInfo[] = [
-  {
-    id: 'whatsapp',
-    monthlyId: 'whatsapp_monthly',
-    yearlyId: 'whatsapp_yearly',
-    name: 'WhatsApp Service',
-    monthlyPrice: 699,
-    yearlyPrice: 6990,
-    msgLimit: '1,000 messages/month',
-    features: [
-      '1,000 WhatsApp messages per month',
-      'All WhatsApp templates',
-      'Message scheduling',
-      'WhatsApp AI Bot',
-      'Email Service (Free)',
-    ],
-    icon: Zap,
-    color: 'from-green-500 to-green-600',
-    btnClass: 'bg-green-600 hover:bg-green-700',
-  },
-  {
-    id: 'chatbot',
-    monthlyId: 'chatbot_monthly',
-    yearlyId: 'chatbot_yearly',
-    name: 'Website Chatbot',
-    monthlyPrice: 699,
-    yearlyPrice: 6990,
-    msgLimit: 'Unlimited conversations',
-    features: [
-      'Custom AI Chatbot',
-      'Embed on any website',
-      'Lead generation & capture',
-      'Custom brand styling',
-      'Email Service (Free)',
-    ],
-    icon: Code,
-    color: 'from-sky-500 to-sky-600',
-    btnClass: 'bg-sky-600 hover:bg-sky-700',
+type LivePricing = Record<string, PublicPlan>;
+
+// Pick a visual style (icon + gradient colors) based on the plan's services
+// and price tier. This is the only "presentation" logic that is not driven by
+// admin-controlled data — it's a small heuristic so the cards still look good
+// when admin creates a brand-new plan.
+function planVisuals(p: PublicPlan): { icon: React.ElementType; color: string; btnClass: string } {
+  const onlyChatbot = p.services.length === 1 && p.services[0] === 'chatbot';
+  if (p.plan === 'free' || p.amount === 0) {
+    return { icon: Shield, color: 'from-gray-500 to-gray-600', btnClass: 'bg-gray-500 hover:bg-gray-600' };
   }
-];
+  if (onlyChatbot) {
+    return { icon: Code, color: 'from-sky-500 to-sky-600', btnClass: 'bg-sky-600 hover:bg-sky-700' };
+  }
+  if (p.highlight) {
+    return { icon: Crown, color: 'from-violet-500 to-violet-600', btnClass: 'bg-violet-600 hover:bg-violet-700' };
+  }
+  if (p.durationDays >= 365) {
+    return { icon: Crown, color: 'from-amber-500 to-amber-600', btnClass: 'bg-amber-600 hover:bg-amber-700' };
+  }
+  return { icon: Zap, color: 'from-green-500 to-green-600', btnClass: 'bg-green-600 hover:bg-green-700' };
+}
 
-const plans: PlanInfo[] = [
-  {
-    id: 'free',
-    monthlyId: 'free',
-    yearlyId: 'free',
-    name: 'Free Trial',
-    monthlyPrice: 0,
-    yearlyPrice: 0,
-    msgLimit: '10 messages total',
-    features: [
-      'Send up to 10 messages total',
-      'Basic templates',
-      'File upload (Excel/CSV)',
-      'WhatsApp QR connect',
-    ],
-    icon: Shield,
-    color: 'from-gray-500 to-gray-600',
-    btnClass: 'bg-gray-500 hover:bg-gray-600',
-  },
-  {
-    id: 'starter',
-    monthlyId: 'starter',
-    yearlyId: 'starter_yearly',
-    name: 'Starter All-Access',
-    monthlyPrice: 599,
-    yearlyPrice: 5990,
-    msgLimit: '1,000 messages/month',
-    features: [
-      'WhatsApp + Chatbot + Email',
-      '1,000 messages per month',
-      'All templates + custom',
-      'Basic support',
-      'API access',
-    ],
-    icon: Zap,
-    color: 'from-indigo-500 to-indigo-600',
-    btnClass: 'bg-indigo-600 hover:bg-indigo-700',
-  },
-  {
-    id: 'growth',
-    monthlyId: 'growth',
-    yearlyId: 'growth_yearly',
-    name: 'Growth All-Access',
-    monthlyPrice: 1299,
-    yearlyPrice: 12990,
-    msgLimit: '5,000 messages/month',
-    features: [
-      'WhatsApp + Chatbot + Email',
-      '5,000 messages per month',
-      'Message scheduling',
-      'Detailed analytics',
-      'Priority support',
-      'API access',
-    ],
-    icon: Crown,
-    color: 'from-violet-500 to-violet-600',
-    btnClass: 'bg-violet-600 hover:bg-violet-700',
-    popular: true,
-  },
-  {
-    id: 'business',
-    monthlyId: 'business',
-    yearlyId: 'business_yearly',
-    name: 'Business All-Access',
-    monthlyPrice: 1999,
-    yearlyPrice: 19990,
-    msgLimit: '15,000 messages/month',
-    features: [
-      'WhatsApp + Chatbot + Email',
-      '15,000 messages per month',
-      'Advanced automation',
-      'Bulk import up to 10K',
-      'Priority support',
-      'API access',
-    ],
-    icon: Zap,
-    color: 'from-amber-500 to-amber-600',
-    btnClass: 'bg-amber-600 hover:bg-amber-700',
-  },
-];
+function describeMessageLimit(p: PublicPlan): string {
+  if (p.messageLimit === 0) return 'Unlimited messages';
+  return `${p.messageLimit.toLocaleString()} messages/month`;
+}
 
-interface LivePricing {
-  [plan: string]: { amount: number; messageLimit: number };
+function planBillingLabel(p: PublicPlan): string {
+  if (p.durationDays >= 365) return '/year';
+  if (p.durationDays >= 28) return '/month';
+  return `/${p.durationDays}d`;
 }
 
 interface APIKeyInfo {
@@ -428,8 +336,6 @@ export function SubscriptionPage() {
   const [promoValidation, setPromoValidation] = useState<ValidatePromoResponse | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
-  const [planType, setPlanType] = useState<'individual' | 'all-access'>('individual');
   const [apiKeys, setApiKeys] = useState<APIKeyInfo[]>([]);
   const [apiKeysLoading, setApiKeysLoading] = useState(false);
   const [creatingKey, setCreatingKey] = useState(false);
@@ -717,88 +623,39 @@ export function SubscriptionPage() {
         <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">Choose Your Plan</h1>
         <p className="text-gray-500 text-center mb-6">Build your perfect marketing stack</p>
 
-        {/* Plan Type toggle */}
-        <div className="flex justify-center mb-6">
-          <div className="inline-flex bg-gray-100 p-1 rounded-xl">
-            <button
-              onClick={() => setPlanType('individual')}
-              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                planType === 'individual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Individual Services
-            </button>
-            <button
-              onClick={() => setPlanType('all-access')}
-              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                planType === 'all-access' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              All-Access Bundles
-            </button>
-          </div>
-        </div>
-
-        {/* Billing toggle */}
-        <div className="flex items-center justify-center gap-3 mb-10">
-          <button
-            onClick={() => setBilling('monthly')}
-            className={`text-sm font-medium transition-colors ${billing === 'monthly' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            Monthly
-          </button>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={billing === 'yearly'}
-            onClick={() => setBilling(b => b === 'monthly' ? 'yearly' : 'monthly')}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${billing === 'yearly' ? 'bg-violet-600' : 'bg-gray-300'}`}
-          >
-            <span
-              aria-hidden="true"
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${billing === 'yearly' ? 'translate-x-5' : 'translate-x-0'}`}
-            />
-          </button>
-          <button
-            onClick={() => setBilling('yearly')}
-            className={`text-sm font-medium transition-colors ${billing === 'yearly' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            Yearly <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">Save ~17%</span>
-          </button>
-        </div>
-
-        <div className={`grid grid-cols-1 sm:grid-cols-2 ${planType === 'all-access' ? 'md:grid-cols-4' : 'max-w-3xl mx-auto'} gap-4 mb-8`}>
-          {(planType === 'all-access' ? plans : individualServices).map((plan) => {
-            const Icon = plan.icon;
-            const activePlanId = billing === 'yearly' && plan.id !== 'free' ? plan.yearlyId : plan.monthlyId;
-            const isCurrent = (subscription?.plan === plan.monthlyId || subscription?.plan === plan.yearlyId) && subscription?.isActive;
-            const planRank: Record<string, number> = {
-              free: 0,
-              starter: 1, starter_yearly: 1,
-              growth: 2, growth_yearly: 2,
-              business: 3, business_yearly: 3,
-              monthly: 1, yearly: 1,
-            };
-            const currentRank = planRank[subscription?.plan ?? 'free'] ?? 0;
-            const isLowerThan = subscription?.isActive && planRank[plan.id] < currentRank;
-            const defaultPrice = billing === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice;
-            const livePrice = plan.id !== 'free' ? (livePricing?.[activePlanId]?.amount ?? defaultPrice) : 0;
-            const freeMsgLimit = livePricing?.['free']?.messageLimit ?? 10;
-            const displayPrice = plan.id === 'free' ? 0 : livePrice;
-            const displayFeatures = plan.id === 'free'
-              ? [`Send up to ${freeMsgLimit} messages total`, ...plan.features.slice(1)]
-              : plan.features;
+        {(() => {
+          const visiblePlans: PublicPlan[] = livePricing
+            ? Object.values(livePricing)
+                .filter((p): p is PublicPlan => !!p && p.isVisible && !p.isAdminOnly)
+                .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.amount - b.amount)
+            : [];
+          const cols = visiblePlans.length >= 4 ? 'md:grid-cols-4' : visiblePlans.length === 3 ? 'md:grid-cols-3' : visiblePlans.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-1';
+          const wrapClass = visiblePlans.length <= 2 ? 'max-w-3xl mx-auto' : '';
+          return (
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${cols} ${wrapClass} gap-4 mb-8`}>
+              {visiblePlans.length === 0 && (
+                <div className="col-span-full text-center py-16 text-gray-400 text-sm">
+                  Loading plans…
+                </div>
+              )}
+              {visiblePlans.map((plan) => {
+            const { icon: Icon, color, btnClass } = planVisuals(plan);
+            const activePlanId = plan.plan;
+            const isCurrent = subscription?.plan === plan.plan && subscription?.isActive;
+            const isLowerThan = false; // upgrade ranking is intentionally simple now — admin can re-order via DisplayOrder
+            const displayPrice = plan.amount;
+            const displayFeatures = plan.features.length > 0 ? plan.features : [describeMessageLimit(plan)];
 
             return (
               <div
-                key={plan.id}
+                key={plan.plan}
                 className={`relative bg-white rounded-2xl border-2 p-6 flex flex-col transition-all hover:shadow-lg ${
-                  plan.popular ? 'border-sky-500 shadow-sky-100 shadow-lg' : 'border-gray-200'
+                  plan.highlight ? 'border-sky-500 shadow-sky-100 shadow-lg' : 'border-gray-200'
                 } ${isCurrent ? 'ring-2 ring-green-500' : ''}`}
               >
-                {plan.popular && (
+                {plan.highlight && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="bg-sky-600 text-white text-xs font-bold px-4 py-1.5 rounded-full">MOST POPULAR</span>
+                    <span className="bg-sky-600 text-white text-xs font-bold px-4 py-1.5 rounded-full">BEST VALUE</span>
                   </div>
                 )}
                 {isCurrent && (
@@ -807,17 +664,20 @@ export function SubscriptionPage() {
                   </div>
                 )}
 
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-4`}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
 
-                <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+                <h3 className="text-xl font-bold text-gray-900">{plan.name || plan.plan}</h3>
+                {plan.description && (
+                  <p className="text-xs text-gray-500 mt-1 mb-1">{plan.description}</p>
+                )}
                 <div className="mt-2 mb-1">
                   <span className="text-4xl font-extrabold text-gray-900">
                     {displayPrice === 0 ? 'Free' : formatPrice(displayPrice)}
                   </span>
                   {displayPrice > 0 && (
-                    <span className="text-gray-500 text-sm">{billing === 'yearly' ? '/year' : '/month'}</span>
+                    <span className="text-gray-500 text-sm">{planBillingLabel(plan)}</span>
                   )}
                 </div>
                 {/* Show USD badge for international */}
@@ -829,7 +689,7 @@ export function SubscriptionPage() {
                     </span>
                   </div>
                 )}
-                <p className="text-xs text-gray-400 mb-4">{plan.id === 'free' ? `${freeMsgLimit} messages` : plan.msgLimit}</p>
+                <p className="text-xs text-gray-400 mb-4">{describeMessageLimit(plan)}</p>
 
                 <ul className="flex-1 space-y-3 mb-6">
                   {displayFeatures.map((f, i) => (
@@ -840,7 +700,7 @@ export function SubscriptionPage() {
                   ))}
                 </ul>
 
-                {plan.id === 'free' ? (
+                {plan.amount === 0 ? (
                   <button disabled className="w-full py-3 rounded-xl bg-gray-100 text-gray-400 font-medium cursor-not-allowed">
                     {isCurrent ? 'Current Plan' : 'Trial Only'}
                   </button>
@@ -907,7 +767,7 @@ export function SubscriptionPage() {
                           ? 'bg-green-500 text-white cursor-not-allowed'
                           : isLowerThan
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : `${plan.btnClass} text-white`
+                          : `${btnClass} text-white`
                       } disabled:opacity-80`}
                     >
                       {paying === activePlanId ? (
@@ -922,7 +782,7 @@ export function SubscriptionPage() {
                       ) : promoValidation?.valid && selectedPlan === activePlanId ? (
                         `Pay ₹${promoValidation.finalAmount.toLocaleString()}`
                       ) : (
-                        `Get ${plan.name}`
+                        `Get ${plan.name || plan.plan}`
                       )}
                     </button>
                   </>
@@ -930,7 +790,9 @@ export function SubscriptionPage() {
               </div>
             );
           })}
-        </div>
+            </div>
+          );
+        })()}
 
         {/* Extra Messages Add-On */}
         {subscription?.isActive && subscription.messageLimit > 0 && subscription.plan !== 'free' && (
@@ -938,7 +800,7 @@ export function SubscriptionPage() {
             <div>
               <p className="font-semibold text-amber-900">Need more messages?</p>
               <p className="text-sm text-amber-700 mt-0.5">
-                Buy an extra 1,000 messages for ₹{(livePricing?.['addon_messages']?.amount ?? 199).toLocaleString()} — added instantly to your current plan.
+                Buy an extra 1,000 messages for ₹{(livePricing?.addon_messages?.amount ?? 199).toLocaleString()} — added instantly to your current plan.
               </p>
             </div>
             <button
