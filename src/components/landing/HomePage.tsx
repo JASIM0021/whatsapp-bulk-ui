@@ -501,6 +501,7 @@ function Pricing() {
   const [plans, setPlans] = useState<PublicPlan[]>([]);
   const [currency, setCurrency] = useState({ symbol: '₹', isIndia: true, rate: 1 });
   const [loading, setLoading] = useState(true);
+  const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/subscription/plans`)
@@ -528,8 +529,15 @@ function Pricing() {
   const fmt = (inr: number) =>
     currency.isIndia ? `₹${inr.toLocaleString('en-IN')}` : `$${(inr * currency.rate).toFixed(2)}`;
 
-  const cols = plans.length >= 4 ? 'lg:grid-cols-4' : plans.length === 3 ? 'lg:grid-cols-3' : plans.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1';
-  const wrap = plans.length <= 2 ? 'max-w-3xl mx-auto' : '';
+  const visiblePlans = plans.filter(p => {
+    const d = p.durationDays ?? 0;
+    if (p.amount === 0) return true; // free plan always visible
+    if (billing === 'yearly') return d >= 365;
+    return d < 365 && d > 0;
+  });
+
+  const cols = visiblePlans.length >= 4 ? 'lg:grid-cols-4' : visiblePlans.length === 3 ? 'lg:grid-cols-3' : visiblePlans.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1';
+  const wrap = visiblePlans.length <= 2 ? 'max-w-3xl mx-auto' : '';
 
   return (
     <section id="pricing" className="bg-white py-24 sm:py-32">
@@ -541,6 +549,32 @@ function Pricing() {
             Simple, transparent pricing
           </h2>
           <p className="text-lg text-gray-500">No hidden fees. Cancel anytime.</p>
+
+          {/* Billing toggle */}
+          <div className="inline-flex items-center mt-6 bg-gray-100 rounded-xl p-1 gap-1">
+            <button
+              onClick={() => setBilling('monthly')}
+              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                billing === 'monthly'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling('yearly')}
+              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+                billing === 'yearly'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Yearly
+              <span className="text-xs font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">Save 20%</span>
+            </button>
+          </div>
+
           {!currency.isIndia && (
             <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full">
               <Globe size={13} className="text-blue-500" />
@@ -554,7 +588,7 @@ function Pricing() {
           {loading && plans.length === 0 && (
             <div className="col-span-full text-center text-gray-400 text-sm py-16">Loading plans…</div>
           )}
-          {plans.map((plan) => {
+          {visiblePlans.map((plan) => {
             const isFree = plan.amount === 0;
             const features = plan.features.length > 0 ? plan.features : defaultFeaturesFor(plan);
 
