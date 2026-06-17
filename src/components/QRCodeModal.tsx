@@ -21,6 +21,11 @@ export function QRCodeModal({ isOpen, onClose, onConnected, token }: QRCodeModal
   const [retryCount, setRetryCount] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onCloseRef = useRef(onClose);
+  const onConnectedRef = useRef(onConnected);
+
+  useEffect(() => { onCloseRef.current = onClose; });
+  useEffect(() => { onConnectedRef.current = onConnected; });
 
   const connectSSE = useCallback(() => {
     if (eventSourceRef.current) {
@@ -46,10 +51,10 @@ export function QRCodeModal({ isOpen, onClose, onConnected, token }: QRCodeModal
           setIsAuthenticated(true);
         } else if (data.type === 'ready') {
           setIsReady(true);
-          if (onConnected) onConnected();
+          if (onConnectedRef.current) onConnectedRef.current();
           setTimeout(() => {
             eventSource.close();
-            onClose();
+            onCloseRef.current();
           }, 2000);
         } else if (data.type === 'timeout') {
           eventSource.close();
@@ -68,13 +73,13 @@ export function QRCodeModal({ isOpen, onClose, onConnected, token }: QRCodeModal
       setRetryCount(prev => {
         if (prev < 5) {
           retryTimerRef.current = setTimeout(() => {
-            setRetryCount(prev + 1);
+            setRetryCount(c => c + 1);
           }, 3000);
         }
         return prev;
       });
     };
-  }, [token, onConnected, onClose]);
+  }, [token]);
 
   // QR tab: connect SSE when open and on QR tab
   useEffect(() => {
