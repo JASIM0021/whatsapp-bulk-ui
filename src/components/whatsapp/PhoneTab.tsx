@@ -53,9 +53,12 @@ export function PhoneTab({ onConnected, token }: PhoneTabProps) {
     };
 
     es.onerror = () => {
-      cleanup();
-      setPhase('error');
-      setErrorMsg('Connection lost. Try again.');
+      if (es.readyState === EventSource.CLOSED) {
+        cleanup();
+        setPhase('error');
+        setErrorMsg('Connection lost. Try again.');
+      }
+      // If readyState is CONNECTING, browser is auto-retrying — do nothing
     };
   }, [token, onConnected, cleanup]);
 
@@ -69,6 +72,7 @@ export function PhoneTab({ onConnected, token }: PhoneTabProps) {
         method: 'POST',
         body: JSON.stringify({ phone: phone.trim() }),
       });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Failed to get code');
 
@@ -80,9 +84,12 @@ export function PhoneTab({ onConnected, token }: PhoneTabProps) {
       countdownRef.current = setInterval(() => {
         setSecondsLeft(prev => {
           if (prev <= 1) {
-            if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
-            setPhase('expired');
-            cleanup();
+            // Schedule expiry side-effects outside the updater (updaters must be pure)
+            setTimeout(() => {
+              if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+              setPhase(p => (p === 'code_shown' ? 'expired' : p));
+              cleanup();
+            }, 0);
             return 0;
           }
           return prev - 1;
