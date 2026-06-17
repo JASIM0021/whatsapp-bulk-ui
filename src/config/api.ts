@@ -28,6 +28,7 @@ export const WIDGET_BASE_URL = rawBackendUrl || (isDevelopment ? 'http://localho
 export const API_ENDPOINTS = {
   whatsapp: {
     init: `${API_BASE_URL}/api/whatsapp/init`,
+    pairPhone: `${API_BASE_URL}/api/whatsapp/pair-phone`,
     qr: `${SSE_BASE_URL}/api/whatsapp/qr`,           // SSE — direct to backend
     status: `${API_BASE_URL}/api/whatsapp/status`,
     disconnect: `${API_BASE_URL}/api/whatsapp/disconnect`,
