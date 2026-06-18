@@ -1,6 +1,6 @@
-import { StrictMode, useEffect } from 'react'
+import { StrictMode, useEffect, useCallback } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
 import App from './App.tsx'
@@ -31,6 +31,8 @@ import { SessionsPage } from './pages/SessionsPage'
 import { CheckChatbotPage } from './pages/CheckChatbotPage'
 import { ChatbotDemoPage } from './pages/ChatbotDemoPage'
 import { BotOnboardingModal } from './components/onboarding/BotOnboardingModal'
+import { SetupPage } from './pages/SetupPage';
+import { useSetupStatus } from './hooks/useSetupStatus';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -69,6 +71,30 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function SetupGuard() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { step1Done, isComplete, isLoading: statusLoading } = useSetupStatus();
+
+  const doRedirect = useCallback(() => {
+    if (authLoading || statusLoading) return;
+    if (!isAuthenticated) return;
+    if (location.pathname === '/setup') return;
+    if (localStorage.getItem('botx_setup_complete')) return;
+    if (!step1Done) return;
+    if (isComplete) {
+      localStorage.setItem('botx_setup_complete', '1');
+      return;
+    }
+    navigate('/setup', { replace: true });
+  }, [authLoading, statusLoading, isAuthenticated, step1Done, isComplete, navigate, location.pathname]);
+
+  useEffect(() => { doRedirect(); }, [doRedirect]);
+
+  return null;
+}
+
 function AppRoutes() {
 
   useEffect(() => {
@@ -83,6 +109,7 @@ function AppRoutes() {
   return (
     <>
       <BotOnboardingModal />
+      <SetupGuard />
       <Routes>
         {/* Public landing pages */}
       <Route path="/" element={<LandingLayout><HomePage /></LandingLayout>} />
@@ -100,6 +127,9 @@ function AppRoutes() {
       {/* Login / Signup */}
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><LoginPage /></PublicRoute>} />
+
+      {/* Setup flow — protected, no app shell */}
+      <Route path="/setup" element={<ProtectedRoute><SetupPage /></ProtectedRoute>} />
 
       {/* Payment result pages (accessible without auth - user returns from PayU) */}
       <Route path="/payment/success" element={<PaymentSuccess />} />
