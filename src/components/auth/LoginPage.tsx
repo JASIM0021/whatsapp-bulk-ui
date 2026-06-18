@@ -33,6 +33,11 @@ export function LoginPage() {
   // After login, redirect back to where the user came from (e.g. /check-chatbot)
   const redirectTo: string = (location.state as { redirect?: string })?.redirect || '/app';
 
+  const getPostAuthDest = () => {
+    if (hasBotDraft) return '/setup';
+    return redirectTo;
+  };
+
   useSEO({
     title: mode === 'login' ? 'Sign In - NexBotix' : 'Sign Up - NexBotix',
     description: mode === 'login' ? 'Sign in to access your NexBotix dashboard.' : 'Create a new account on NexBotix and get started with free messages today.',
@@ -126,7 +131,7 @@ export function LoginPage() {
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Google login failed');
         loginWithToken(data.data.token, data.data.user);
-        navigate(redirectTo);
+        navigate(getPostAuthDest());
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Google login failed');
       } finally {
@@ -192,7 +197,7 @@ export function LoginPage() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Invalid code');
       loginWithToken(data.data.token, data.data.user);
-      navigate(redirectTo);
+      navigate(getPostAuthDest());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
