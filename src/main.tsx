@@ -33,6 +33,7 @@ import { ChatbotDemoPage } from './pages/ChatbotDemoPage'
 import { BotOnboardingModal } from './components/onboarding/BotOnboardingModal'
 import { SetupPage } from './pages/SetupPage';
 import { useSetupStatus } from './hooks/useSetupStatus';
+import { DataDeletionPage } from './pages/DataDeletionPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -119,6 +120,7 @@ function AppRoutes() {
       <Route path="/docs" element={<LandingLayout><DevDocsPage /></LandingLayout>} />
       <Route path="/contact" element={<LandingLayout><ContactPage /></LandingLayout>} />
       <Route path="/about" element={<LandingLayout><AboutPage /></LandingLayout>} />
+      <Route path="/data-deletion" element={<LandingLayout><DataDeletionPage /></LandingLayout>} />
 
       {/* Public chatbot demo tool (no auth required) */}
       <Route path="/check-chatbot" element={<CheckChatbotPage />} />

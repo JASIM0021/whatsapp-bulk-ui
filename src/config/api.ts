@@ -146,6 +146,14 @@ export const API_ENDPOINTS = {
     create: `${API_BASE_URL}/api/admin/chatbot-demos`,
     delete: (id: string) => `${API_BASE_URL}/api/admin/chatbot-demos/${id}`,
   },
+  dataDeletion: {
+    submit: `${API_BASE_URL}/api/data-deletion`,
+  },
+  adminDeletion: {
+    list: `${API_BASE_URL}/api/admin/deletion-requests`,
+    approve: (id: string) => `${API_BASE_URL}/api/admin/deletion-requests/${id}/approve`,
+    reject: (id: string) => `${API_BASE_URL}/api/admin/deletion-requests/${id}/reject`,
+  },
 };
 
 /**

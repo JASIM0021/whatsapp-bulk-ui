@@ -63,7 +63,7 @@ interface AdminUser {
   };
 }
 
-type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos';
+type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions';
 
 interface Invoice {
   id: string;
@@ -2113,6 +2113,150 @@ function ChatbotDemosTab() {
   );
 }
 
+/* ─── Deletion Requests Tab ─── */
+interface DeletionRequest {
+  id: string;
+  name: string;
+  email: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  processed_at?: string;
+}
+
+function DeletionRequestsTab() {
+  const [requests, setRequests] = useState<DeletionRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('pending');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const fetch_ = async (status: string) => {
+    setLoading(true);
+    try {
+      const res = await apiFetch(`${API_ENDPOINTS.adminDeletion.list}?status=${status}`);
+      const data = await res.json();
+      if (data.success) setRequests(data.data || []);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetch_(statusFilter); }, [statusFilter]);
+
+  const handleAction = async (id: string, action: 'approve' | 'reject') => {
+    const url = action === 'approve'
+      ? API_ENDPOINTS.adminDeletion.approve(id)
+      : API_ENDPOINTS.adminDeletion.reject(id);
+    const label = action === 'approve' ? 'Approve & delete all user data' : 'Reject';
+    if (!confirm(`${label}?\n\nThis action cannot be undone.`)) return;
+    setActionLoading(id + action);
+    try {
+      const res = await apiFetch(url, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) fetch_(statusFilter);
+    } catch { /* ignore */ }
+    finally { setActionLoading(null); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900">Data Deletion Requests</h2>
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+          {(['pending', 'approved', 'rejected'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
+                statusFilter === s ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 size={22} className="animate-spin text-gray-400" />
+        </div>
+      ) : requests.length === 0 ? (
+        <div className="text-center py-12 text-gray-500 text-sm">No {statusFilter} requests.</div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Reason</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Submitted</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                  {statusFilter === 'pending' && (
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {requests.map((req) => (
+                  <tr key={req.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-900">{req.name}</td>
+                    <td className="px-4 py-3 text-gray-600">{req.email}</td>
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{req.reason || '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                      {new Date(req.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        req.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        req.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {req.status}
+                      </span>
+                    </td>
+                    {statusFilter === 'pending' && (
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleAction(req.id, 'approve')}
+                            disabled={actionLoading === req.id + 'approve'}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+                          >
+                            {actionLoading === req.id + 'approve' ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={12} />
+                            )}
+                            Approve & Delete
+                          </button>
+                          <button
+                            onClick={() => handleAction(req.id, 'reject')}
+                            disabled={actionLoading === req.id + 'reject'}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-700 text-xs font-medium rounded-lg transition-colors"
+                          >
+                            {actionLoading === req.id + 'reject' ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              <X size={12} />
+                            )}
+                            Reject
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Main Admin Panel ─── */
 export function AdminPanel() {
   const { user } = useAuth();
@@ -2146,6 +2290,7 @@ export function AdminPanel() {
     { id: 'promos', label: 'Promos', icon: Tag },
     { id: 'email', label: 'Email', icon: Mail },
     { id: 'demos', label: 'Chatbot Demos', icon: Bot },
+    { id: 'deletions', label: 'Deletion Requests', icon: Trash2 },
   ];
 
   return (
@@ -2201,6 +2346,7 @@ export function AdminPanel() {
         {tab === 'promos' && <PromosTab />}
         {tab === 'email' && <EmailTab />}
         {tab === 'demos' && <ChatbotDemosTab />}
+        {tab === 'deletions' && <DeletionRequestsTab />}
       </div>
     </div>
   );

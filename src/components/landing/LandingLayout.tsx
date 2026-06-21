@@ -159,6 +159,7 @@ function Footer() {
               <li><Link to="/privacy" className="text-sm hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms" className="text-sm hover:text-white transition-colors">Terms of Service</Link></li>
               <li><Link to="/refund" className="text-sm hover:text-white transition-colors">Refund Policy</Link></li>
+              <li><Link to="/data-deletion" className="text-sm hover:text-white transition-colors">Data Deletion</Link></li>
             </ul>
           </div>
 
@@ -183,6 +184,7 @@ function Footer() {
             <Link to="/privacy" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Privacy</Link>
             <Link to="/terms" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Terms</Link>
             <Link to="/refund" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Refund Policy</Link>
+            <Link to="/data-deletion" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Data Deletion</Link>
           </div>
         </div>
       </div>
