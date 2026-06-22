@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader, Ban, Sparkles, Code2, Shield, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader, Ban, Sparkles, Code2, Shield, User, ChevronDown, ChevronUp, RefreshCw, Check } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -49,6 +49,8 @@ export function BotSetupPage() {
   const [config, setConfig] = useState<BotConfig>(EMPTY);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCrawling, setIsCrawling] = useState(false);
+  const [crawlMsg, setCrawlMsg] = useState('');
   const [isToggeling, setIsToggeling] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [aiDetectionExpanded, setAiDetectionExpanded] = useState(false);
@@ -185,6 +187,45 @@ export function BotSetupPage() {
       showToast('Network error — could not update bot status', false);
     } finally {
       setIsToggeling(false);
+    }
+  };
+
+  const handleCrawl = async () => {
+    const raw = config.website.trim();
+    if (!raw) return;
+    // Auto-add https:// if missing — backend needs a full URL
+    const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    setIsCrawling(true);
+    setCrawlMsg('');
+    try {
+      const res = await apiFetch(API_ENDPOINTS.websiteChatbot.crawl, {
+        method: 'POST',
+        body: JSON.stringify({ url }),
+      });
+      const d = await res.json();
+      // Check both outer success AND inner CrawlResult.success
+      const innerOk = d.success && d.data && d.data.success !== false && d.data.businessName;
+      if (innerOk) {
+        setConfig(prev => ({
+          ...prev,
+          businessName: d.data.businessName || prev.businessName,
+          description: d.data.description || prev.description,
+          services: d.data.services?.length
+            ? d.data.services.slice(0, 5).concat(Array(5).fill('')).slice(0, 5)
+            : prev.services,
+        }));
+        setCrawlMsg('Auto-filled from your website!');
+        setTimeout(() => setCrawlMsg(''), 4000);
+      } else {
+        const errMsg = d.data?.error || d.error || 'Could not extract data — check the URL';
+        setToast({ msg: errMsg, ok: false });
+        setTimeout(() => setToast(null), 5000);
+      }
+    } catch {
+      setToast({ msg: 'Network error during crawl', ok: false });
+      setTimeout(() => setToast(null), 4000);
+    } finally {
+      setIsCrawling(false);
     }
   };
 
@@ -335,13 +376,33 @@ export function BotSetupPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
                 <Globe size={13} /> Website <span className="text-gray-400 font-normal">(optional)</span>
               </label>
-              <input
-                type="url"
-                value={config.website}
-                onChange={e => setConfig(prev => ({ ...prev, website: e.target.value }))}
-                placeholder="https://yourwebsite.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={config.website}
+                  onChange={e => setConfig(prev => ({ ...prev, website: e.target.value }))}
+                  placeholder="https://yourwebsite.com"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleCrawl}
+                  disabled={isCrawling || !config.website.trim()}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                >
+                  <RefreshCw size={13} className={isCrawling ? 'animate-spin' : ''} />
+                  {isCrawling ? 'Crawling…' : 'Crawl Website'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+                <span className="text-blue-400">💡</span>
+                Auto-fills name, description &amp; services from your website.
+              </p>
+              {crawlMsg && (
+                <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
+                  <Check size={12} /> {crawlMsg}
+                </p>
+              )}
             </div>
           </div>
 

@@ -103,8 +103,10 @@ function Step1ReviewBot({ onContinue }: { onContinue: () => void }) {
     setConfig(p => ({ ...p, services: p.services.filter((_, idx) => idx !== i) }));
 
   const handleCrawl = async () => {
-    const url = config.website.trim();
-    if (!url) { setError('Enter a website URL first'); return; }
+    const raw = config.website.trim();
+    if (!raw) { setError('Enter a website URL first'); return; }
+    // Auto-add https:// if missing
+    const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
     setIsCrawling(true);
     setCrawlMsg('');
     setError('');
@@ -114,7 +116,8 @@ function Step1ReviewBot({ onContinue }: { onContinue: () => void }) {
         body: JSON.stringify({ url }),
       });
       const d = await res.json();
-      if (d.success && d.data) {
+      const innerOk = d.success && d.data && d.data.success !== false && d.data.businessName;
+      if (innerOk) {
         setConfig(prev => ({
           ...prev,
           businessName: d.data.businessName || prev.businessName,
@@ -124,7 +127,7 @@ function Step1ReviewBot({ onContinue }: { onContinue: () => void }) {
         setCrawlMsg('Details auto-filled from your website!');
         setTimeout(() => setCrawlMsg(''), 4000);
       } else {
-        setError(d.error || 'Crawl failed — try again');
+        setError(d.data?.error || d.error || 'Could not extract data — check the URL');
       }
     } catch {
       setError('Network error during crawl');
