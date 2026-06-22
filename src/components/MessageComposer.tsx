@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Message } from '@/types/message';
-import { MessageSquare, Link, Image as ImageIcon, Upload, X, FileText, Plus, Trash2, Clock } from 'lucide-react';
+import { MessageSquare, Link, Image as ImageIcon, Upload, X, FileText, Plus, Trash2, Clock, Flag } from 'lucide-react';
 import { apiFetch, API_BASE_URL } from '@/config/api';
 import { Template } from '@/types/template';
 import { TemplateSelector } from './templates/TemplateSelector';
@@ -30,7 +30,7 @@ const createEmptySet = (): MessageSet => ({
 interface MessageComposerProps {
   isOpen: boolean;
   onClose: () => void;
-  onSend: (messages: Message[], scheduledAt?: Date) => void;
+  onSend: (messages: Message[], scheduledAt?: Date, campaignName?: string) => void;
   selectedCount: number;
   inline?: boolean;
   isWhatsAppConnected?: boolean;
@@ -56,6 +56,10 @@ export function MessageComposer({
   // Schedule state
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');  // datetime-local string
+
+  // Campaign state
+  const [createCampaign, setCreateCampaign] = useState(false);
+  const [campaignName, setCampaignName] = useState('');
 
   // Preview text for set[0] with template variable resolution
   const previewText = useMemo(() => {
@@ -206,7 +210,8 @@ export function MessageComposer({
     });
 
     const scheduleDate = scheduleEnabled && scheduledAt ? new Date(scheduledAt) : undefined;
-    onSend(messages, scheduleDate);
+    const campaign = createCampaign && campaignName.trim() ? campaignName.trim() : undefined;
+    onSend(messages, scheduleDate, campaign);
 
     // Reset state
     messageSets.forEach(s => {
@@ -217,6 +222,8 @@ export function MessageComposer({
     setVariableValues({});
     setScheduleEnabled(false);
     setScheduledAt('');
+    setCreateCampaign(false);
+    setCampaignName('');
     if (!inline) onClose();
   };
 
@@ -513,6 +520,39 @@ export function MessageComposer({
         )}
       </div>
 
+      {/* Campaign toggle */}
+      <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+        <label className="flex items-center gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={createCampaign}
+            onChange={e => setCreateCampaign(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+          />
+          <div className="flex items-center gap-2">
+            <Flag size={16} className={createCampaign ? 'text-green-600' : 'text-gray-400'} />
+            <span className={`text-sm font-medium ${createCampaign ? 'text-green-700' : 'text-gray-600'}`}>
+              Save as campaign
+            </span>
+          </div>
+        </label>
+
+        {createCampaign && (
+          <div className="pl-1">
+            <label className="block text-xs text-gray-500 mb-1">Campaign name <span className="text-red-400">*</span></label>
+            <input
+              type="text"
+              value={campaignName}
+              onChange={e => setCampaignName(e.target.value)}
+              placeholder="e.g. Summer Sale 2025"
+              maxLength={80}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-400 mt-1">Track replies and delivery stats under Campaigns.</p>
+          </div>
+        )}
+      </div>
+
       {/* Actions */}
       <div className="flex justify-end gap-3">
         {!inline && (
@@ -524,7 +564,7 @@ export function MessageComposer({
           <Button
             variant="primary"
             onClick={handleSend}
-            disabled={validSetCount === 0 || (scheduleEnabled && !scheduledAt) || (inline && !isWhatsAppConnected)}
+            disabled={validSetCount === 0 || (scheduleEnabled && !scheduledAt) || (inline && !isWhatsAppConnected) || (createCampaign && !campaignName.trim())}
             className={scheduleEnabled ? '!bg-blue-600 hover:!bg-blue-700' : ''}
           >
             {scheduleEnabled ? (

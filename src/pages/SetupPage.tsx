@@ -464,6 +464,8 @@ function Step3ActivateBot() {
   const navigate = useNavigate();
   const [botName, setBotName] = useState('Your Bot');
   const [services, setServices] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [fullConfig, setFullConfig] = useState<Record<string, any>>({});
   const [isActivating, setIsActivating] = useState(false);
   const [isActivated, setIsActivated] = useState(false);
   const [error, setError] = useState('');
@@ -475,6 +477,7 @@ function Step3ActivateBot() {
         if (d.success && d.data) {
           setBotName(d.data.businessName || 'Your Bot');
           setServices(Array.isArray(d.data.services) ? d.data.services : []);
+          setFullConfig(d.data);
         }
       })
       .catch(() => {});
@@ -486,7 +489,7 @@ function Step3ActivateBot() {
     try {
       const res = await apiFetch(API_ENDPOINTS.bot.upsert, {
         method: 'POST',
-        body: JSON.stringify({ isEnabled: true }),
+        body: JSON.stringify({ ...fullConfig, isEnabled: true }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Activation failed');

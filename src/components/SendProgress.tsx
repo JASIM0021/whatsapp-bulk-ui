@@ -13,6 +13,7 @@ interface SendProgressProps {
   onWorkInBackground?: (jobId: string) => void;
   contacts: any[];
   messages: any[];
+  campaignName?: string;
 }
 
 export function SendProgress({
@@ -22,6 +23,7 @@ export function SendProgress({
   onWorkInBackground,
   contacts,
   messages,
+  campaignName: campaignNameProp,
 }: SendProgressProps) {
   const [progress, setProgress] = useState<SendProgressType>({
     total: contacts.length,
@@ -32,9 +34,14 @@ export function SendProgress({
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bgMode, setBgMode] = useState<null | 'loading' | 'active'>(null);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [campaignName, setCampaignName] = useState(campaignNameProp ?? '');
 
   const hasSentRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // Capture contacts+messages at send-start; parent may clear selection before bg-send fires
+  const sentContactsRef = useRef<any[]>(contacts);
+  const sentMessagesRef = useRef<any[]>(messages);
 
   useEffect(() => {
     if (!isOpen || contacts.length === 0) return;
@@ -45,17 +52,23 @@ export function SendProgress({
     }
     hasSentRef.current = true;
 
+    // Snapshot the contacts/messages NOW — before the parent can clear selection
+    sentContactsRef.current = contacts;
+    sentMessagesRef.current = messages;
+
     setProgress({ total: contacts.length, sent: 0, failed: 0, errors: [] });
     setIsComplete(false);
     setError(null);
     setBgMode(null);
+    setShowNamePrompt(false);
+    setCampaignName(campaignNameProp ?? '');
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
     apiFetch(API_ENDPOINTS.whatsapp.send, {
       method: 'POST',
-      body: JSON.stringify({ contacts, messages }),
+      body: JSON.stringify({ contacts, messages, campaignName: campaignNameProp?.trim() || undefined }),
       signal: controller.signal,
     })
       .then((response) => {
@@ -117,14 +130,18 @@ export function SendProgress({
 
   const handleWorkInBackground = async () => {
     setBgMode('loading');
+    setShowNamePrompt(false);
     try {
       const res = await apiFetch(API_ENDPOINTS.whatsapp.sendBg, {
         method: 'POST',
-        body: JSON.stringify({ contacts, messages }),
+        body: JSON.stringify({
+          contacts: sentContactsRef.current,
+          messages: sentMessagesRef.current,
+          campaignName: campaignName.trim() || undefined,
+        }),
       });
       const json = await res.json();
       if (json.success && json.data?.jobId) {
-        // Abort the SSE stream now that background job has started
         abortControllerRef.current?.abort();
         setBgMode('active');
         onWorkInBackground?.(json.data.jobId);
@@ -149,7 +166,6 @@ export function SendProgress({
       maxWidth="xl"
     >
       {bgMode === 'active' ? (
-        /* Background confirmation screen */
         <div className="py-8 flex flex-col items-center gap-5 text-center">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
             <Mail className="text-blue-600" size={30} />
@@ -246,22 +262,51 @@ export function SendProgress({
             </div>
           )}
 
+          {/* Campaign name prompt — inline, shown before moving to background */}
+          {showNamePrompt && (
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+              <p className="text-sm font-semibold text-gray-900">Name this campaign</p>
+              <p className="text-xs text-gray-500 -mt-1">Give it a memorable name so you can find it in Campaigns.</p>
+              <input
+                type="text"
+                placeholder="e.g. June Promo, Product Launch…"
+                value={campaignName}
+                onChange={e => setCampaignName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleWorkInBackground() }}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowNamePrompt(false)}
+                  className="flex-1 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleWorkInBackground}
+                  disabled={bgMode === 'loading'}
+                  className="flex-1 px-3 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  {bgMode === 'loading' ? (
+                    <><Loader className="animate-spin" size={14} /> Starting…</>
+                  ) : 'Start Campaign'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex items-center justify-between gap-3 pt-1">
-            {/* Work in Background — only while sending is active */}
-            {!isComplete && !error && (
+            {!isComplete && !error && !showNamePrompt && (
               <Button
                 variant="secondary"
-                onClick={handleWorkInBackground}
+                onClick={() => setShowNamePrompt(true)}
                 disabled={bgMode === 'loading'}
                 className="flex items-center gap-2"
               >
-                {bgMode === 'loading' ? (
-                  <Loader className="animate-spin shrink-0" size={15} />
-                ) : (
-                  <Layers size={15} className="shrink-0" />
-                )}
-                {bgMode === 'loading' ? 'Moving to background…' : 'Work in Background'}
+                <Layers size={15} className="shrink-0" />
+                Work in Background
               </Button>
             )}
 

@@ -2,6 +2,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles } from 'lucide-react';
 
+function FacebookIcon({ size = 32 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12.07h2.54V9.845c0-2.507 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562v1.875h2.773l-.443 2.89h-2.33v6.988C20.343 21.201 24 17.064 24 12.073z" />
+    </svg>
+  );
+}
+
 export function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -47,7 +55,19 @@ export function DashboardPage() {
       iconBg: 'bg-purple-100',
       path: '/website-chatbot',
       dbId: 'chatbot',
-    }
+    },
+    {
+      id: 'facebook',
+      title: 'Facebook Pages',
+      description: 'Publish posts, schedule content, and view reach analytics for your Facebook Pages.',
+      icon: <FacebookIcon size={32} />,
+      bg: 'bg-blue-50',
+      border: 'border-blue-100',
+      hoverBorder: 'hover:border-blue-400',
+      iconBg: 'bg-blue-100',
+      path: '/facebook',
+      dbId: 'facebook',
+    },
   ];
 
   return (
@@ -100,7 +120,7 @@ export function DashboardPage() {
           <p className="text-gray-500 text-lg max-w-2xl">Select a service below to start managing your communications, running campaigns, and capturing leads.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {services.map((service) => {
             const plan = user?.subscription?.plan || 'free';
             const enabled = user?.subscription?.enabledServices ?? [];

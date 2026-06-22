@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { FileUpload } from '@/components/FileUpload';
 import { ContactsTable } from '@/components/ContactsTable';
 import { MessageComposer } from '@/components/MessageComposer';
@@ -42,7 +42,15 @@ function App() {
   const [showScheduledJobs, setShowScheduledJobs] = useState(false);
   const [scheduleToast, setScheduleToast] = useState('');
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
+  const [currentCampaignName, setCurrentCampaignName] = useState<string | undefined>(undefined);
   const [bgJobs, setBgJobs] = useState<BgJob[]>([]);
+
+  // Draggable panel divider
+  const [panelWidth, setPanelWidth] = useState(58); // left panel % width
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartWidth = useRef(58);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [showTour, setShowTour] = useState(false);
   const [mobileTab, setMobileTab] = useState<'send' | 'contacts' | 'schedule' | 'more'>('send');
@@ -230,7 +238,7 @@ function App() {
     setTimeout(checkWhatsAppStatus, 1000);
   };
 
-  const handleSendMessages = async (messages: Message[], scheduledAt?: Date) => {
+  const handleSendMessages = async (messages: Message[], scheduledAt?: Date, campaignName?: string) => {
     setShowMessageComposer(false);
 
     if (scheduledAt) {
@@ -242,6 +250,7 @@ function App() {
             contacts: selectedContacts.map(c => ({ phone: c.formattedPhone || c.phone, name: c.name || '' })),
             messages,
             scheduledAt: scheduledAt.toISOString(),
+            campaignName: campaignName || undefined,
           }),
         });
         const json = await res.json();
@@ -261,6 +270,7 @@ function App() {
 
     // Immediate send
     setCurrentMessages(messages);
+    setCurrentCampaignName(campaignName);
     setShowSendProgress(true);
   };
 
@@ -297,162 +307,204 @@ function App() {
     setMobileTab('send');
   };
 
+  const handleDividerMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartWidth.current = panelWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      const containerW = containerRef.current.getBoundingClientRect().width;
+      const delta = ev.clientX - dragStartX.current;
+      const newPct = dragStartWidth.current + (delta / containerW) * 100;
+      setPanelWidth(Math.min(70, Math.max(30, newPct)));
+    };
+
+    const onMouseUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
   const selectedContacts = contacts.filter((c) => selection[c.id]);
   const selectedCount = selectedContacts.length;
 
   return (
     <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="flex-none bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+      <header className="flex-none bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0">
           {/* Desktop header */}
-          <div className="hidden md:flex items-center justify-between gap-4">
+          <div className="hidden md:flex items-center h-14 gap-3">
 
-            {/* Left: Logo + title */}
-            <div className="flex items-center gap-4 shrink-0">
+            {/* Left: back + logo */}
+            <div className="flex items-center gap-3 shrink-0">
               <button
                 onClick={() => navigate('/app')}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
                 title="Back to Dashboard"
               >
-                <ArrowLeft size={18} className="text-gray-600" />
+                <ArrowLeft size={17} />
               </button>
-              <div className="flex items-center gap-2.5">
-                <img src="/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
-                <div>
-                  <h1 className="text-sm font-bold text-gray-900 leading-tight">WhatsApp Campaign</h1>
-                  <p className="text-[11px] text-gray-400">Send bulk messages efficiently</p>
-                </div>
+              <div className="flex items-center gap-2">
+                <img src="/icon-192.png" alt="Logo" className="w-7 h-7 rounded-lg object-contain" />
+                <span className="text-sm font-semibold text-gray-900">WhatsApp Campaign</span>
               </div>
             </div>
 
-            {/* Right: all controls */}
-            <div className="flex items-center gap-2">
+            <div className="w-px h-5 bg-gray-200 mx-0.5" />
 
-              {/* WhatsApp connection */}
-              <div data-tour="step-connect">
-                {isWhatsAppConnected ? (
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      <span className="text-xs font-medium text-green-700">Connected</span>
-                    </div>
-                    <Button variant="secondary" size="sm" onClick={handleDisconnectWhatsApp}>
-                      Disconnect
-                    </Button>
+            {/* WhatsApp status */}
+            <div data-tour="step-connect" className="flex items-center gap-1.5 shrink-0">
+              {isWhatsAppConnected ? (
+                <>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 border border-green-200 rounded-full">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-[11px] font-semibold text-green-700 tracking-wide">CONNECTED</span>
                   </div>
-                ) : (
-                  <Button variant="primary" size="sm" onClick={handleConnectWhatsApp} disabled={connectionStatus === 'connecting'}>
-                    <Smartphone className="mr-1.5" size={15} />
-                    {connectionStatus === 'connecting' ? 'Connecting…' : 'Connect WhatsApp'}
-                  </Button>
-                )}
-              </div>
-
-              <div className="w-px h-5 bg-gray-200 mx-1" />
-
-              {/* Icon nav buttons */}
-              <div className="flex items-center gap-0.5">
-                <button
-                  onClick={() => setShowScheduledJobs(true)}
-                  title="Scheduled messages"
-                  className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                >
-                  <CalendarClock size={17} />
-                </button>
-                {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('whatsapp') && (
                   <button
-                    onClick={() => navigate('/bot')}
-                    title="AI Chatbot"
-                    className="p-2 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                    onClick={handleDisconnectWhatsApp}
+                    className="px-2.5 py-1 text-[11px] font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full border border-gray-200 hover:border-red-200 transition-colors"
                   >
-                    <Bot size={17} />
+                    Disconnect
                   </button>
-                )}
-                {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('chatbot') && (
-                  <button
-                    onClick={() => navigate('/website-chatbot')}
-                    title="Website Chatbot"
-                    className="p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
-                  >
-                    <Globe size={17} />
-                  </button>
-                )}
-                <button
-                  onClick={() => navigate('/security')}
-                  title="Security Settings"
-                  className="p-2 rounded-lg text-gray-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                >
-                  <Lock size={17} />
-                </button>
-                {user?.role === 'admin' && (
-                  <button
-                    onClick={() => navigate('/admin')}
-                    title="Admin Panel"
-                    className="p-2 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-colors"
-                  >
-                    <Shield size={17} />
-                  </button>
-                )}
-                {/* ── Email Channel Switch ── */}
-                {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('email') && (
-                  <button
-                    onClick={() => navigate('/email')}
-                    title="Switch to Email Channel"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 ml-1 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-xs font-semibold border border-blue-200"
-                  >
-                    <Mail size={14} />
-                    <span className="hidden sm:inline">Email</span>
-                  </button>
-                )}
-              </div>
+                </>
+              ) : (
+                <Button variant="primary" size="sm" onClick={handleConnectWhatsApp} disabled={connectionStatus === 'connecting'}>
+                  <Smartphone className="mr-1.5" size={14} />
+                  {connectionStatus === 'connecting' ? 'Connecting…' : 'Connect WhatsApp'}
+                </Button>
+              )}
+            </div>
 
-              <div className="w-px h-5 bg-gray-200 mx-1" />
+            <div className="w-px h-5 bg-gray-200 mx-0.5" />
 
-              {/* Subscription badge */}
+            {/* Nav buttons — consistent neutral style, icon + label */}
+            <nav className="flex items-center gap-1">
+              {/* Schedule */}
               <button
-                onClick={() => navigate('/subscription')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${!user?.subscription?.isActive
-                  ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                onClick={() => setShowScheduledJobs(true)}
+                title="Scheduled messages"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors text-xs font-medium"
+              >
+                <CalendarClock size={14} className="text-blue-500" />
+                <span>Schedule</span>
+              </button>
+
+              {/* AI Bot */}
+              {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('whatsapp') && (
+                <button
+                  onClick={() => navigate('/bot')}
+                  title="AI WhatsApp Bot"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors text-xs font-medium"
+                >
+                  <Bot size={14} className="text-violet-500" />
+                  <span>AI Bot</span>
+                </button>
+              )}
+
+              {/* Campaigns */}
+              <button
+                onClick={() => navigate('/campaigns')}
+                title="Campaign history & lead tracking"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors text-xs font-medium"
+              >
+                <MessageSquare size={14} className="text-emerald-500" />
+                <span>Campaigns</span>
+              </button>
+
+              {/* Email channel switch */}
+              {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('email') && (
+                <button
+                  onClick={() => navigate('/email')}
+                  title="Switch to Email Channel"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors text-xs font-medium"
+                >
+                  <Mail size={14} className="text-sky-500" />
+                  <span>Email</span>
+                </button>
+              )}
+
+              {/* Icon-only utilities */}
+              {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('chatbot') && (
+                <button onClick={() => navigate('/website-chatbot')} title="Website Chatbot"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                  <Globe size={15} />
+                </button>
+              )}
+              <button onClick={() => navigate('/security')} title="Security Settings"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                <Lock size={15} />
+              </button>
+              {user?.role === 'admin' && (
+                <button onClick={() => navigate('/admin')} title="Admin Panel"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                  <Shield size={15} />
+                </button>
+              )}
+            </nav>
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Subscription badge */}
+            <button
+              onClick={() => navigate('/subscription')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors shrink-0 ${
+                !user?.subscription?.isActive
+                  ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
                   : user?.subscription?.plan === 'free'
                     ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                     : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                  }`}
-              >
-                <Crown size={13} />
-                <span className="capitalize">
-                  {user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'Free'}
+              }`}
+            >
+              <Crown size={11} />
+              <span>{(() => {
+                const plan = user?.subscription?.plan || ''
+                if (plan === 'free') return 'Trial'
+                if (plan.includes('yearly')) return 'Yearly'
+                if (plan.includes('monthly')) return 'Monthly'
+                if (plan.includes('chatbot')) return 'Chatbot'
+                return plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : 'Free'
+              })()}</span>
+              {user?.subscription?.isActive && user?.subscription?.plan === 'free' && (
+                <span className={`font-normal ${user.subscription.messagesUsed >= user.subscription.messageLimit - 10 ? 'text-red-600 font-bold' : 'opacity-70'}`}>
+                  · {user.subscription.messagesUsed}/{user.subscription.messageLimit}
                 </span>
-                {user?.subscription?.isActive && (
-                  user?.subscription?.plan === 'free' ? (
-                    <span className={user.subscription.messagesUsed >= user.subscription.messageLimit - 10 ? 'text-red-600 font-semibold' : ''}>
-                      · {user.subscription.messagesUsed}/{user.subscription.messageLimit}
-                    </span>
-                  ) : (
-                    <span className={user.subscription.daysLeft <= 3 ? 'text-red-600 font-semibold' : ''}>
-                      · {user.subscription.daysLeft}d
-                    </span>
-                  )
-                )}
-              </button>
+              )}
+              {user?.subscription?.isActive && user?.subscription?.plan !== 'free' && user?.subscription?.daysLeft > 0 && user?.subscription?.daysLeft <= 90 && (
+                <span className={`font-normal ${user.subscription.daysLeft <= 7 ? 'text-red-600 font-bold' : 'opacity-70'}`}>
+                  · {user.subscription.daysLeft}d
+                </span>
+              )}
+            </button>
 
-              {/* User avatar + name */}
-              <div className="flex items-center gap-2 pl-1">
-                <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                  <User size={14} className="text-primary-600" />
-                </div>
-                <span className="text-sm font-medium text-gray-700 max-w-[100px] truncate">{user?.name}</span>
+            {/* User avatar */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center shrink-0">
+                <span className="text-[11px] font-bold text-white">
+                  {user?.name?.charAt(0)?.toUpperCase() || <User size={12} className="text-white" />}
+                </span>
               </div>
-
-              {/* Logout */}
-              <button
-                onClick={handleLogout}
-                title="Logout"
-                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-              >
-                <LogOut size={16} />
-              </button>
+              <span className="text-xs font-medium text-gray-700 max-w-[80px] truncate hidden lg:block">{user?.name?.split(' ')[0]}</span>
             </div>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              title="Logout"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
 
           {/* Mobile: simplified header */}
@@ -477,9 +529,11 @@ function App() {
                 </div>
                 <button
                   onClick={() => setMobileTab('more')}
-                  className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center"
                 >
-                  <User size={15} className="text-primary-600" />
+                  <span className="text-[11px] font-bold text-white">
+                    {user?.name?.charAt(0)?.toUpperCase() || '?'}
+                  </span>
                 </button>
               </div>
             </div>
@@ -504,6 +558,33 @@ function App() {
                   {connectionStatus === 'connecting' ? 'Connecting...' : 'Connect WhatsApp'}
                 </Button>
               )}
+            </div>
+
+            {/* Row 3: Feature shortcuts */}
+            <div className="mt-2 pt-2 border-t border-gray-100 flex gap-1.5">
+              <button
+                onClick={() => setShowScheduledJobs(true)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-50 text-gray-700 border border-gray-200 text-xs font-medium active:bg-gray-100 transition-colors"
+              >
+                <CalendarClock size={13} className="text-blue-500" />
+                Schedule
+              </button>
+              {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('whatsapp') && (
+                <button
+                  onClick={() => navigate('/bot')}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-50 text-gray-700 border border-gray-200 text-xs font-medium active:bg-gray-100 transition-colors"
+                >
+                  <Bot size={13} className="text-violet-500" />
+                  AI Bot
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/campaigns')}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-50 text-gray-700 border border-gray-200 text-xs font-medium active:bg-gray-100 transition-colors"
+              >
+                <MessageSquare size={13} className="text-emerald-500" />
+                Campaigns
+              </button>
             </div>
           </div>
         </div>
@@ -547,10 +628,10 @@ function App() {
       <div className="flex-1 overflow-hidden min-h-0">
 
         {/* ── Desktop two-column layout ── */}
-        <div className="hidden md:flex flex-1 h-full overflow-hidden min-h-0">
+        <div ref={containerRef} className="hidden md:flex flex-1 h-full overflow-hidden min-h-0">
 
           {/* LEFT: Contacts Panel */}
-          <div className="flex flex-col border-r border-gray-200 bg-white overflow-hidden" style={{ width: '58%' }}>
+          <div className="flex flex-col border-r border-gray-200 bg-white overflow-hidden" style={{ width: `${panelWidth}%` }}>
 
             {/* Panel header */}
             <div className="flex-none flex items-center gap-2 px-5 py-3 border-b border-gray-100">
@@ -600,8 +681,17 @@ function App() {
             </div>
           </div>
 
+          {/* Drag handle */}
+          <div
+            onMouseDown={handleDividerMouseDown}
+            className="w-1.5 flex-none bg-gray-200 hover:bg-blue-400 active:bg-blue-500 cursor-col-resize transition-colors group flex items-center justify-center"
+            title="Drag to resize"
+          >
+            <div className="w-0.5 h-8 rounded-full bg-gray-400 group-hover:bg-blue-500 transition-colors" />
+          </div>
+
           {/* RIGHT: Compose Panel */}
-          <div className="flex flex-col bg-gray-50 overflow-hidden" style={{ width: '42%' }}>
+          <div className="flex flex-col bg-gray-50 overflow-hidden" style={{ width: `${100 - panelWidth}%` }}>
 
             {/* Panel header: step label + WA status */}
             <div className="flex-none flex items-center gap-3 px-5 py-3 border-b border-gray-200 bg-white">
@@ -952,6 +1042,7 @@ function App() {
           onWorkInBackground={handleWorkInBackground}
           contacts={selectedContacts}
           messages={currentMessages}
+          campaignName={currentCampaignName}
         />
       )}
 

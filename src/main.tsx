@@ -34,6 +34,9 @@ import { BotOnboardingModal } from './components/onboarding/BotOnboardingModal'
 import { SetupPage } from './pages/SetupPage';
 import { useSetupStatus } from './hooks/useSetupStatus';
 import { DataDeletionPage } from './pages/DataDeletionPage';
+import { FacebookPage } from './pages/facebook/FacebookPage';
+import { FacebookCallbackPage } from './pages/facebook/FacebookCallbackPage';
+import { CampaignPage } from '@/pages/CampaignPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -181,6 +184,27 @@ function AppRoutes() {
         <ProtectedRoute>
           <AppProvider>
             <App />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+
+      {/* Facebook channel */}
+      <Route path="/facebook" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <FacebookPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+      <Route path="/facebook/callback" element={
+        <ProtectedRoute><FacebookCallbackPage /></ProtectedRoute>
+      } />
+
+      {/* Campaigns channel */}
+      <Route path="/campaigns" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <CampaignPage />
           </AppProvider>
         </ProtectedRoute>
       } />

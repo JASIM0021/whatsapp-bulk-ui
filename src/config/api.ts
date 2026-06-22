@@ -107,6 +107,15 @@ export const API_ENDPOINTS = {
     detectionLogs: `${API_BASE_URL}/api/bot/detection-logs`,
     detectionStats: `${API_BASE_URL}/api/bot/detection-stats`,
   },
+  campaigns: {
+    list: `${API_BASE_URL}/api/campaigns`,
+    get: (id: string) => `${API_BASE_URL}/api/campaigns/${id}`,
+    messages: (id: string) => `${API_BASE_URL}/api/campaigns/${id}/messages`,
+    markReplyRead: (campaignId: string, msgId: string) =>
+      `${API_BASE_URL}/api/campaigns/${campaignId}/messages/${msgId}/read-reply`,
+    reply: (campaignId: string, msgId: string) =>
+      `${API_BASE_URL}/api/campaigns/${campaignId}/messages/${msgId}/reply`,
+  },
   security: {
     settings: `${API_BASE_URL}/api/settings/security`,
     heartbeat: `${API_BASE_URL}/api/activity/heartbeat`,
@@ -122,6 +131,21 @@ export const API_ENDPOINTS = {
     deleteTemplate: (id: string) => `${API_BASE_URL}/api/email/templates/${id}`,
     bot: `${API_BASE_URL}/api/email/bot`,
     copyBot: `${API_BASE_URL}/api/email/bot/copy-from-whatsapp`,
+  },
+  // ── Facebook (Omnichannel) ────────────────────────────────────────────
+  facebook: {
+    oauthUrl:       `${API_BASE_URL}/api/facebook/oauth-url`,
+    exchangeToken:  `${API_BASE_URL}/api/facebook/exchange-token`,
+    status:         `${API_BASE_URL}/api/facebook/status`,
+    disconnect:     `${API_BASE_URL}/api/facebook/disconnect`,
+    pages:          `${API_BASE_URL}/api/facebook/pages`,
+    selectPage:     `${API_BASE_URL}/api/facebook/pages/select`,
+    posts:          `${API_BASE_URL}/api/facebook/posts`,
+    post:           (id: string) => `${API_BASE_URL}/api/facebook/posts/${id}`,
+    postInsights:   (id: string) => `${API_BASE_URL}/api/facebook/posts/${id}/insights`,
+    schedule:       `${API_BASE_URL}/api/facebook/schedule`,
+    cancelSchedule: (id: string) => `${API_BASE_URL}/api/facebook/schedule/${id}`,
+    ogPreview:      `${API_BASE_URL}/api/facebook/og-preview`,
   },
   // ── Website Chatbot ───────────────────────────────────────────────────
   websiteChatbot: {

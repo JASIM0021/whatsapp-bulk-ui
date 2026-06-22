@@ -15,6 +15,10 @@ interface AppContextType {
   isWhatsAppConnected: boolean;
   setIsWhatsAppConnected: (connected: boolean) => void;
 
+  // Facebook status
+  isFacebookConnected: boolean;
+  setIsFacebookConnected: (connected: boolean) => void;
+
   // Message
   currentMessage: Message | null;
   setCurrentMessage: (message: Message | null) => void;
@@ -26,6 +30,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selection, setSelection] = useState<ContactSelection>({});
   const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false);
+  const [isFacebookConnected, setIsFacebookConnected] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<Message | null>(null);
 
   return (
@@ -37,6 +42,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSelection,
         isWhatsAppConnected,
         setIsWhatsAppConnected,
+        isFacebookConnected,
+        setIsFacebookConnected,
         currentMessage,
         setCurrentMessage,
       }}
