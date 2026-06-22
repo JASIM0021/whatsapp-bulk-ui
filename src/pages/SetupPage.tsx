@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bot, Check, ArrowRight, Plus, X as XIcon,
-  Loader, CheckCircle, Smartphone, QrCode, Info,
+  Loader, CheckCircle, Smartphone, QrCode, Info, RefreshCw,
 } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS, SSE_BASE_URL } from '@/config/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -70,6 +70,8 @@ function Step1ReviewBot({ onContinue }: { onContinue: () => void }) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCrawling, setIsCrawling] = useState(false);
+  const [crawlMsg, setCrawlMsg] = useState('');
   const [serviceInput, setServiceInput] = useState('');
   const [error, setError] = useState('');
 
@@ -99,6 +101,37 @@ function Step1ReviewBot({ onContinue }: { onContinue: () => void }) {
 
   const removeService = (i: number) =>
     setConfig(p => ({ ...p, services: p.services.filter((_, idx) => idx !== i) }));
+
+  const handleCrawl = async () => {
+    const url = config.website.trim();
+    if (!url) { setError('Enter a website URL first'); return; }
+    setIsCrawling(true);
+    setCrawlMsg('');
+    setError('');
+    try {
+      const res = await apiFetch(API_ENDPOINTS.websiteChatbot.crawl, {
+        method: 'POST',
+        body: JSON.stringify({ url }),
+      });
+      const d = await res.json();
+      if (d.success && d.data) {
+        setConfig(prev => ({
+          ...prev,
+          businessName: d.data.businessName || prev.businessName,
+          description: d.data.description || prev.description,
+          services: d.data.services?.length ? d.data.services.slice(0, 4) : prev.services,
+        }));
+        setCrawlMsg('Details auto-filled from your website!');
+        setTimeout(() => setCrawlMsg(''), 4000);
+      } else {
+        setError(d.error || 'Crawl failed — try again');
+      }
+    } catch {
+      setError('Network error during crawl');
+    } finally {
+      setIsCrawling(false);
+    }
+  };
 
   const handleContinue = async () => {
     if (!config.businessName.trim()) { setError('Business name is required'); return; }
@@ -211,13 +244,33 @@ function Step1ReviewBot({ onContinue }: { onContinue: () => void }) {
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Website <span className="text-gray-400 font-normal">(optional)</span>
         </label>
-        <input
-          type="url"
-          value={config.website}
-          onChange={e => setConfig(p => ({ ...p, website: e.target.value }))}
-          placeholder="https://yourbusiness.com"
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-        />
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={config.website}
+            onChange={e => setConfig(p => ({ ...p, website: e.target.value }))}
+            placeholder="https://yourbusiness.com"
+            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+          />
+          <button
+            type="button"
+            onClick={handleCrawl}
+            disabled={isCrawling || !config.website.trim()}
+            className="flex items-center gap-1.5 px-4 py-3 rounded-xl text-sm font-medium border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+          >
+            <RefreshCw size={14} className={isCrawling ? 'animate-spin' : ''} />
+            {isCrawling ? 'Crawling…' : 'Crawl Website'}
+          </button>
+        </div>
+        <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+          <span className="text-blue-400">💡</span>
+          Crawls your website and auto-fills business name, description &amp; services.
+        </p>
+        {crawlMsg && (
+          <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
+            <Check size={12} /> {crawlMsg}
+          </p>
+        )}
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -417,6 +470,40 @@ type ConnectTab = 'phone' | 'qr';
 function Step2ConnectWhatsApp({ onContinue }: { onContinue: () => void }) {
   const { token } = useAuth();
   const [activeTab, setActiveTab] = useState<ConnectTab>('phone');
+  const [alreadyConnected, setAlreadyConnected] = useState<boolean | null>(null);
+
+  // Check if WA is already connected when this step mounts
+  useEffect(() => {
+    apiFetch(API_ENDPOINTS.whatsapp.status)
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data?.isConnected && d.data?.isReady) {
+          setAlreadyConnected(true);
+          setTimeout(onContinue, 1200);
+        } else {
+          setAlreadyConnected(false);
+        }
+      })
+      .catch(() => setAlreadyConnected(false));
+  }, [onContinue]);
+
+  if (alreadyConnected === null) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader size={22} className="animate-spin text-green-600" />
+      </div>
+    );
+  }
+
+  if (alreadyConnected) {
+    return (
+      <div className="text-center py-8 space-y-3">
+        <CheckCircle size={44} className="text-green-500 mx-auto" />
+        <p className="font-semibold text-gray-900">WhatsApp already connected!</p>
+        <p className="text-sm text-gray-400">Taking you to the next step…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -571,7 +658,57 @@ const STEP_TITLES: Record<1 | 2 | 3, string> = {
 };
 
 export function SetupPage() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [isChecking, setIsChecking] = useState(true);
+  const [waConnected, setWaConnected] = useState(false);
+
+  // On mount: check existing WhatsApp + bot state and skip steps that are already done
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      apiFetch(API_ENDPOINTS.whatsapp.status).then(r => r.json()).catch(() => null),
+      apiFetch(API_ENDPOINTS.bot.get).then(r => r.json()).catch(() => null),
+    ]).then(([waRes, botRes]) => {
+      if (cancelled) return;
+      const waConn = !!(waRes?.success && waRes?.data?.isConnected && waRes?.data?.isReady);
+      const botEnabled = !!(botRes?.success && botRes?.data?.isEnabled);
+      const botConfigured = !!(botRes?.success && botRes?.data?.businessName?.trim());
+
+      setWaConnected(waConn);
+
+      if (waConn && botEnabled) {
+        // Everything already set up — go straight to the app
+        navigate('/app');
+        return;
+      }
+      if (waConn && botConfigured) {
+        setCurrentStep(3); // just needs activation
+      } else if (botConfigured && !waConn) {
+        setCurrentStep(2); // bot done, need WA
+      }
+      // else: Step 1 is correct (default)
+      setIsChecking(false);
+    }).catch(() => setIsChecking(false));
+    return () => { cancelled = true; };
+  }, [navigate]);
+
+  // After Step 1 bot config is saved, skip Step 2 if WA is already connected
+  const handleStep1Done = () => {
+    if (waConnected) {
+      setCurrentStep(3);
+    } else {
+      setCurrentStep(2);
+    }
+  };
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader size={28} className="animate-spin text-green-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -583,7 +720,15 @@ export function SetupPage() {
           </div>
           <span className="font-bold text-gray-900 text-sm">botx</span>
         </div>
-        <span className="text-xs text-gray-400 font-medium">Step {currentStep} of 3</span>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/app')}
+            className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+          >
+            Skip setup →
+          </button>
+          <span className="text-xs text-gray-400 font-medium">Step {currentStep} of 3</span>
+        </div>
       </div>
 
       {/* Content */}
@@ -597,7 +742,7 @@ export function SetupPage() {
             </h2>
 
             {currentStep === 1 && (
-              <Step1ReviewBot onContinue={() => setCurrentStep(2)} />
+              <Step1ReviewBot onContinue={handleStep1Done} />
             )}
             {currentStep === 2 && (
               <Step2ConnectWhatsApp onContinue={() => setCurrentStep(3)} />

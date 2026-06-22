@@ -52,8 +52,9 @@ export function FacebookConnectTab({ session }: Props) {
     try {
       const res = await apiFetch(API_ENDPOINTS.facebook.oauthUrl);
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      const url = data.data?.url || data.url;
+      if (url) {
+        window.location.href = url;
       } else {
         setState('idle');
       }
