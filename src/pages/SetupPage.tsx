@@ -725,7 +725,7 @@ export function SetupPage() {
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate('/app')}
+            onClick={() => { localStorage.setItem('botx_setup_complete', '1'); navigate('/app'); }}
             className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
           >
             Skip setup →

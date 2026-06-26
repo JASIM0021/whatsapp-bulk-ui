@@ -36,6 +36,7 @@ import { useSetupStatus } from './hooks/useSetupStatus';
 import { DataDeletionPage } from './pages/DataDeletionPage';
 import { FacebookPage } from './pages/facebook/FacebookPage';
 import { FacebookCallbackPage } from './pages/facebook/FacebookCallbackPage';
+import { LinkedInPage } from './pages/linkedin/LinkedInPage';
 import { CampaignPage } from '@/pages/CampaignPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -198,6 +199,15 @@ function AppRoutes() {
       } />
       <Route path="/facebook/callback" element={
         <ProtectedRoute><FacebookCallbackPage /></ProtectedRoute>
+      } />
+
+      {/* LinkedIn channel */}
+      <Route path="/linkedin" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <LinkedInPage />
+          </AppProvider>
+        </ProtectedRoute>
       } />
 
       {/* Campaigns channel */}

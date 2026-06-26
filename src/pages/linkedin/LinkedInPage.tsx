@@ -1,62 +1,71 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
-  Send, CalendarClock, LayoutGrid, BarChart2,
-  ArrowLeft, Crown, LogOut, User, Zap, MessageSquare, Mail, Menu, X, Link2, Linkedin
+  Send, CalendarClock, LayoutGrid,
+  ArrowLeft, Crown, LogOut, User, Zap, MessageSquare, Mail, Menu, X, Link2, Facebook
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
-import { useFacebookSession } from '@/hooks/useFacebookSession';
-import { FacebookConnectTab } from './FacebookConnectTab';
-import { FacebookComposePage } from './FacebookComposePage';
-import { FacebookSchedulePage } from './FacebookSchedulePage';
-import { FacebookPostsPage } from './FacebookPostsPage';
-import { FacebookAnalyticsPage } from './FacebookAnalyticsPage';
+import { useLinkedInSession } from '@/hooks/useLinkedInSession';
+import { LinkedInConnectTab } from './LinkedInConnectTab';
+import { LinkedInComposePage } from './LinkedInComposePage';
+import { LinkedInSchedulePage } from './LinkedInSchedulePage';
+import { LinkedInPostsPage } from './LinkedInPostsPage';
 
-type Tab = 'connect' | 'compose' | 'schedule' | 'posts' | 'analytics';
+type Tab = 'connect' | 'compose' | 'schedule' | 'posts';
 
-function FacebookIcon({ size = 20 }: { size?: number }) {
+function LinkedInIcon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12.07h2.54V9.845c0-2.507 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562v1.875h2.773l-.443 2.89h-2.33v6.988C20.343 21.201 24 17.064 24 12.073z" />
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
     </svg>
   );
 }
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
-  { id: 'connect',   label: 'Connect',   icon: <Link2 size={20} />,        desc: 'Facebook Page'   },
-  { id: 'compose',   label: 'Compose',   icon: <Send size={20} />,         desc: 'Create post'     },
-  { id: 'schedule',  label: 'Scheduled', icon: <CalendarClock size={20} />, desc: 'Queued posts'    },
-  { id: 'posts',     label: 'Posts',     icon: <LayoutGrid size={20} />,   desc: 'Published feed'  },
-  { id: 'analytics', label: 'Analytics', icon: <BarChart2 size={20} />,    desc: 'Reach & insights' },
+  { id: 'connect',  label: 'Connect',   icon: <Link2 size={20} />,         desc: 'LinkedIn account' },
+  { id: 'compose',  label: 'Compose',   icon: <Send size={20} />,          desc: 'Create post'      },
+  { id: 'schedule', label: 'Scheduled', icon: <CalendarClock size={20} />, desc: 'Queued posts'     },
+  { id: 'posts',    label: 'Posts',     icon: <LayoutGrid size={20} />,    desc: 'Published feed'   },
 ];
 
 const TAB_LABELS: Record<Tab, string> = {
-  connect: 'Connect Page', compose: 'Create Post', schedule: 'Scheduled Posts',
-  posts: 'Published Posts', analytics: 'Analytics',
+  connect: 'Connect Account', compose: 'Create Post', schedule: 'Scheduled Posts', posts: 'Published Posts',
 };
 
-export function FacebookPage() {
-  const [searchParams] = useSearchParams();
-  const initialTab = (searchParams.get('tab') as Tab) || 'connect';
-  const [tab, setTab] = useState<Tab>(initialTab);
+export function LinkedInPage() {
+  const [tab, setTab] = useState<Tab>('connect');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [oauthBanner, setOauthBanner] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const { user, logout } = useAuth();
-  const { setIsFacebookConnected } = useApp();
+  const { setIsLinkedInConnected } = useApp();
   const navigate = useNavigate();
   const isPaid = !!(user?.subscription?.plan !== 'free' && user?.subscription?.isActive);
-  const session = useFacebookSession();
+  const session = useLinkedInSession();
 
-  // Keep AppContext in sync
+  // Handle OAuth2 callback redirect params (?connected=true or ?error=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('connected') === 'true') {
+      setOauthBanner({ type: 'success', msg: 'LinkedIn connected successfully!' });
+      session.refresh();
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('error')) {
+      const errMsg = params.get('error') || 'connection_failed';
+      setOauthBanner({ type: 'error', msg: `LinkedIn connection failed: ${errMsg.replace(/_/g, ' ')}` });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!session.isLoading) {
-      setIsFacebookConnected(session.isConnected);
+      setIsLinkedInConnected(session.isConnected);
     }
-  }, [session.isConnected, session.isLoading, setIsFacebookConnected]);
+  }, [session.isConnected, session.isLoading, setIsLinkedInConnected]);
 
-  // If session loaded and connected, skip to compose if on connect tab
   useEffect(() => {
-    if (!session.isLoading && session.isConnected && tab === 'connect' && searchParams.get('tab') !== 'connect') {
+    if (!session.isLoading && session.isConnected && tab === 'connect') {
       setTab('compose');
     }
   }, [session.isLoading, session.isConnected]);
@@ -73,13 +82,13 @@ export function FacebookPage() {
           <span>Back to Dashboard</span>
         </button>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#1877f2] flex items-center justify-center shadow-lg text-white">
-            <FacebookIcon size={17} />
+          <div className="w-9 h-9 rounded-xl bg-[#0A66C2] flex items-center justify-center shadow-lg text-white">
+            <LinkedInIcon size={17} />
           </div>
           <div>
-            <p className="text-white font-bold text-sm leading-none">Facebook</p>
+            <p className="text-white font-bold text-sm leading-none">LinkedIn</p>
             <p className="text-slate-400 text-xs mt-0.5">
-              {session.isConnected && session.selectedPageName ? session.selectedPageName : 'Pages'}
+              {session.isConnected && session.profileName ? session.profileName : 'Account'}
             </p>
           </div>
         </div>
@@ -93,7 +102,7 @@ export function FacebookPage() {
             onClick={() => { setTab(item.id); setDrawerOpen(false); }}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group ${
               tab === item.id
-                ? 'bg-[#1877f2] text-white shadow-lg shadow-blue-900/40'
+                ? 'bg-[#0A66C2] text-white shadow-lg shadow-blue-900/40'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
@@ -110,33 +119,24 @@ export function FacebookPage() {
 
       {/* Channel switch */}
       <div className="px-3 pb-1 border-t border-slate-800 pt-3 space-y-1">
-        <button
-          onClick={() => navigate('/whatsapp')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-        >
+        <button onClick={() => navigate('/whatsapp')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
           <MessageSquare size={18} />
           <div>
             <p className="text-sm font-semibold leading-none">WhatsApp</p>
             <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
           </div>
         </button>
-        <button
-          onClick={() => navigate('/email')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-        >
+        <button onClick={() => navigate('/email')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
           <Mail size={18} />
           <div>
             <p className="text-sm font-semibold leading-none">Email</p>
             <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
           </div>
         </button>
-        <button
-          onClick={() => navigate('/linkedin')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-        >
-          <Linkedin size={18} />
+        <button onClick={() => navigate('/facebook')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+          <Facebook size={18} />
           <div>
-            <p className="text-sm font-semibold leading-none">LinkedIn</p>
+            <p className="text-sm font-semibold leading-none">Facebook</p>
             <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
           </div>
         </button>
@@ -145,10 +145,7 @@ export function FacebookPage() {
       {/* User */}
       <div className="px-3 pb-4 border-t border-slate-800 pt-3 space-y-2">
         {!isPaid && (
-          <button
-            onClick={() => navigate('/subscription')}
-            className="w-full flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl text-xs font-semibold hover:bg-amber-500/20 transition-colors"
-          >
+          <button onClick={() => navigate('/subscription')} className="w-full flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl text-xs font-semibold hover:bg-amber-500/20 transition-colors">
             <Crown size={13} />Upgrade to Pro
           </button>
         )}
@@ -180,10 +177,7 @@ export function FacebookPage() {
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/60" onClick={() => setDrawerOpen(false)} />
           <aside className="relative z-10 w-64 flex flex-col bg-slate-900 h-full shadow-2xl">
-            <button
-              onClick={() => setDrawerOpen(false)}
-              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-            >
+            <button onClick={() => setDrawerOpen(false)} className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
               <X size={18} />
             </button>
             <SidebarContent />
@@ -210,8 +204,8 @@ export function FacebookPage() {
           <div className="flex items-center gap-2">
             {session.isConnected && (
               <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 border border-blue-200 rounded-full">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#1877f2]" />
-                <span className="text-xs font-semibold text-[#1877f2]">{session.selectedPageName || 'Connected'}</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#0A66C2]" />
+                <span className="text-xs font-semibold text-[#0A66C2]">{session.profileName || 'Connected'}</span>
               </div>
             )}
             {isPaid
@@ -219,21 +213,31 @@ export function FacebookPage() {
                   <Zap size={11} className="text-green-600" />
                   <span className="text-xs font-semibold text-green-700 hidden sm:inline">Pro Active</span>
                 </div>
-              : <button onClick={() => navigate('/subscription')}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-full text-xs font-semibold hover:bg-amber-100 transition-colors">
+              : <button onClick={() => navigate('/subscription')} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-full text-xs font-semibold hover:bg-amber-100 transition-colors">
                   <Crown size={12} /><span className="hidden sm:inline">Upgrade</span>
                 </button>
             }
           </div>
         </header>
 
+        {/* OAuth callback banner */}
+        {oauthBanner && (
+          <div className={`mx-4 mt-3 px-4 py-3 rounded-xl text-sm font-medium flex items-center justify-between ${
+            oauthBanner.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}>
+            <span>{oauthBanner.msg}</span>
+            <button onClick={() => setOauthBanner(null)} className="ml-3 opacity-60 hover:opacity-100 text-lg leading-none">×</button>
+          </div>
+        )}
+
         {/* Page content */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 pb-20 md:pb-6">
-          {tab === 'connect'   && <FacebookConnectTab session={session} />}
-          {tab === 'compose'   && <FacebookComposePage isPaid={isPaid} session={session} onSwitchTab={setTab} />}
-          {tab === 'schedule'  && <FacebookSchedulePage isPaid={isPaid} session={session} />}
-          {tab === 'posts'     && <FacebookPostsPage isPaid={isPaid} session={session} />}
-          {tab === 'analytics' && <FacebookAnalyticsPage isPaid={isPaid} session={session} />}
+          {tab === 'connect'  && <LinkedInConnectTab session={session} />}
+          {tab === 'compose'  && <LinkedInComposePage isPaid={isPaid} session={session} onSwitchTab={setTab} />}
+          {tab === 'schedule' && <LinkedInSchedulePage isPaid={isPaid} session={session} />}
+          {tab === 'posts'    && <LinkedInPostsPage isPaid={isPaid} session={session} />}
         </div>
 
         {/* Mobile Bottom Tab Bar */}
@@ -243,14 +247,12 @@ export function FacebookPage() {
               key={item.id}
               onClick={() => setTab(item.id)}
               className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors relative ${
-                tab === item.id ? 'text-[#1877f2]' : 'text-slate-500'
+                tab === item.id ? 'text-[#0A66C2]' : 'text-slate-500'
               }`}
             >
-              <span className={`transition-transform ${tab === item.id ? 'scale-110' : ''}`}>
-                {item.icon}
-              </span>
+              <span className={`transition-transform ${tab === item.id ? 'scale-110' : ''}`}>{item.icon}</span>
               <span className="text-[9px] font-semibold leading-none">{item.label}</span>
-              {tab === item.id && <span className="absolute bottom-0 w-8 h-0.5 bg-[#1877f2] rounded-full" />}
+              {tab === item.id && <span className="absolute bottom-0 w-8 h-0.5 bg-[#0A66C2] rounded-full" />}
             </button>
           ))}
         </nav>

@@ -147,6 +147,17 @@ export const API_ENDPOINTS = {
     cancelSchedule: (id: string) => `${API_BASE_URL}/api/facebook/schedule/${id}`,
     ogPreview:      `${API_BASE_URL}/api/facebook/og-preview`,
   },
+  // ── LinkedIn (OAuth2 API) ─────────────────────────────────────────────
+  linkedin: {
+    credentials:    `${API_BASE_URL}/api/linkedin/credentials`,
+    authUrl:        `${API_BASE_URL}/api/linkedin/auth-url`,
+    disconnect:     `${API_BASE_URL}/api/linkedin/disconnect`,
+    status:         `${API_BASE_URL}/api/linkedin/status`,
+    posts:          `${API_BASE_URL}/api/linkedin/posts`,
+    post:           (id: string) => `${API_BASE_URL}/api/linkedin/posts/${id}`,
+    schedule:       `${API_BASE_URL}/api/linkedin/schedule`,
+    cancelSchedule: (id: string) => `${API_BASE_URL}/api/linkedin/schedule/${id}`,
+  },
   // ── Website Chatbot ───────────────────────────────────────────────────
   websiteChatbot: {
     config: `${API_BASE_URL}/api/website-chatbot/config`,
