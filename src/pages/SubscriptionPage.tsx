@@ -391,11 +391,6 @@ export function SubscriptionPage() {
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
   const [unavailableServices, setUnavailableServices] = useState<Set<string>>(new Set());
 
-  const toggleSvc = (id: string) => setSelectedServices(prev => {
-    const n = new Set(prev);
-    if (n.has(id)) { n.delete(id); } else { n.add(id); }
-    return n;
-  });
   const toggleGroup = (ids: string[]) => setSelectedServices(prev => {
     const n = new Set(prev);
     if (ids.every(id => n.has(id))) { ids.forEach(id => n.delete(id)); } else { ids.forEach(id => n.add(id)); }

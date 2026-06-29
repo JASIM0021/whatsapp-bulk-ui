@@ -13,7 +13,6 @@ import {
   Check,
   ArrowRight,
   Star,
-  ChevronRight,
   MessageSquareWarning,
   UserX,
   Timer,

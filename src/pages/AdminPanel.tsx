@@ -1196,6 +1196,7 @@ const formFromPlan = (p: PlanConfigData): PlanFormState => ({
   isAdminOnly: !!p.isAdminOnly,
   displayOrder: String(p.displayOrder ?? 0),
   highlight: !!p.highlight,
+  yearlyDiscount: '0',
 });
 
 function PlansTab() {
@@ -2378,12 +2379,6 @@ interface InfluencerProfile {
   totalEarned: number; totalPaid: number; totalPending: number; totalReferrals: number;
   createdAt: string;
 }
-interface Commission {
-  id: string; userEmail: string; userName: string;
-  txnId: string; plan: string; paymentAmount: number;
-  commissionAmount: number; status: 'pending' | 'paid';
-  createdAt: string;
-}
 
 function fmtMoney(n: number) {
   return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2394,7 +2389,6 @@ function InfluencersTab() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedInf, setSelectedInf] = useState<InfluencerProfile | null>(null);
-  const [commissions, setCommissions] = useState<Commission[]>([]);
   const [payingOut, setPayingOut] = useState(false);
   const [form, setForm] = useState({ userEmail: '', promoCode: '', commissionRate: '20', upiId: '', phone: '' });
   const [saving, setSaving] = useState(false);
@@ -2407,13 +2401,6 @@ function InfluencersTab() {
       const json = await res.json();
       if (json.success) setInfluencers(json.data || []);
     } catch { /* ignore */ } finally { setLoading(false); }
-  }, []);
-
-  const loadCommissions = useCallback(async (inf: InfluencerProfile) => {
-    setSelectedInf(inf);
-    setCommissions([]);
-    // Reuse the dashboard endpoint through the user's own account is not available to admin,
-    // so we load fresh from admin list and show stats from the profile object itself.
   }, []);
 
   useEffect(() => { load(); }, [load]);
