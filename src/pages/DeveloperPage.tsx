@@ -5,7 +5,7 @@ import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import {
   Key, MessageSquare, Mail, Cpu, Code2, Copy, Check,
   LayoutDashboard, ChevronLeft, Plus, Trash2, LogOut,
-  User, Shield, Globe, Clock, X, Terminal, Zap,
+  User, Shield, Globe, X, Terminal, Zap,
 } from 'lucide-react';
 
 type Tab = 'overview' | 'keys' | 'whatsapp' | 'email' | 'mcp';
