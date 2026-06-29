@@ -40,6 +40,7 @@ import {
   TrendingUp,
   DollarSign,
   LinkIcon,
+  Zap,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -67,6 +68,7 @@ interface AdminUser {
     daysLeft: number;
     messagesUsed: number;
     messageLimit: number;
+    enabledServices?: string[];
   };
 }
 
@@ -297,14 +299,21 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
   const [planMsg, setPlanMsg] = useState('');
   const [planOptions, setPlanOptions] = useState<PlanConfigData[]>([]);
 
+  // Add-on grant state
+  const [grantedServices, setGrantedServices] = useState<Set<string>>(new Set());
+  const [svcSaving, setSvcSaving] = useState(false);
+  const [svcMsg, setSvcMsg] = useState('');
+
   useEffect(() => {
     if (user) {
       setName(user.name);
       setRole(user.role as 'user' | 'admin');
       setError('');
       setPlanMsg('');
+      setSvcMsg('');
       setPlanToSet(user.subscription?.plan || 'monthly');
       setPlanDays('');
+      setGrantedServices(new Set(user.subscription?.enabledServices ?? []));
     }
   }, [user]);
 
@@ -362,6 +371,34 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
       setPlanSaving(false);
     }
   };
+
+  const handleServicesUpdate = async () => {
+    if (!user) return;
+    setSvcSaving(true); setSvcMsg('');
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.updateUserServices(user.id), {
+        method: 'PUT',
+        body: JSON.stringify({ services: Array.from(grantedServices) }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSvcMsg('Add-ons saved!');
+        onUpdated();
+      } else {
+        setSvcMsg(data.error || 'Failed');
+      }
+    } catch {
+      setSvcMsg('Network error');
+    } finally {
+      setSvcSaving(false);
+    }
+  };
+
+  const toggleGrantedSvc = (svc: string) => setGrantedServices(prev => {
+    const next = new Set(prev);
+    if (next.has(svc)) { next.delete(svc); } else { next.add(svc); }
+    return next;
+  });
 
   if (!open || !user) return null;
 
@@ -462,6 +499,67 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
               </p>
             )}
           </div>
+        </div>
+
+        {/* Add-on Grant Section */}
+        <div className="px-6 pb-6 border-t border-gray-100 pt-4">
+          <p className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <Zap size={14} className="text-violet-500" /> Grant Add-ons (no payment)
+          </p>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {[
+              { id: 'whatsapp',     label: 'WhatsApp Sender' },
+              { id: 'whatsapp_bot', label: 'WhatsApp AI Bot' },
+              { id: 'email',        label: 'Email Marketing' },
+              { id: 'chatbot',      label: 'Website Chatbot' },
+              { id: 'facebook',     label: 'Facebook' },
+              { id: 'linkedin',     label: 'LinkedIn Publisher' },
+              { id: 'linkedin_bot', label: 'LinkedIn AI Bot' },
+              { id: 'seo',          label: 'SEO Manager' },
+              { id: 'seo_bot',      label: 'SEO AI Bot' },
+            ].map(({ id, label }) => {
+              const active = grantedServices.has(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => toggleGrantedSvc(id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border transition-colors text-left ${
+                    active
+                      ? 'bg-violet-50 border-violet-300 text-violet-700'
+                      : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  <span className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center flex-shrink-0 ${active ? 'bg-violet-600 border-violet-600' : 'border-gray-300'}`}>
+                    {active && <Check size={10} className="text-white" />}
+                  </span>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleServicesUpdate}
+              disabled={svcSaving}
+              className="flex-1 py-2 bg-violet-600 text-white text-xs font-semibold rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
+            >
+              {svcSaving ? 'Saving…' : 'Save Add-ons'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setGrantedServices(new Set())}
+              className="px-3 py-2 text-xs text-gray-500 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+            >
+              Clear all
+            </button>
+          </div>
+          {svcMsg && (
+            <p className={`mt-2 text-xs rounded-lg px-3 py-2 ${svcMsg.includes('saved') || svcMsg.includes('Add-ons') ? 'bg-violet-50 text-violet-700' : 'bg-red-50 text-red-600'}`}>
+              {svcMsg}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -2393,6 +2491,8 @@ function InfluencersTab() {
   const [form, setForm] = useState({ userEmail: '', promoCode: '', commissionRate: '20', upiId: '', phone: '' });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCommission, setEditCommission] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2432,6 +2532,19 @@ function InfluencersTab() {
     await apiFetch(API_ENDPOINTS.adminInfluencer.update(inf.id), {
       method: 'PUT', body: JSON.stringify({ status: newStatus }),
     });
+    load();
+  };
+
+  const saveEdit = async (inf: InfluencerProfile) => {
+    const rate = parseFloat(editCommission);
+    if (isNaN(rate) || rate < 1 || rate > 100) return;
+    setSaving(true);
+    await apiFetch(API_ENDPOINTS.adminInfluencer.update(inf.id), {
+      method: 'PUT',
+      body: JSON.stringify({ commissionRate: rate / 100 }),
+    });
+    setSaving(false);
+    setEditingId(null);
     load();
   };
 
@@ -2538,7 +2651,28 @@ function InfluencersTab() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-400">Commission</p>
-                        <p className="font-semibold text-gray-900">{Math.round(inf.commissionRate * 100)}%</p>
+                        {editingId === inf.id ? (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <input
+                              type="number" min="1" max="100"
+                              value={editCommission}
+                              onChange={e => setEditCommission(e.target.value)}
+                              className="w-16 border border-blue-300 rounded px-1.5 py-0.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none"
+                              autoFocus
+                            />
+                            <span className="text-xs text-gray-500">%</span>
+                            <button onClick={() => saveEdit(inf)} disabled={saving}
+                              className="px-2 py-0.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
+                              {saving ? '…' : 'Save'}
+                            </button>
+                            <button onClick={() => setEditingId(null)}
+                              className="px-2 py-0.5 border border-gray-300 rounded text-xs text-gray-600 hover:bg-gray-50">
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="font-semibold text-gray-900">{Math.round(inf.commissionRate * 100)}%</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2551,6 +2685,11 @@ function InfluencersTab() {
                       <DollarSign size={12} /> Mark Paid ({fmtMoney(inf.totalPending)})
                     </button>
                   )}
+                  <button
+                    onClick={() => { setEditingId(inf.id); setEditCommission(String(Math.round(inf.commissionRate * 100))); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200">
+                    ✏️ Edit
+                  </button>
                   <button onClick={() => toggleStatus(inf)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${inf.status === 'active' ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-green-50 text-green-600 hover:bg-green-100 border border-green-200'}`}>
                     {inf.status === 'active' ? <><Ban size={12} /> Suspend</> : <><CheckCircle2 size={12} /> Activate</>}

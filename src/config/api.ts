@@ -77,6 +77,7 @@ export const API_ENDPOINTS = {
     sendEmail: `${API_BASE_URL}/api/admin/email/promotional`,
     userActivity: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/activity`,
     updateUserPlan: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/plan`,
+    updateUserServices: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/services`,
     invoices: `${API_BASE_URL}/api/admin/invoices`,
     invoice: (id: string) => `${API_BASE_URL}/api/admin/invoices/${id}`,
     approveInvoice: (id: string) => `${API_BASE_URL}/api/admin/invoices/${id}/approve`,
