@@ -364,6 +364,134 @@ function CodeExamples() {
   );
 }
 
+// ── MCP Setup Card ────────────────────────────────────────────────────────────
+
+const MCP_ENDPOINT = 'https://nexbotix.todayintech.in/api/mcp';
+
+const MCP_CLIENTS = [
+  {
+    key: 'claude',
+    label: 'Claude Desktop',
+    snippet: (key: string) => JSON.stringify({
+      mcpServers: {
+        'botx-whatsapp': {
+          url: MCP_ENDPOINT,
+          headers: { 'X-API-Key': key },
+        },
+      },
+    }, null, 2),
+    note: 'Add to ~/Library/Application Support/Claude/claude_desktop_config.json (Mac) or %APPDATA%\\Claude\\claude_desktop_config.json (Windows)',
+  },
+  {
+    key: 'cursor',
+    label: 'Cursor',
+    snippet: (key: string) => JSON.stringify({
+      mcpServers: {
+        'botx-whatsapp': {
+          url: MCP_ENDPOINT,
+          headers: { 'X-API-Key': key },
+        },
+      },
+    }, null, 2),
+    note: 'Add to .cursor/mcp.json in your project root, or Cursor Settings → MCP',
+  },
+  {
+    key: 'generic',
+    label: 'Any MCP Client',
+    snippet: (key: string) =>
+`Server URL:  ${MCP_ENDPOINT}
+Transport:   Streamable HTTP (POST)
+Auth header: X-API-Key: ${key}
+
+Supports: Claude Desktop 0.7+, Cursor 0.42+, Windsurf, and any MCP Streamable HTTP client.`,
+    note: 'Paste the URL and header into your AI agent\'s MCP server settings',
+  },
+];
+
+function MCPSetupCard({ apiKey }: { apiKey: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [activeClient, setActiveClient] = useState('claude');
+  const [copied, setCopied] = useState(false);
+  const displayKey = apiKey ?? 'YOUR_API_KEY';
+  const client = MCP_CLIENTS.find(c => c.key === activeClient)!;
+
+  const copy = () => {
+    navigator.clipboard.writeText(client.snippet(displayKey)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="border border-purple-200 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-purple-50 hover:bg-purple-100 transition-colors text-left"
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-purple-600" />
+          <span className="text-sm font-semibold text-purple-900">MCP Server — Control WhatsApp from AI Agents</span>
+          <span className="hidden sm:inline text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-medium">New</span>
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-purple-600" /> : <ChevronDown className="w-4 h-4 text-purple-600" />}
+      </button>
+
+      {open && (
+        <div className="p-4 space-y-4 bg-white">
+          <p className="text-sm text-gray-600">
+            Connect your AI agent to WhatsApp using the <strong>Model Context Protocol</strong>. Once connected, your agent can send messages, check status, manage schedules, and more — no code required.
+          </p>
+
+          <div className="bg-gray-50 rounded-lg px-3 py-2 flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium">Endpoint</span>
+            <code className="text-xs font-mono text-gray-800 flex-1">{MCP_ENDPOINT}</code>
+          </div>
+
+          {/* Available tools */}
+          <div className="flex flex-wrap gap-1.5">
+            {['get_status', 'send_message', 'send_bulk', 'schedule_message', 'get_contacts', 'list_schedules', 'cancel_schedule'].map(t => (
+              <span key={t} className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono">{t}</span>
+            ))}
+          </div>
+
+          {/* Client tabs */}
+          <div className="flex gap-1 border-b border-gray-100 pb-0">
+            {MCP_CLIENTS.map(c => (
+              <button
+                key={c.key}
+                onClick={() => setActiveClient(c.key)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors ${
+                  activeClient === c.key
+                    ? 'bg-purple-600 text-white'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Snippet */}
+          <div className="relative">
+            <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all">
+              {client.snippet(displayKey)}
+            </pre>
+            <button
+              onClick={copy}
+              className="absolute top-2 right-2 flex items-center gap-1 bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded text-xs transition-colors"
+            >
+              {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-400">{client.note}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function SubscriptionPage() {
@@ -1147,6 +1275,9 @@ export function SubscriptionPage() {
 
               {/* Multi-language code examples */}
               <CodeExamples />
+
+              {/* MCP Server setup */}
+              <MCPSetupCard apiKey={apiKeys[0]?.keyPreview ?? null} />
             </div>
           )}
         </div>

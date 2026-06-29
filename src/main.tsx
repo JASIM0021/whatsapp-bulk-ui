@@ -41,6 +41,7 @@ import { SEOPage } from './pages/seo/SEOPage';
 import { SEOBlogCallbackPage } from './pages/seo/SEOBlogCallbackPage';
 import { CampaignPage } from '@/pages/CampaignPage';
 import InfluencerDashboard from '@/pages/influencer/InfluencerDashboard';
+import { DeveloperPage } from './pages/DeveloperPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -237,6 +238,11 @@ function AppRoutes() {
       {/* Influencer / affiliate portal */}
       <Route path="/influencer" element={
         <ProtectedRoute><InfluencerDashboard /></ProtectedRoute>
+      } />
+
+      {/* Developer Hub — API keys, REST docs, MCP docs */}
+      <Route path="/developer" element={
+        <ProtectedRoute><DeveloperPage /></ProtectedRoute>
       } />
 
         {/* Catch-all */}

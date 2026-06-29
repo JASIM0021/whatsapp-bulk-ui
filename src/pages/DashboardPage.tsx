@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles, Search } from 'lucide-react';
+import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles, Search, Code2 } from 'lucide-react';
 
 function FacebookIcon({ size = 32 }: { size?: number }) {
   return (
@@ -247,6 +247,32 @@ export function DashboardPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Developer Hub */}
+        <div
+          onClick={() => navigate('/developer')}
+          className="mt-6 cursor-pointer group relative overflow-hidden rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 via-purple-50 to-indigo-50 hover:border-violet-400 shadow-sm hover:shadow-md transition-all duration-300"
+        >
+          <div className="px-8 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <div className="w-12 h-12 shrink-0 rounded-2xl bg-violet-100 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
+              <Code2 size={24} className="text-violet-600" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-base font-bold text-gray-900">Developer Hub</h3>
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider bg-violet-100 text-violet-700 px-2.5 py-0.5 rounded-full">
+                  API + MCP
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 leading-relaxed max-w-xl">
+                Manage API keys, explore REST API docs for WhatsApp & Email, and connect AI agents via the WhatsApp MCP server.
+              </p>
+            </div>
+            <div className="shrink-0 flex items-center gap-2 text-violet-600 font-semibold text-sm group-hover:translate-x-1 transition-transform">
+              Open <ChevronRight size={18} />
+            </div>
           </div>
         </div>
 

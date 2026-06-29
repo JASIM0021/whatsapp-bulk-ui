@@ -27,6 +27,9 @@ import {
   Search,
   Sparkles,
   X,
+  Code2,
+  Workflow,
+  Cpu,
 } from 'lucide-react';
 
 /* ─────────────── Hero ─────────────── */
@@ -378,6 +381,13 @@ function Features() {
       color: 'from-indigo-500 to-blue-600',
       shadow: 'shadow-indigo-500/20',
     },
+    {
+      icon: Cpu,
+      title: 'WhatsApp MCP Server',
+      desc: 'Connect Claude Desktop, Cursor, or any AI agent to your WhatsApp via API key. Send messages, run bulk campaigns, and schedule broadcasts using natural language.',
+      color: 'from-violet-600 to-purple-700',
+      shadow: 'shadow-violet-500/20',
+    },
   ];
 
   return (
@@ -461,6 +471,223 @@ function HowItWorks() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────── MCP / AI Agent Integration ─────────────── */
+function MCPSection() {
+  const [copied, setCopied] = useState(false);
+
+  const configSnippet = `{
+  "mcpServers": {
+    "whatsapp": {
+      "url": "https://nexbotix.todayintech.in/api/mcp",
+      "headers": {
+        "X-API-Key": "bsk_your_api_key"
+      }
+    }
+  }
+}`;
+
+  const agentApps = [
+    { name: 'Claude Desktop', bg: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
+    { name: 'Cursor', bg: 'bg-blue-500/15 text-blue-300 border-blue-500/30' },
+    { name: 'Windsurf', bg: 'bg-teal-500/15 text-teal-300 border-teal-500/30' },
+    { name: 'Any MCP Client', bg: 'bg-violet-500/15 text-violet-300 border-violet-500/30' },
+  ];
+
+  const tools = [
+    { name: 'whatsapp_connect_qr', desc: 'Connect via QR code image' },
+    { name: 'whatsapp_connect_pair', desc: 'Connect via phone pairing code' },
+    { name: 'whatsapp_disconnect', desc: 'Disconnect & remove session' },
+    { name: 'whatsapp_get_status', desc: 'Check connection state' },
+    { name: 'whatsapp_send_message', desc: 'Send text or image' },
+    { name: 'whatsapp_send_bulk', desc: 'Broadcast to 50 contacts' },
+    { name: 'whatsapp_schedule_message', desc: 'Schedule for later' },
+    { name: 'whatsapp_get_contacts', desc: 'List all contacts' },
+    { name: 'whatsapp_list_schedules', desc: 'View pending jobs' },
+    { name: 'whatsapp_cancel_schedule', desc: 'Cancel a scheduled send' },
+    { name: 'whatsapp_bot_get_config', desc: 'Read bot configuration' },
+    { name: 'whatsapp_bot_setup', desc: 'Create or update bot' },
+    { name: 'whatsapp_bot_enable', desc: 'Turn bot on' },
+    { name: 'whatsapp_bot_disable', desc: 'Turn bot off' },
+    { name: 'whatsapp_bot_add_excluded', desc: 'Mute a number' },
+    { name: 'whatsapp_bot_remove_excluded', desc: 'Unmute a number' },
+    { name: 'whatsapp_bot_detection_stats', desc: 'Spam detection stats' },
+  ];
+
+  const useCases = [
+    {
+      icon: MessageSquare,
+      title: 'Natural Language Sends',
+      desc: 'Tell Claude "send a flash sale announcement to all my leads" — it calls your WhatsApp and delivers instantly.',
+      color: 'text-green-400',
+      bg: 'bg-green-500/10 border-green-500/20',
+    },
+    {
+      icon: CalendarClock,
+      title: 'AI-Powered Scheduling',
+      desc: '"Remind the 50 contacts about tomorrow\'s webinar at 9 am" — your agent schedules it without a single click.',
+      color: 'text-blue-400',
+      bg: 'bg-blue-500/10 border-blue-500/20',
+    },
+    {
+      icon: Workflow,
+      title: 'Multi-Step Workflows',
+      desc: 'Chain WhatsApp with Notion, Sheets, or CRMs. New deal added → AI drafts a welcome → WhatsApp sent automatically.',
+      color: 'text-violet-400',
+      bg: 'bg-violet-500/10 border-violet-500/20',
+    },
+    {
+      icon: Zap,
+      title: 'Instant Bulk Broadcasts',
+      desc: 'Voice-command a campaign from inside your AI IDE. No dashboard needed — just describe the audience and message.',
+      color: 'text-amber-400',
+      bg: 'bg-amber-500/10 border-amber-500/20',
+    },
+    {
+      icon: Bot,
+      title: 'Create & Manage the Bot',
+      desc: 'Ask your AI agent to create a WhatsApp bot, set the business identity, configure handoff keywords, and toggle it on — all in one conversation.',
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-500/10 border-emerald-500/20',
+    },
+    {
+      icon: Shield,
+      title: 'Secure Scoped API Keys',
+      desc: 'Each API key is tied to a single user account. Generate, rotate, or revoke anytime. Zero cross-user data access.',
+      color: 'text-rose-400',
+      bg: 'bg-rose-500/10 border-rose-500/20',
+    },
+  ];
+
+  function copyConfig() {
+    navigator.clipboard.writeText(configSnippet).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <section
+      id="whatsapp-mcp-api-agent"
+      aria-label="WhatsApp MCP Server — AI Agent Integration"
+      className="bg-gray-950 py-24 sm:py-32 border-t border-gray-800/50"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* SEO heading */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/25 mb-6">
+            <Cpu size={14} className="text-violet-400" />
+            <span className="text-xs font-semibold text-violet-400 tracking-wide">WhatsApp MCP Server</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-4">
+            Control WhatsApp From Inside<br />
+            <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
+              Your Favourite AI Agent
+            </span>
+          </h2>
+          <p className="text-lg text-gray-400 leading-relaxed">
+            NexBotix exposes a full <strong className="text-white font-semibold">Model Context Protocol (MCP) server</strong> for WhatsApp.
+            Connect Claude Desktop, Cursor, Windsurf, or any MCP-compatible AI agent with one API key — then send messages,
+            run bulk campaigns, and schedule broadcasts using plain English.
+          </p>
+        </div>
+
+        {/* 2-column: config + tools */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16 items-start">
+
+          {/* Config snippet */}
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="text-xs text-gray-500">Works with:</span>
+              {agentApps.map(a => (
+                <span key={a.name} className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border ${a.bg}`}>
+                  {a.name}
+                </span>
+              ))}
+            </div>
+
+            <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+              {/* Terminal bar */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+                  <Code2 size={13} className="text-gray-500 ml-2" />
+                  <span className="text-xs text-gray-500 font-mono">claude_desktop_config.json</span>
+                </div>
+                <button
+                  onClick={copyConfig}
+                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 px-2 py-1 rounded-lg hover:bg-gray-800 transition-all"
+                >
+                  {copied ? <Check size={12} className="text-green-400" /> : <FileText size={12} />}
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <pre className="p-5 text-sm font-mono text-gray-300 overflow-x-auto leading-relaxed">
+                <code>{configSnippet}</code>
+              </pre>
+            </div>
+
+            <p className="text-sm text-gray-500 mt-3 leading-relaxed">
+              Add this to your AI agent config. Your WhatsApp — contacts, schedules, bulk messaging — becomes a set of natural-language commands available in any conversation.
+            </p>
+          </div>
+
+          {/* Tool list */}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+              17 WhatsApp tools — available to your AI agent
+            </p>
+            <div className="flex flex-col gap-2">
+              {tools.map(t => (
+                <div key={t.name} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/70 border border-gray-800 hover:border-gray-700 transition-all">
+                  <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" />
+                  <code className="text-xs font-mono text-violet-300 flex-1 min-w-0 truncate">{t.name}</code>
+                  <span className="text-xs text-gray-500 flex-shrink-0">{t.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Agentic use cases */}
+        <div>
+          <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-8">
+            What you can build with WhatsApp + AI agents
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {useCases.map(uc => (
+              <article
+                key={uc.title}
+                className={`rounded-2xl border p-6 hover:scale-[1.01] transition-all ${uc.bg}`}
+              >
+                <uc.icon size={22} className={`${uc.color} mb-3`} />
+                <h3 className="text-base font-bold text-white mb-2">{uc.title}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed">{uc.desc}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link
+            to="/signup"
+            className="group inline-flex items-center gap-2 px-6 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl shadow-xl shadow-violet-600/25 hover:from-violet-500 hover:to-purple-500 transition-all"
+          >
+            Get Your API Key Free
+            <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+          <span className="text-sm text-gray-500">
+            Compatible with MCP Streamable HTTP (v2024-11-05)
+          </span>
         </div>
       </div>
     </section>
@@ -854,9 +1081,9 @@ import { useSEO } from '@/hooks/useSEO';
 /* ─────────────── Page ─────────────── */
 export function HomePage() {
   useSEO({
-    title: 'NexBotix - Multi-Channel Marketing & Chatbots',
-    description: 'Unified platform for WhatsApp marketing, Email campaigns, and AI Website Chatbots. Engage customers, capture leads, and automate sales.',
-    keywords: 'whatsapp bulk sender, email campaigns, website chatbot, lead capture, marketing automation, nexbotix',
+    title: 'NexBotix - WhatsApp MCP Server, Bulk Marketing & AI Chatbots',
+    description: 'WhatsApp MCP server for AI agents — connect Claude Desktop, Cursor, or any AI agent to WhatsApp with one API key. Plus bulk WhatsApp marketing, email campaigns, and AI website chatbots.',
+    keywords: 'whatsapp mcp server, whatsapp api ai agent, claude desktop whatsapp, whatsapp automation mcp, mcp whatsapp integration, whatsapp bulk sender, email campaigns, website chatbot, lead capture, marketing automation, nexbotix, ai agent whatsapp, whatsapp model context protocol',
     url: 'https://nexbotix.todayintech.in/'
   });
 
@@ -866,6 +1093,7 @@ export function HomePage() {
       <Problem />
       <Solution />
       <Features />
+      <MCPSection />
       <HowItWorks />
       <Pricing />
       <CTA />
