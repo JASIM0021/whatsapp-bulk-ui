@@ -36,6 +36,23 @@ function saveDraft(draft: BotDraft) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
 }
 
+function getDraftStep(draft: BotDraft): { step: number; messages: ChatMessage[] } {
+  const msgs: ChatMessage[] = [{ role: 'bot', text: "Hi! 👋 What's your business name?" }];
+  if (!draft.businessName) return { step: 1, messages: msgs };
+
+  msgs.push({ role: 'user', text: draft.businessName });
+  msgs.push({ role: 'bot', text: `Got it! Describe what ${draft.businessName} does in one sentence.` });
+  if (!draft.description) return { step: 2, messages: msgs };
+
+  msgs.push({ role: 'user', text: draft.description });
+  msgs.push({ role: 'bot', text: "What are your top services or products? Add up to 4, one at a time — then click Done." });
+  if (!draft.services.length) return { step: 3, messages: msgs };
+
+  msgs.push({ role: 'user', text: draft.services.join(', ') });
+  msgs.push({ role: 'bot', text: "Do you have a website or booking link? (optional — press Skip to continue)" });
+  return { step: 4, messages: msgs };
+}
+
 export function useBotxOnboarding() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -49,11 +66,22 @@ export function useBotxOnboarding() {
   // Open modal on mount when unauthenticated and not skipped this session
   useEffect(() => {
     if (isLoading) return;
-    if (isAuthenticated) return;
     if (sessionStorage.getItem(SKIP_KEY)) return;
 
+    if (!isAuthenticated) {
+      setIsOpen(true);
+      setMessages([{ role: 'bot', text: "Hi! 👋 What's your business name?" }]);
+      return;
+    }
+
+    // Resume incomplete onboarding after registration
+    const saved = loadDraft();
+    if (!saved.businessName || saved.completedAt) return;
+    const { step: resumeStep, messages: resumeMessages } = getDraftStep(saved);
+    setDraft(saved);
+    setStep(resumeStep);
+    setMessages(resumeMessages);
     setIsOpen(true);
-    setMessages([{ role: 'bot', text: "Hi! 👋 What's your business name?" }]);
   }, [isAuthenticated, isLoading]);
 
   // Register global re-open function for the homepage CTA

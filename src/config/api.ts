@@ -84,6 +84,10 @@ export const API_ENDPOINTS = {
     plan: (name: string) => `${API_BASE_URL}/api/admin/plans/${name}`,
     promos: `${API_BASE_URL}/api/admin/promos`,
     promo: (id: string) => `${API_BASE_URL}/api/admin/promos/${id}`,
+    serviceAvailability: `${API_BASE_URL}/api/admin/services/availability`,
+  },
+  services: {
+    availability: `${API_BASE_URL}/api/services/availability`,
   },
   contacts: {
     list: `${API_BASE_URL}/api/contacts`,
@@ -147,6 +151,50 @@ export const API_ENDPOINTS = {
     cancelSchedule: (id: string) => `${API_BASE_URL}/api/facebook/schedule/${id}`,
     ogPreview:      `${API_BASE_URL}/api/facebook/og-preview`,
   },
+  // ── LinkedIn (OAuth2 API) ─────────────────────────────────────────────
+  linkedin: {
+    credentials:    `${API_BASE_URL}/api/linkedin/credentials`,
+    authUrl:        `${API_BASE_URL}/api/linkedin/auth-url`,
+    disconnect:     `${API_BASE_URL}/api/linkedin/disconnect`,
+    status:         `${API_BASE_URL}/api/linkedin/status`,
+    posts:          `${API_BASE_URL}/api/linkedin/posts`,
+    post:           (id: string) => `${API_BASE_URL}/api/linkedin/posts/${id}`,
+    schedule:       `${API_BASE_URL}/api/linkedin/schedule`,
+    cancelSchedule: (id: string) => `${API_BASE_URL}/api/linkedin/schedule/${id}`,
+    bot:            `${API_BASE_URL}/api/linkedin/bot`,
+    botRun:         `${API_BASE_URL}/api/linkedin/bot/run`,
+  },
+  // ── SEO Extension ─────────────────────────────────────────────────────────
+  seo: {
+    config:     `${API_BASE_URL}/api/seo/config`,
+    dashboard:  `${API_BASE_URL}/api/seo/dashboard`,
+    pages:      `${API_BASE_URL}/api/seo/pages`,
+    pageDetail: (url: string) => `${API_BASE_URL}/api/seo/pages/detail?url=${encodeURIComponent(url)}`,
+    vitals:     `${API_BASE_URL}/api/seo/vitals`,
+    issues:     `${API_BASE_URL}/api/seo/issues`,
+    verify:     `${API_BASE_URL}/api/seo/verify`,
+    autofix:    `${API_BASE_URL}/api/seo/autofix`,
+    bot:        `${API_BASE_URL}/api/seo/bot`,
+    botRun:     `${API_BASE_URL}/api/seo/bot/run`,
+    trends:     (geo: string) => `${API_BASE_URL}/api/seo/trends?geo=${encodeURIComponent(geo)}`,
+    gtm:        `${API_BASE_URL}/api/seo/gtm`,
+    gtmVerify:  `${API_BASE_URL}/api/seo/gtm/verify`,
+    resetData:  `${API_BASE_URL}/api/seo/data`,
+    scan:       `${API_BASE_URL}/api/seo/scan`,
+    scanStream: `${SSE_BASE_URL}/api/seo/scan/stream`,
+  },
+  // ── SEO Blog (GitHub App) ─────────────────────────────────────────────────────
+  seoBlog: {
+    installUrl:  `${API_BASE_URL}/api/seo/blog/install-url`,
+    callback:    `${API_BASE_URL}/api/seo/blog/callback`,
+    repos:       `${API_BASE_URL}/api/seo/blog/repos`,
+    config:      `${API_BASE_URL}/api/seo/blog/config`,
+    test:        `${API_BASE_URL}/api/seo/blog/test`,
+    run:         `${API_BASE_URL}/api/seo/blog/run`,
+    posts:       `${API_BASE_URL}/api/seo/blog/posts`,
+    detect:      `${API_BASE_URL}/api/seo/blog/detect`,
+    preview:     (id: string) => `${API_BASE_URL}/api/seo/blog/posts/${id}/preview`,
+  },
   // ── Website Chatbot ───────────────────────────────────────────────────
   websiteChatbot: {
     config: `${API_BASE_URL}/api/website-chatbot/config`,
@@ -177,6 +225,17 @@ export const API_ENDPOINTS = {
     list: `${API_BASE_URL}/api/admin/deletion-requests`,
     approve: (id: string) => `${API_BASE_URL}/api/admin/deletion-requests/${id}/approve`,
     reject: (id: string) => `${API_BASE_URL}/api/admin/deletion-requests/${id}/reject`,
+  },
+  // ── Influencer / Affiliate portal ─────────────────────────────────────────
+  influencer: {
+    me:        `${API_BASE_URL}/api/influencer/me`,
+    dashboard: `${API_BASE_URL}/api/influencer/dashboard`,
+  },
+  adminInfluencer: {
+    list:   `${API_BASE_URL}/api/admin/influencers`,
+    create: `${API_BASE_URL}/api/admin/influencers`,
+    update: (id: string) => `${API_BASE_URL}/api/admin/influencers/${id}`,
+    payout: (id: string) => `${API_BASE_URL}/api/admin/influencers/${id}/payout`,
   },
 };
 
