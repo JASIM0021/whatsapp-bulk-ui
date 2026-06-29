@@ -158,7 +158,7 @@ export function DashboardPage() {
             const enabled = user?.subscription?.enabledServices ?? [];
             const isLocked = !user?.subscription?.isActive || (plan === 'free' ? service.dbId !== 'whatsapp' : !enabled.includes(service.dbId));
             return (
-              <div 
+              <div
                 key={service.id}
                 onClick={() => !isLocked && navigate(service.path)}
                 className={`relative group bg-white rounded-2xl border-2 ${service.border} ${isLocked ? 'opacity-80' : `cursor-pointer ${service.hoverBorder}`} overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col`}
@@ -174,19 +174,26 @@ export function DashboardPage() {
                       </span>
                     )}
                   </div>
-                  
+
                   <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-gray-700 transition-colors">{service.title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed flex-1">{service.description}</p>
                 </div>
-                
+
                 <div className={`px-8 py-4 ${service.bg} border-t ${service.border} flex items-center justify-between`}>
-                  <span className={`text-sm font-semibold ${isLocked ? 'text-gray-500' : 'text-gray-900'}`}>
-                    {isLocked ? 'Upgrade to unlock' : 'Open Workspace'}
-                  </span>
-                  {!isLocked && (
-                    <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                      <ChevronRight size={16} className="text-gray-700" />
-                    </div>
+                  {isLocked ? (
+                    <button
+                      onClick={e => { e.stopPropagation(); navigate('/subscription', { state: { preselect: service.dbId } }); }}
+                      className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                    >
+                      <Lock size={13} /> Click here to unlock
+                    </button>
+                  ) : (
+                    <>
+                      <span className="text-sm font-semibold text-gray-900">Open Workspace</span>
+                      <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                        <ChevronRight size={16} className="text-gray-700" />
+                      </div>
+                    </>
                   )}
                 </div>
               </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
 import { Check, Zap, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X, Code, Copy, ChevronDown, ChevronUp, Trash2, Plus, ExternalLink, MessageSquare, Bot, Mail, MessageCircle, Facebook, Search, Sparkles } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 // ─── Add-on pricing metadata ──────────────────────────────────────────────────
 
@@ -369,6 +369,7 @@ function CodeExamples() {
 export function SubscriptionPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -397,6 +398,19 @@ export function SubscriptionPage() {
     return n;
   });
   const selectCombo = (svcs: readonly string[]) => setSelectedServices(new Set(svcs));
+
+  // Auto-select a service when arriving from a locked dashboard card
+  useEffect(() => {
+    const preselect = (location.state as { preselect?: string } | null)?.preselect;
+    if (!preselect) return;
+    const group = SVC_GROUPS.find(g => g.ids.includes(preselect));
+    if (group) {
+      setSelectedServices(new Set(group.ids));
+    }
+    // Clear the navigation state so a page refresh doesn't re-trigger
+    window.history.replaceState({}, '');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   // Helper: convert INR price → display string in user's currency
