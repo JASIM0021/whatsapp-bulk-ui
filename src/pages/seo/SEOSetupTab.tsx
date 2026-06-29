@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Loader2, Copy, Check, ExternalLink, Code2, Globe,
   ToggleLeft, ToggleRight, AlertCircle, FlaskConical,
@@ -27,6 +27,14 @@ export function SEOSetupTab({ session }: Props) {
   const [siteName, setSiteName] = useState(session.config?.siteName || '');
   const [sitemapUrl, setSitemapUrl] = useState(session.config?.sitemapUrl || '');
   const [isEnabled, setIsEnabled] = useState(session.config?.isEnabled ?? true);
+
+  // Sync form fields when config loads asynchronously after the initial render
+  useEffect(() => {
+    if (!session.config) return;
+    setSiteName(session.config.siteName || '');
+    setSitemapUrl(session.config.sitemapUrl || '');
+    setIsEnabled(session.config.isEnabled ?? true);
+  }, [session.config]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
