@@ -34,6 +34,12 @@ import {
   Copy,
   Loader2,
   ExternalLink,
+  FlaskConical,
+  AlertTriangle,
+  Check,
+  TrendingUp,
+  DollarSign,
+  LinkIcon,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -51,6 +57,7 @@ interface AdminUser {
   name: string;
   role: string;
   status?: string;
+  isTestUser?: boolean;
   createdAt: string;
   subscription?: {
     plan: string;
@@ -63,7 +70,7 @@ interface AdminUser {
   };
 }
 
-type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions';
+type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers';
 
 interface Invoice {
   id: string;
@@ -515,6 +522,18 @@ function UsersTab() {
     } catch { /* ignore */ }
   };
 
+  const toggleTestUser = async (userId: string, current: boolean) => {
+    const action = current ? 'Remove test user status from' : 'Mark as test user';
+    if (!confirm(`${action} this user? Test users have no rate limits or restrictions.`)) return;
+    try {
+      await apiFetch(API_ENDPOINTS.admin.user(userId), {
+        method: 'PUT',
+        body: JSON.stringify({ isTestUser: !current }),
+      });
+      fetchUsers();
+    } catch { /* ignore */ }
+  };
+
   const deleteUser = async (userId: string, email: string) => {
     if (!confirm(`Delete user "${email}"? This will remove all their data and cannot be undone.`)) return;
     try {
@@ -594,6 +613,11 @@ function UsersTab() {
                           {isBlocked && (
                             <span className="px-1.5 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded uppercase">Blocked</span>
                           )}
+                          {u.isTestUser && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded uppercase">
+                              <FlaskConical size={9} /> Test
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -648,6 +672,17 @@ function UsersTab() {
                             className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                           >
                             <Pencil size={15} />
+                          </button>
+                          <button
+                            onClick={() => toggleTestUser(u.id, !!u.isTestUser)}
+                            title={u.isTestUser ? 'Remove test user status' : 'Mark as test user (removes all limits)'}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              u.isTestUser
+                                ? 'text-violet-600 hover:text-violet-800 hover:bg-violet-50'
+                                : 'text-gray-400 hover:text-violet-600 hover:bg-violet-50'
+                            }`}
+                          >
+                            <FlaskConical size={15} />
                           </button>
                           {!isSelf && (
                             <button
@@ -1104,7 +1139,17 @@ function InvoicesTab() {
 }
 
 /* ─── Plans Tab ─── */
-const ALL_SERVICES = ['whatsapp', 'chatbot', 'email'] as const;
+const ALL_SERVICES = [
+  'whatsapp',     // WhatsApp bulk send
+  'whatsapp_bot', // WhatsApp AI auto-reply bot
+  'chatbot',      // Website chatbot widget
+  'email',        // Email bulk send
+  'facebook',     // Facebook posting
+  'linkedin',     // LinkedIn connect + manual posts
+  'linkedin_bot', // LinkedIn automation bot + AI images
+  'seo',          // SEO dashboard / pages / vitals (basic)
+  'seo_bot',      // SEO auto-fix bot + blog bot (premium)
+] as const;
 
 interface PlanFormState {
   plan: string;
@@ -1119,6 +1164,7 @@ interface PlanFormState {
   isAdminOnly: boolean;
   displayOrder: string;
   highlight: boolean;
+  yearlyDiscount: string;
 }
 
 const emptyForm = (): PlanFormState => ({
@@ -1134,6 +1180,7 @@ const emptyForm = (): PlanFormState => ({
   isAdminOnly: false,
   displayOrder: '0',
   highlight: false,
+  yearlyDiscount: '0',
 });
 
 const formFromPlan = (p: PlanConfigData): PlanFormState => ({
@@ -1157,6 +1204,7 @@ function PlansTab() {
   const [editing, setEditing] = useState<{ mode: 'create' | 'edit'; form: PlanFormState } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -1170,9 +1218,9 @@ function PlansTab() {
 
   useEffect(() => { load(); }, []);
 
-  const startCreate = () => { setError(null); setEditing({ mode: 'create', form: emptyForm() }); };
-  const startEdit = (p: PlanConfigData) => { setError(null); setEditing({ mode: 'edit', form: formFromPlan(p) }); };
-  const closeModal = () => { setEditing(null); setError(null); };
+  const startCreate = () => { setError(null); setSuccessMsg(null); setEditing({ mode: 'create', form: emptyForm() }); };
+  const startEdit = (p: PlanConfigData) => { setError(null); setSuccessMsg(null); setEditing({ mode: 'edit', form: formFromPlan(p) }); };
+  const closeModal = () => { setEditing(null); setError(null); setSuccessMsg(null); };
 
   const submitForm = async () => {
     if (!editing) return;
@@ -1195,6 +1243,7 @@ function PlansTab() {
 
     setSaving(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       const url = editing.mode === 'create'
         ? API_ENDPOINTS.admin.plans
@@ -1208,6 +1257,37 @@ function PlansTab() {
         setError(data.error || 'Failed to save');
         return;
       }
+
+      // Auto-create companion yearly plan if discount > 0 (create mode only)
+      if (editing.mode === 'create') {
+        const discount = parseFloat(f.yearlyDiscount) || 0;
+        if (discount > 0 && discount < 100) {
+          const yearlyAmount = Math.round(body.amount * 12 * (1 - discount / 100));
+          const yearlyBody = {
+            ...body,
+            plan: body.plan + '_yearly',
+            name: body.name + ' (Yearly)',
+            durationDays: 365,
+            amount: yearlyAmount,
+          };
+          const yr = await apiFetch(API_ENDPOINTS.admin.plans, {
+            method: 'POST',
+            body: JSON.stringify(yearlyBody),
+          });
+          const yrData = await yr.json();
+          if (!yrData.success) {
+            await load();
+            setSuccessMsg(`Monthly plan created. Yearly companion failed: ${yrData.error || 'unknown error'}`);
+            setEditing(null);
+            return;
+          }
+          await load();
+          setSuccessMsg(`Created "${body.name}" (monthly) + "${yearlyBody.name}" at ₹${yearlyAmount.toLocaleString()}/yr (${discount}% off).`);
+          setEditing(null);
+          return;
+        }
+      }
+
       await load();
       closeModal();
     } catch (e: unknown) {
@@ -1264,6 +1344,13 @@ function PlansTab() {
           + Add Plan
         </button>
       </div>
+
+      {successMsg && (
+        <div className="p-3 bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg flex items-center justify-between">
+          <span>{successMsg}</span>
+          <button onClick={() => setSuccessMsg(null)} className="ml-3 opacity-60 hover:opacity-100 text-lg leading-none">×</button>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
@@ -1380,7 +1467,7 @@ function PlansTab() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-2">Services included</label>
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
                   {ALL_SERVICES.map(svc => (
                     <label key={svc} className="flex items-center gap-1.5 text-sm">
                       <input type="checkbox" checked={editing.form.services.includes(svc)}
@@ -1423,6 +1510,32 @@ function PlansTab() {
                   Admin-only (never sold)
                 </label>
               </div>
+
+              {editing.mode === 'create' && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-blue-800 mb-1">Yearly discount % (optional)</label>
+                      <input
+                        type="number" min="0" max="99" step="1"
+                        value={editing.form.yearlyDiscount}
+                        onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, yearlyDiscount: e.target.value } }))}
+                        className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white"
+                        placeholder="e.g. 20"
+                      />
+                    </div>
+                    {parseFloat(editing.form.yearlyDiscount) > 0 && parseFloat(editing.form.yearlyDiscount) < 100 && (
+                      <div className="text-sm text-blue-700 pt-5">
+                        → ₹{Math.round(parseFloat(editing.form.amount || '0') * 12 * (1 - parseFloat(editing.form.yearlyDiscount) / 100)).toLocaleString()}/yr
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-blue-600">
+                    Enter a discount to auto-create a companion <span className="font-mono font-semibold">{editing.form.plan || 'plan_id'}_yearly</span> plan (365 days) at the discounted annual price.
+                    Leave at 0 to skip.
+                  </p>
+                </div>
+              )}
             </div>
             <div className="p-5 border-t border-gray-100 flex justify-end gap-2">
               <button onClick={closeModal}
@@ -2257,6 +2370,335 @@ function DeletionRequestsTab() {
   );
 }
 
+/* ─── Influencers Tab ─── */
+interface InfluencerProfile {
+  id: string; name: string; email: string; phone?: string;
+  promoCode: string; commissionRate: number; status: string;
+  upiId?: string;
+  totalEarned: number; totalPaid: number; totalPending: number; totalReferrals: number;
+  createdAt: string;
+}
+interface Commission {
+  id: string; userEmail: string; userName: string;
+  txnId: string; plan: string; paymentAmount: number;
+  commissionAmount: number; status: 'pending' | 'paid';
+  createdAt: string;
+}
+
+function fmtMoney(n: number) {
+  return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function InfluencersTab() {
+  const [influencers, setInfluencers] = useState<InfluencerProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [selectedInf, setSelectedInf] = useState<InfluencerProfile | null>(null);
+  const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [payingOut, setPayingOut] = useState(false);
+  const [form, setForm] = useState({ userEmail: '', promoCode: '', commissionRate: '20', upiId: '', phone: '' });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.adminInfluencer.list);
+      const json = await res.json();
+      if (json.success) setInfluencers(json.data || []);
+    } catch { /* ignore */ } finally { setLoading(false); }
+  }, []);
+
+  const loadCommissions = useCallback(async (inf: InfluencerProfile) => {
+    setSelectedInf(inf);
+    setCommissions([]);
+    // Reuse the dashboard endpoint through the user's own account is not available to admin,
+    // so we load fresh from admin list and show stats from the profile object itself.
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const create = async () => {
+    setSaving(true); setMsg('');
+    try {
+      const res = await apiFetch(API_ENDPOINTS.adminInfluencer.create, {
+        method: 'POST',
+        body: JSON.stringify({
+          userEmail: form.userEmail,
+          promoCode: form.promoCode,
+          commissionRate: parseFloat(form.commissionRate) / 100,
+          upiId: form.upiId,
+          phone: form.phone,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setMsg('Influencer enrolled!'); setShowCreate(false);
+        setForm({ userEmail: '', promoCode: '', commissionRate: '20', upiId: '', phone: '' });
+        load();
+      } else { setMsg(json.error || 'Failed'); }
+    } catch { setMsg('Network error'); } finally { setSaving(false); }
+  };
+
+  const toggleStatus = async (inf: InfluencerProfile) => {
+    const newStatus = inf.status === 'active' ? 'suspended' : 'active';
+    await apiFetch(API_ENDPOINTS.adminInfluencer.update(inf.id), {
+      method: 'PUT', body: JSON.stringify({ status: newStatus }),
+    });
+    load();
+  };
+
+  const markAllPaid = async (inf: InfluencerProfile) => {
+    setPayingOut(true);
+    await apiFetch(API_ENDPOINTS.adminInfluencer.payout(inf.id), { method: 'POST', body: '{}' });
+    setPayingOut(false); load();
+    if (selectedInf?.id === inf.id) setSelectedInf({ ...inf, totalPending: 0, totalPaid: inf.totalPaid + inf.totalPending });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Influencer / Affiliate Partners</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Manage affiliate commissions and payout tracking</p>
+        </div>
+        <button onClick={() => { setShowCreate(true); setMsg(''); }} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+          <UserPlus size={16} /> Enroll Influencer
+        </button>
+      </div>
+
+      {msg && <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">{msg}</div>}
+
+      {/* Enroll form */}
+      {showCreate && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+          <h3 className="font-semibold text-gray-900">Enroll New Influencer</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">User Email</label>
+              <input type="email" value={form.userEmail} onChange={e => setForm(f => ({ ...f, userEmail: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="influencer@email.com" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Promo Code (must exist)</label>
+              <input value={form.promoCode} onChange={e => setForm(f => ({ ...f, promoCode: e.target.value.toUpperCase() }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase"
+                placeholder="INFLUENCER10" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Commission %</label>
+              <input type="number" min="1" max="50" value={form.commissionRate} onChange={e => setForm(f => ({ ...f, commissionRate: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">UPI ID (for payouts)</label>
+              <input value={form.upiId} onChange={e => setForm(f => ({ ...f, upiId: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="name@upi" />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={create} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+              {saving ? 'Saving…' : 'Enroll'}
+            </button>
+            <button onClick={() => setShowCreate(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Influencer list */}
+      {loading ? (
+        <div className="text-center py-12 text-gray-400 text-sm">Loading…</div>
+      ) : influencers.length === 0 ? (
+        <div className="text-center py-12 text-gray-400 text-sm">No influencers enrolled yet.</div>
+      ) : (
+        <div className="space-y-4">
+          {influencers.map(inf => (
+            <div key={inf.id} className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    {(inf.name || '?')[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-gray-900">{inf.name}</p>
+                      <span className="font-mono text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200">{inf.promoCode}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${inf.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {inf.status}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-0.5">{inf.email}</p>
+                    {inf.upiId && <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><LinkIcon size={10} /> {inf.upiId}</p>}
+                    {/* Stats row */}
+                    <div className="flex gap-4 mt-3 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-400">Referrals</p>
+                        <p className="font-semibold text-gray-900">{inf.totalReferrals}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Total Earned</p>
+                        <p className="font-semibold text-gray-900">{fmtMoney(inf.totalEarned)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Pending</p>
+                        <p className={`font-semibold ${inf.totalPending > 0 ? 'text-yellow-600' : 'text-gray-900'}`}>{fmtMoney(inf.totalPending)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Paid Out</p>
+                        <p className="font-semibold text-green-600">{fmtMoney(inf.totalPaid)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Commission</p>
+                        <p className="font-semibold text-gray-900">{Math.round(inf.commissionRate * 100)}%</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* Actions */}
+                <div className="flex gap-2 flex-shrink-0">
+                  {inf.totalPending > 0 && (
+                    <button onClick={() => markAllPaid(inf)} disabled={payingOut}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
+                      <DollarSign size={12} /> Mark Paid ({fmtMoney(inf.totalPending)})
+                    </button>
+                  )}
+                  <button onClick={() => toggleStatus(inf)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${inf.status === 'active' ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-green-50 text-green-600 hover:bg-green-100 border border-green-200'}`}>
+                    {inf.status === 'active' ? <><Ban size={12} /> Suspend</> : <><CheckCircle2 size={12} /> Activate</>}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Service Availability Tab ─── */
+const SVC_LABELS: Record<string, { label: string; desc: string }> = {
+  whatsapp:     { label: 'WhatsApp Sender',  desc: 'Bulk messaging at scale' },
+  whatsapp_bot: { label: 'WhatsApp AI Bot',  desc: '24/7 auto-reply chatbot' },
+  email:        { label: 'Email Marketing',  desc: 'Bulk campaigns & tracking' },
+  chatbot:      { label: 'Website Chatbot',  desc: 'Embeddable AI widget' },
+  facebook:     { label: 'Facebook',         desc: 'Schedule & publish posts' },
+  linkedin:     { label: 'LinkedIn',         desc: 'Publish & schedule posts' },
+  linkedin_bot: { label: 'LinkedIn AI Bot',  desc: 'Automated AI posting' },
+  seo:          { label: 'SEO Manager',      desc: 'Audit & health tracking' },
+  seo_bot:      { label: 'SEO AI Bot',       desc: 'AI blog & recommendations' },
+};
+
+interface ServiceStatus {
+  service: string;
+  isUnavailable: boolean;
+  message?: string;
+}
+
+function ServiceAvailabilityTab() {
+  const [services, setServices] = useState<ServiceStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [editMsg, setEditMsg] = useState<Record<string, string>>({});
+  const [saved, setSaved] = useState<string | null>(null);
+
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.serviceAvailability);
+      const data = await res.json();
+      if (data.success) {
+        setServices(data.data || []);
+        const msgs: Record<string, string> = {};
+        for (const s of (data.data || [])) msgs[s.service] = s.message || '';
+        setEditMsg(msgs);
+      }
+    } catch { /* ignore */ } finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchServices(); }, []);
+
+  const updateService = async (svcId: string, isUnavailable: boolean, message: string) => {
+    setSaving(svcId);
+    try {
+      await apiFetch(API_ENDPOINTS.admin.serviceAvailability, {
+        method: 'PUT',
+        body: JSON.stringify({ service: svcId, isUnavailable, message }),
+      });
+      setServices(prev => prev.map(s => s.service === svcId ? { ...s, isUnavailable, message } : s));
+      setSaved(svcId);
+      setTimeout(() => setSaved(null), 2000);
+    } catch { /* ignore */ } finally { setSaving(null); }
+  };
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-1">Service Availability</h2>
+      <p className="text-sm text-gray-500 mb-6">
+        Mark any service as temporarily unavailable. Users will see a "Temporarily Unavailable" badge on pricing cards and cannot subscribe to that service.
+      </p>
+      <div className="space-y-3">
+        {services.map(svc => {
+          const meta = SVC_LABELS[svc.service];
+          return (
+            <div
+              key={svc.service}
+              className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl border transition-colors ${
+                svc.isUnavailable ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+              }`}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-gray-900 text-sm">{meta?.label ?? svc.service}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${svc.isUnavailable ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                    {svc.isUnavailable ? 'Unavailable' : 'Available'}
+                  </span>
+                  {saved === svc.service && <span className="text-xs text-green-600 flex items-center gap-1"><Check className="w-3 h-3" />Saved</span>}
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">{meta?.desc}</p>
+                {svc.isUnavailable && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="text"
+                      placeholder="Message for users (e.g. Maintenance until Dec 15)"
+                      value={editMsg[svc.service] ?? ''}
+                      onChange={e => setEditMsg(prev => ({ ...prev, [svc.service]: e.target.value }))}
+                      className="flex-1 text-xs border border-red-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-red-300 placeholder:text-gray-400"
+                    />
+                    <button
+                      onClick={() => updateService(svc.service, true, editMsg[svc.service] ?? '')}
+                      disabled={saving === svc.service}
+                      className="text-xs px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium disabled:opacity-50 whitespace-nowrap"
+                    >
+                      Save msg
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => updateService(svc.service, !svc.isUnavailable, editMsg[svc.service] ?? '')}
+                disabled={saving === svc.service}
+                className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                  svc.isUnavailable
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-red-100 hover:bg-red-200 text-red-700'
+                }`}
+              >
+                {saving === svc.service && <Loader2 className="w-4 h-4 animate-spin" />}
+                {svc.isUnavailable ? 'Mark Available' : 'Mark Unavailable'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Admin Panel ─── */
 export function AdminPanel() {
   const { user } = useAuth();
@@ -2291,6 +2733,8 @@ export function AdminPanel() {
     { id: 'email', label: 'Email', icon: Mail },
     { id: 'demos', label: 'Chatbot Demos', icon: Bot },
     { id: 'deletions', label: 'Deletion Requests', icon: Trash2 },
+    { id: 'services', label: 'Services', icon: AlertTriangle },
+    { id: 'influencers', label: 'Influencers', icon: TrendingUp },
   ];
 
   return (
@@ -2347,6 +2791,8 @@ export function AdminPanel() {
         {tab === 'email' && <EmailTab />}
         {tab === 'demos' && <ChatbotDemosTab />}
         {tab === 'deletions' && <DeletionRequestsTab />}
+        {tab === 'services' && <ServiceAvailabilityTab />}
+        {tab === 'influencers' && <InfluencersTab />}
       </div>
     </div>
   );

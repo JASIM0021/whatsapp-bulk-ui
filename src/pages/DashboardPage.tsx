@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles } from 'lucide-react';
+import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles, Search } from 'lucide-react';
 
 function FacebookIcon({ size = 32 }: { size?: number }) {
   return (
@@ -87,6 +87,18 @@ export function DashboardPage() {
       iconBg: 'bg-sky-100',
       path: '/linkedin',
       dbId: 'linkedin',
+    },
+    {
+      id: 'seo',
+      title: 'SEO Manager',
+      description: 'Embed one script to track SEO scores, Core Web Vitals, and page-level issues across your entire website.',
+      icon: <Search size={32} className="text-emerald-600" />,
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-100',
+      hoverBorder: 'hover:border-emerald-300',
+      iconBg: 'bg-emerald-100',
+      path: '/seo',
+      dbId: 'seo',
     },
   ];
 
@@ -182,6 +194,55 @@ export function DashboardPage() {
           })}
         </div>
         
+        {/* Bots Hub */}
+        <div className="mt-10">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center">
+              <Bot size={18} className="text-violet-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Your Bots</h2>
+              <p className="text-sm text-gray-500">AI-powered automation for every channel</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { id: 'whatsapp-bot', label: 'WhatsApp Bot',  icon: <Smartphone size={22} className="text-green-600" />,  bg: 'bg-green-50',  border: 'border-green-200',  hoverBorder: 'hover:border-green-400', service: 'whatsapp',  path: '/bot' },
+              { id: 'chatbot',      label: 'Website Chatbot', icon: <Globe size={22} className="text-sky-600" />,      bg: 'bg-sky-50',    border: 'border-sky-200',    hoverBorder: 'hover:border-sky-400',   service: 'chatbot',   path: '/website-chatbot' },
+              { id: 'email-bot',   label: 'Email Bot',      icon: <Mail size={22} className="text-blue-600" />,       bg: 'bg-blue-50',   border: 'border-blue-200',   hoverBorder: 'hover:border-blue-400',  service: 'email',     path: '/email' },
+              { id: 'seo-bot',     label: 'SEO Bot',        icon: <Search size={22} className="text-emerald-600" />,  bg: 'bg-emerald-50',border: 'border-emerald-200',hoverBorder: 'hover:border-emerald-400',service: 'seo',      path: '/seo' },
+              { id: 'linkedin-bot',label: 'LinkedIn Bot',   icon: <LinkedInIcon size={22} />,                         bg: 'bg-indigo-50', border: 'border-indigo-200', hoverBorder: 'hover:border-indigo-400',service: 'linkedin',  path: '/linkedin' },
+              { id: 'blog-bot',    label: 'Blog Bot',       icon: <Sparkles size={22} className="text-amber-500" />,  bg: 'bg-amber-50',  border: 'border-amber-200',  hoverBorder: 'hover:border-amber-400', service: null,        path: null },
+            ].map((bot) => {
+              const enabled = user?.subscription?.enabledServices ?? [];
+              const isActive = !!user?.subscription?.isActive;
+              const accessible = bot.path !== null && isActive && (bot.service === null || enabled.includes(bot.service));
+              const comingSoon = bot.path === null;
+              return (
+                <div
+                  key={bot.id}
+                  onClick={() => accessible && navigate(bot.path!)}
+                  title={bot.label}
+                  className={`relative flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border-2 ${bot.border} ${bot.bg} transition-all duration-200 ${accessible ? `cursor-pointer ${bot.hoverBorder} hover:shadow-md` : 'opacity-60 cursor-not-allowed'}`}
+                >
+                  {!accessible && !comingSoon && (
+                    <span className="absolute top-2 right-2">
+                      <Lock size={11} className="text-gray-400" />
+                    </span>
+                  )}
+                  {comingSoon && (
+                    <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>
+                  )}
+                  <div className={`w-11 h-11 rounded-xl ${bot.bg} border ${bot.border} flex items-center justify-center shadow-sm`}>
+                    {bot.icon}
+                  </div>
+                  <span className="text-xs font-semibold text-gray-700 text-center leading-tight">{bot.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Check Your AI Chatbot Demo */}
         <div
           onClick={() => navigate('/check-chatbot')}

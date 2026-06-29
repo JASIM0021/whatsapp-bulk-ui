@@ -1,11 +1,34 @@
 export interface LinkedInSessionStatus {
   isConnected: boolean;
   hasCredentials: boolean;
+  hasPlatformAuth?: boolean;
   profileName?: string | null;
   profilePicture?: string | null;
   email?: string | null;
   connectedAt?: string | null;
   callbackUrl?: string | null;
+}
+
+export interface LinkedInBotConfig {
+  isEnabled: boolean;
+  keywords: string[];
+  geos: string[];
+  postsPerDay: number;
+  schedule: 'daily' | 'off';
+  postTime: string;        // "HH:MM" UTC
+  postGapMinutes: number;  // gap between posts when postsPerDay > 1
+  generateImage: boolean;
+  adText?: string;
+  lastRunAt?: string;
+}
+
+export interface LinkedInBotRunResult {
+  success: boolean;
+  postId?: string;
+  postUrl?: string;
+  postText?: string;
+  hasImage: boolean;
+  createdAt?: string;
 }
 
 export interface LinkedInPost {

@@ -1,8 +1,81 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
-import { Check, Crown, Zap, Shield, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X, Code, Copy, ChevronDown, ChevronUp, Trash2, Plus, ExternalLink, Globe } from 'lucide-react';
+import { Check, Zap, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X, Code, Copy, ChevronDown, ChevronUp, Trash2, Plus, ExternalLink, MessageSquare, Bot, Mail, MessageCircle, Facebook, Search, Sparkles } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+
+// ─── Add-on pricing metadata ──────────────────────────────────────────────────
+
+const SVC_META = [
+  { id: 'whatsapp',     planMonthly: 'wa',       planYearly: 'wa_yr',       label: 'WhatsApp Sender', desc: 'Bulk messaging at scale',    colorBg: 'bg-green-500',   icon: 'MessageSquare' },
+  { id: 'whatsapp_bot', planMonthly: 'wa_bot',   planYearly: 'wa_bot_yr',   label: 'WhatsApp AI Bot', desc: '24/7 auto-reply chatbot',    colorBg: 'bg-emerald-600', icon: 'Bot' },
+  { id: 'email',        planMonthly: 'email',    planYearly: 'email_yr',    label: 'Email Marketing', desc: 'Bulk campaigns & tracking',  colorBg: 'bg-blue-500',    icon: 'Mail' },
+  { id: 'chatbot',      planMonthly: 'chatbot',  planYearly: 'chatbot_yr',  label: 'Website Chatbot', desc: 'Embeddable AI widget',       colorBg: 'bg-sky-500',     icon: 'MessageCircle' },
+  { id: 'facebook',     planMonthly: 'facebook', planYearly: 'facebook_yr', label: 'Facebook',        desc: 'Schedule & publish posts',   colorBg: 'bg-indigo-600',  icon: 'Facebook' },
+  { id: 'linkedin',     planMonthly: 'li',       planYearly: 'li_yr',       label: 'LinkedIn',        desc: 'Publish & schedule posts',   colorBg: 'bg-blue-700',    icon: 'LI' },
+  { id: 'linkedin_bot', planMonthly: 'li_bot',   planYearly: 'li_bot_yr',   label: 'LinkedIn AI Bot', desc: 'Automated AI posting',       colorBg: 'bg-cyan-600',    icon: 'Bot' },
+  { id: 'seo',          planMonthly: 'seo',      planYearly: 'seo_yr',      label: 'SEO Manager',     desc: 'Audit & health tracking',    colorBg: 'bg-violet-600',  icon: 'Search' },
+  { id: 'seo_bot',      planMonthly: 'seo_bot',  planYearly: 'seo_bot_yr',  label: 'SEO AI Bot',      desc: 'AI blog & recommendations',  colorBg: 'bg-purple-600',  icon: 'Sparkles' },
+] as const;
+
+const COMBO_DEFS = [
+  { planId: 'starter',  name: 'Starter',        services: ['whatsapp', 'email'] as const,                                                                                         savingsPct: '15%', highlight: false },
+  { planId: 'social',   name: 'Social Suite',   services: ['whatsapp', 'facebook', 'linkedin'] as const,                                                                          savingsPct: '16%', highlight: false },
+  { planId: 'growth',   name: 'Growth Pack',    services: ['whatsapp', 'email', 'linkedin', 'seo'] as const,                                                                      savingsPct: '25%', highlight: true  },
+  { planId: 'business', name: 'Business Suite', services: ['whatsapp', 'whatsapp_bot', 'email', 'linkedin', 'linkedin_bot', 'seo'] as const,                                      savingsPct: '24%', highlight: false },
+  { planId: 'ultimate', name: 'Ultimate',       services: ['whatsapp', 'whatsapp_bot', 'chatbot', 'email', 'facebook', 'linkedin', 'linkedin_bot', 'seo', 'seo_bot'] as const,   savingsPct: '33%', highlight: true  },
+];
+
+const SVC_TO_PLAN: Record<string, string> = {
+  whatsapp: 'wa', whatsapp_bot: 'wa_bot', email: 'email',
+  chatbot: 'chatbot', facebook: 'facebook', linkedin: 'li',
+  linkedin_bot: 'li_bot', seo: 'seo', seo_bot: 'seo_bot',
+};
+
+// Display groups — LinkedIn & SEO each collapse their sub-bot into one card
+const SVC_GROUPS = [
+  { ids: ['whatsapp'],                  label: 'WhatsApp Sender', desc: 'Bulk messaging at scale',    colorBg: 'bg-green-500',   icon: 'MessageSquare', subLabels: [] as string[] },
+  { ids: ['whatsapp_bot'],              label: 'WhatsApp AI Bot', desc: '24/7 auto-reply chatbot',   colorBg: 'bg-emerald-600', icon: 'Bot',           subLabels: [] as string[] },
+  { ids: ['email'],                     label: 'Email Marketing', desc: 'Bulk campaigns & tracking', colorBg: 'bg-blue-500',    icon: 'Mail',          subLabels: [] as string[] },
+  { ids: ['chatbot'],                   label: 'Website Chatbot', desc: 'Embeddable AI widget',      colorBg: 'bg-sky-500',     icon: 'MessageCircle', subLabels: [] as string[] },
+  { ids: ['facebook'],                  label: 'Facebook',        desc: 'Schedule & publish posts',  colorBg: 'bg-indigo-600',  icon: 'Facebook',      subLabels: [] as string[] },
+  { ids: ['linkedin', 'linkedin_bot'],  label: 'LinkedIn',        desc: 'Publisher + AI Bot',        colorBg: 'bg-blue-700',    icon: 'LI',            subLabels: ['Publisher', 'AI Bot'] },
+  { ids: ['seo', 'seo_bot'],            label: 'SEO',             desc: 'Manager + AI Bot',          colorBg: 'bg-violet-600',  icon: 'Search',        subLabels: ['Manager', 'AI Bot'] },
+];
+
+type BestPlan = { planId: string; name: string; price: number; isExact: boolean; savingsPct: string | null; extras: string[] };
+
+function matchBestPlan(sel: Set<string>, cycle: 'monthly' | 'yearly', pricing: LivePricing | null): BestPlan | null {
+  const suffix = cycle === 'yearly' ? '_yr' : '';
+  const selArr = Array.from(sel);
+  if (!sel.size) return null;
+
+  if (sel.size === 1) {
+    const pid = SVC_TO_PLAN[selArr[0]] + suffix;
+    const p = pricing?.[pid];
+    return p ? { planId: pid, name: p.name, price: p.amount, isExact: true, savingsPct: null, extras: [] } : null;
+  }
+
+  // exact combo match
+  for (const c of COMBO_DEFS) {
+    const cset = new Set<string>(c.services);
+    if (selArr.length === c.services.length && selArr.every(s => cset.has(s))) {
+      const pid = c.planId + suffix;
+      const p = pricing?.[pid];
+      return p ? { planId: pid, name: p.name, price: p.amount, isExact: true, savingsPct: c.savingsPct, extras: [] } : null;
+    }
+  }
+  // covering combo — cheapest that includes all selected
+  for (const c of COMBO_DEFS) {
+    const cset = new Set<string>(c.services);
+    if (selArr.every(s => cset.has(s))) {
+      const pid = c.planId + suffix;
+      const p = pricing?.[pid];
+      return p ? { planId: pid, name: p.name, price: p.amount, isExact: false, savingsPct: c.savingsPct, extras: Array.from(c.services).filter(s => !sel.has(s)) } : null;
+    }
+  }
+  return null;
+}
 
 interface SubscriptionInfo {
   plan: string;
@@ -86,37 +159,6 @@ interface PublicPlan {
 
 type LivePricing = Record<string, PublicPlan>;
 
-// Pick a visual style (icon + gradient colors) based on the plan's services
-// and price tier. This is the only "presentation" logic that is not driven by
-// admin-controlled data — it's a small heuristic so the cards still look good
-// when admin creates a brand-new plan.
-function planVisuals(p: PublicPlan): { icon: React.ElementType; color: string; btnClass: string } {
-  const onlyChatbot = p.services.length === 1 && p.services[0] === 'chatbot';
-  if (p.plan === 'free' || p.amount === 0) {
-    return { icon: Shield, color: 'from-gray-500 to-gray-600', btnClass: 'bg-gray-500 hover:bg-gray-600' };
-  }
-  if (onlyChatbot) {
-    return { icon: Code, color: 'from-sky-500 to-sky-600', btnClass: 'bg-sky-600 hover:bg-sky-700' };
-  }
-  if (p.highlight) {
-    return { icon: Crown, color: 'from-violet-500 to-violet-600', btnClass: 'bg-violet-600 hover:bg-violet-700' };
-  }
-  if (p.durationDays >= 365) {
-    return { icon: Crown, color: 'from-amber-500 to-amber-600', btnClass: 'bg-amber-600 hover:bg-amber-700' };
-  }
-  return { icon: Zap, color: 'from-green-500 to-green-600', btnClass: 'bg-green-600 hover:bg-green-700' };
-}
-
-function describeMessageLimit(p: PublicPlan): string {
-  if (p.messageLimit === 0) return 'Unlimited messages';
-  return `${p.messageLimit.toLocaleString()} messages/month`;
-}
-
-function planBillingLabel(p: PublicPlan): string {
-  if (p.durationDays >= 365) return '/year';
-  if (p.durationDays >= 28) return '/month';
-  return `/${p.durationDays}d`;
-}
 
 interface APIKeyInfo {
   id: string;
@@ -345,6 +387,22 @@ export function SubscriptionPage() {
   const [currencyInfo, setCurrencyInfo] = useState<CurrencyInfo>({
     country: 'IN', currency: 'INR', symbol: '₹', exchangeRate: 1, isIndia: true,
   });
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
+  const [unavailableServices, setUnavailableServices] = useState<Set<string>>(new Set());
+
+  const toggleSvc = (id: string) => setSelectedServices(prev => {
+    const n = new Set(prev);
+    if (n.has(id)) { n.delete(id); } else { n.add(id); }
+    return n;
+  });
+  const toggleGroup = (ids: string[]) => setSelectedServices(prev => {
+    const n = new Set(prev);
+    if (ids.every(id => n.has(id))) { ids.forEach(id => n.delete(id)); } else { ids.forEach(id => n.add(id)); }
+    return n;
+  });
+  const selectCombo = (svcs: readonly string[]) => setSelectedServices(new Set(svcs));
+
 
   // Helper: convert INR price → display string in user's currency
   const formatPrice = (inrAmount: number) => {
@@ -360,6 +418,16 @@ export function SubscriptionPage() {
     fetch(API_ENDPOINTS.subscription.plans)
       .then(r => r.json())
       .then(data => { if (data.success && data.data) setLivePricing(data.data); })
+      .catch(() => {});
+    fetch(API_ENDPOINTS.services.availability)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.data) {
+          const unavail = new Set<string>((data.data as { service: string; isUnavailable: boolean }[])
+            .filter(s => s.isUnavailable).map(s => s.service));
+          setUnavailableServices(unavail);
+        }
+      })
       .catch(() => {});
     // Detect user's currency — support ?testCurrency=US for local dev testing
     const testCountry = new URLSearchParams(window.location.search).get('testCurrency');
@@ -466,7 +534,15 @@ export function SubscriptionPage() {
   const clearPromo = () => {
     setPromoInput('');
     setPromoValidation(null);
+    setSelectedPlan(null);
   };
+
+  // Auto-clear applied promo whenever selection or billing cycle changes
+  useEffect(() => {
+    setPromoValidation(null);
+    setSelectedPlan(null);
+    setPromoInput('');
+  }, [selectedServices, billingCycle]);
 
   const handleUpgrade = async (plan: string) => {
     if (plan === 'free') return;
@@ -619,203 +695,308 @@ export function SubscriptionPage() {
           </div>
         )}
 
-        {/* Pricing Cards */}
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">Choose Your Plan</h1>
-        <p className="text-gray-500 text-center mb-6">Build your perfect marketing stack</p>
-
+        {/* ── Add-on Pricing ── */}
         {(() => {
-          const visiblePlans: PublicPlan[] = livePricing
-            ? Object.values(livePricing)
-                .filter((p): p is PublicPlan => !!p && p.isVisible && !p.isAdminOnly)
-                .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.amount - b.amount)
-            : [];
-          const cols = visiblePlans.length >= 4 ? 'md:grid-cols-4' : visiblePlans.length === 3 ? 'md:grid-cols-3' : visiblePlans.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-1';
-          const wrapClass = visiblePlans.length <= 2 ? 'max-w-3xl mx-auto' : '';
+          const bestPlan = matchBestPlan(selectedServices, billingCycle, livePricing);
+          const rawTotal = Array.from(selectedServices).reduce((sum, svc) => {
+            const pid = SVC_TO_PLAN[svc] + (billingCycle === 'yearly' ? '_yr' : '');
+            return sum + (livePricing?.[pid]?.amount ?? (billingCycle === 'yearly' ? 950 : 99));
+          }, 0);
+          const isExactCombo = bestPlan?.isExact ?? false;
+          const checkoutPrice = isExactCombo ? (bestPlan?.price ?? rawTotal) : rawTotal;
+          const savings = Math.max(0, rawTotal - checkoutPrice);
+
+          const SvcIcon = ({ id }: { id: string }) => {
+            if (id === 'LI') {
+              return (
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                </svg>
+              );
+            }
+            const MAP: Record<string, React.ElementType> = {
+              MessageSquare, Bot, Mail, MessageCircle, Facebook, Search, Sparkles,
+            };
+            const Icon = MAP[id] ?? Zap;
+            return <Icon className="w-5 h-5" />;
+          };
+
           return (
-            <div className={`grid grid-cols-1 sm:grid-cols-2 ${cols} ${wrapClass} gap-4 mb-8`}>
-              {visiblePlans.length === 0 && (
-                <div className="col-span-full text-center py-16 text-gray-400 text-sm">
-                  Loading plans…
-                </div>
-              )}
-              {visiblePlans.map((plan) => {
-            const { icon: Icon, color, btnClass } = planVisuals(plan);
-            const activePlanId = plan.plan;
-            const isCurrent = subscription?.plan === plan.plan && subscription?.isActive;
-            const isLowerThan = false; // upgrade ranking is intentionally simple now — admin can re-order via DisplayOrder
-            const displayPrice = plan.amount;
-            const displayFeatures = plan.features.length > 0 ? plan.features : [describeMessageLimit(plan)];
-
-            return (
-              <div
-                key={plan.plan}
-                className={`relative bg-white rounded-2xl border-2 p-6 flex flex-col transition-all hover:shadow-lg ${
-                  plan.highlight ? 'border-sky-500 shadow-sky-100 shadow-lg' : 'border-gray-200'
-                } ${isCurrent ? 'ring-2 ring-green-500' : ''}`}
-              >
-                {plan.highlight && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="bg-sky-600 text-white text-xs font-bold px-4 py-1.5 rounded-full">BEST VALUE</span>
-                  </div>
-                )}
-                {isCurrent && (
-                  <div className="absolute -top-3.5 right-4">
-                    <span className="bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-full">CURRENT</span>
-                  </div>
-                )}
-
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-4`}>
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
-
-                <h3 className="text-xl font-bold text-gray-900">{plan.name || plan.plan}</h3>
-                {plan.description && (
-                  <p className="text-xs text-gray-500 mt-1 mb-1">{plan.description}</p>
-                )}
-                <div className="mt-2 mb-1">
-                  <span className="text-4xl font-extrabold text-gray-900">
-                    {displayPrice === 0 ? 'Free' : formatPrice(displayPrice)}
-                  </span>
-                  {displayPrice > 0 && (
-                    <span className="text-gray-500 text-sm">{planBillingLabel(plan)}</span>
-                  )}
-                </div>
-                {/* Show USD badge for international */}
-                {!currencyInfo.isIndia && displayPrice > 0 && (
-                  <div className="flex items-center gap-1 mb-1">
-                    <Globe size={11} className="text-blue-500" />
-                    <span className="text-xs text-blue-600 font-medium">
-                      ≈ ₹{displayPrice.toLocaleString('en-IN')} INR
-                    </span>
-                  </div>
-                )}
-                <p className="text-xs text-gray-400 mb-4">{describeMessageLimit(plan)}</p>
-
-                <ul className="flex-1 space-y-3 mb-6">
-                  {displayFeatures.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                      <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                {plan.amount === 0 ? (
-                  <button disabled className="w-full py-3 rounded-xl bg-gray-100 text-gray-400 font-medium cursor-not-allowed">
-                    {isCurrent ? 'Current Plan' : 'Trial Only'}
+            <div className="mt-2">
+              {/* Header + toggle */}
+              <div className="text-center mb-8">
+                <p className="text-xs font-bold text-green-600 uppercase tracking-widest mb-2">Pricing</p>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">Simple, transparent pricing</h1>
+                <p className="text-gray-500 text-sm mb-6">Pick any service — add more for bigger savings</p>
+                <div className="inline-flex items-center bg-gray-100 p-1 rounded-xl gap-1">
+                  <button
+                    onClick={() => setBillingCycle('monthly')}
+                    className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${billingCycle === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Monthly
                   </button>
-                ) : (
-                  <>
-                    {/* Promo code section */}
-                    {!isCurrent && !isLowerThan && (
-                      <div className="mb-4 border border-violet-200 rounded-xl p-3 bg-violet-50">
-                        <p className="text-xs font-semibold text-violet-600 mb-2 flex items-center gap-1.5">
-                          <Tag className="w-3.5 h-3.5" /> Have a promo code?
-                        </p>
-                        {promoValidation?.valid && selectedPlan === activePlanId ? (
-                          <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                            <div>
-                              <span className="text-xs font-semibold text-green-700">{promoValidation.code} applied!</span>
-                              <p className="text-xs text-green-600 mt-0.5">
-                                {formatPrice(promoValidation.discountAmount)} off — Pay <strong>{formatPrice(promoValidation.finalAmount)}</strong> instead of {formatPrice(promoValidation.originalAmount)}
-                              </p>
-                            </div>
-                            <button onClick={clearPromo} className="ml-2 text-green-500 hover:text-green-700 shrink-0">
-                              <X className="w-4 h-4" />
-                            </button>
+                  <button
+                    onClick={() => setBillingCycle('yearly')}
+                    className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${billingCycle === 'yearly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Yearly
+                    <span className="text-[11px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">-20%</span>
+                  </button>
+                </div>
+                {billingCycle === 'yearly' && (
+                  <p className="text-xs text-green-600 mt-2 font-medium">2 months free on every yearly plan</p>
+                )}
+              </div>
+
+              {/* Individual service add-on cards */}
+              <div className="mb-10">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-4">
+                  Add-ons · {formatPrice(billingCycle === 'yearly' ? 950 : 99)}/{billingCycle === 'yearly' ? 'yr' : 'mo'} each
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {SVC_GROUPS.map(g => {
+                    const groupPrice = g.ids.reduce((sum, id) => {
+                      const planId = SVC_TO_PLAN[id] + (billingCycle === 'yearly' ? '_yr' : '');
+                      return sum + (livePricing?.[planId]?.amount ?? (billingCycle === 'yearly' ? 950 : 99));
+                    }, 0);
+                    const isGroupSel = g.ids.every(id => selectedServices.has(id));
+                    const isGroupActive = !!(subscription?.isActive && g.ids.every(id => subscription?.enabledServices?.includes(id)));
+                    const isYearlySub = subscription?.plan?.endsWith('_yr') ?? false;
+                    const isUnavail = g.ids.some(id => unavailableServices.has(id));
+                    // monthly-active → show upgrade CTA; yearly-active → fully locked
+                    const isUpgradeOnly = isGroupActive && !isYearlySub;
+                    const isLocked = isUnavail || (isGroupActive && isYearlySub);
+
+                    return (
+                      <button
+                        key={g.ids.join('+')}
+                        onClick={() => !isLocked && !isUpgradeOnly && toggleGroup(g.ids)}
+                        disabled={isLocked}
+                        className={`relative text-left rounded-2xl border-2 p-4 transition-all focus:outline-none ${
+                          isLocked
+                            ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                            : isUpgradeOnly
+                            ? 'border-blue-200 bg-blue-50'
+                            : isGroupSel
+                            ? 'border-green-500 bg-green-50 shadow-md shadow-green-100'
+                            : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-sm'
+                        }`}
+                      >
+                        {/* Badge */}
+                        {isUnavail && (
+                          <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-bold rounded-full">UNAVAILABLE</div>
+                        )}
+                        {isGroupActive && isYearlySub && (
+                          <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-sky-100 text-sky-700 text-[9px] font-bold rounded-full">ACTIVE</div>
+                        )}
+                        {isGroupSel && !isLocked && !isUpgradeOnly && (
+                          <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" strokeWidth={3} />
                           </div>
-                        ) : promoValidation && !promoValidation.valid && selectedPlan === activePlanId ? (
-                          <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                            <span className="text-xs text-red-600">{promoValidation.message || 'Invalid promo code'}</span>
-                            <button onClick={clearPromo} className="ml-2 text-red-400 hover:text-red-600 shrink-0">
-                              <X className="w-4 h-4" />
+                        )}
+
+                        {/* Icon */}
+                        <div className={`w-9 h-9 rounded-xl ${isLocked ? 'bg-gray-300' : g.colorBg} flex items-center justify-center mb-3 text-white`}>
+                          <SvcIcon id={g.icon} />
+                        </div>
+
+                        {/* Label + sub-labels for grouped cards */}
+                        <p className="text-sm font-bold text-gray-900 leading-tight">{g.label}</p>
+                        {g.subLabels.length > 0 ? (
+                          <p className="text-[9px] text-gray-400 mt-0.5 mb-3 leading-tight">{g.subLabels.join(' + ')}</p>
+                        ) : (
+                          <p className="text-[11px] text-gray-400 mt-0.5 mb-3 leading-snug">{g.desc}</p>
+                        )}
+
+                        {/* Price / state footer */}
+                        {isUnavail ? (
+                          <p className="text-[11px] text-amber-600 font-medium">Temporarily unavailable</p>
+                        ) : isGroupActive && isYearlySub ? (
+                          <p className="text-[11px] text-sky-600 font-medium">Subscribed (Yearly)</p>
+                        ) : isUpgradeOnly ? (
+                          <button
+                            onClick={e => { e.stopPropagation(); setBillingCycle('yearly'); toggleGroup(g.ids); }}
+                            className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 underline text-left"
+                          >
+                            Upgrade to Yearly →
+                          </button>
+                        ) : (
+                          <div>
+                            <span className="text-lg font-extrabold text-gray-900">{formatPrice(groupPrice)}</span>
+                            <span className="text-xs text-gray-400">/{billingCycle === 'yearly' ? 'yr' : 'mo'}</span>
+                            {g.ids.length > 1 && <span className="text-[10px] text-gray-400 ml-1">({g.ids.length} svcs)</span>}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Popular bundle cards */}
+              <div className="mb-24">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-4">Popular bundles — combine &amp; save</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+                  {COMBO_DEFS.map(combo => {
+                    const pid = billingCycle === 'yearly' ? combo.planId + '_yr' : combo.planId;
+                    const planData = livePricing?.[pid];
+                    const price = planData?.amount;
+                    const selMatch = Array.from(selectedServices).length === combo.services.length &&
+                      combo.services.every(s => selectedServices.has(s));
+                    const isCurrent = subscription?.plan === pid && subscription?.isActive;
+
+                    return (
+                      <button
+                        key={combo.planId}
+                        onClick={() => selectCombo(combo.services)}
+                        className={`relative text-left rounded-2xl border-2 p-5 transition-all focus:outline-none ${
+                          combo.highlight
+                            ? 'border-gray-900 bg-gray-900 text-white shadow-xl'
+                            : selMatch
+                            ? 'border-green-500 bg-green-50 shadow-md'
+                            : 'border-gray-200 bg-white hover:border-gray-400 hover:shadow-md'
+                        }`}
+                      >
+                        {combo.highlight && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <span className="bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">Best Value</span>
+                          </div>
+                        )}
+                        {isCurrent && (
+                          <div className="absolute -top-3 right-4">
+                            <span className="bg-green-600 text-white text-[10px] font-bold px-3 py-1 rounded-full">Current</span>
+                          </div>
+                        )}
+                        {selMatch && !combo.highlight && (
+                          <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                          </div>
+                        )}
+                        <p className={`text-sm font-bold mb-1 ${combo.highlight ? 'text-white' : 'text-gray-900'}`}>{combo.name}</p>
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {combo.services.map(s => {
+                            const meta = SVC_META.find(m => m.id === s);
+                            return (
+                              <span key={s} className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${combo.highlight ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                {meta?.label ?? s}
+                              </span>
+                            );
+                          })}
+                        </div>
+                        <div className="flex items-end justify-between mt-auto">
+                          <div>
+                            <span className={`text-2xl font-extrabold ${combo.highlight ? 'text-white' : 'text-gray-900'}`}>
+                              {price !== undefined ? formatPrice(price) : '—'}
+                            </span>
+                            <span className={`text-xs ${combo.highlight ? 'text-white/70' : 'text-gray-400'}`}>/{billingCycle === 'yearly' ? 'yr' : 'mo'}</span>
+                          </div>
+                          <span className={`text-xs font-bold px-2 py-1 rounded-full ${combo.highlight ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700'}`}>
+                            save {combo.savingsPct}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Sticky bottom summary bar */}
+              {selectedServices.size > 0 && (
+                <div className="fixed bottom-0 inset-x-0 z-50 bg-white border-t-2 border-gray-200 shadow-2xl">
+                  <div className="max-w-6xl mx-auto px-4 py-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      {/* Left: selection info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                          {SVC_GROUPS.filter(g => g.ids.some(id => selectedServices.has(id))).map(g => (
+                            <button
+                              key={g.ids.join('+')}
+                              onClick={() => toggleGroup(g.ids)}
+                              className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${g.colorBg} text-white`}
+                            >
+                              {g.label}
+                              <X className="w-3 h-3 opacity-80" />
                             </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {selectedServices.size} service{selectedServices.size !== 1 ? 's' : ''} × {formatPrice(billingCycle === 'yearly' ? 950 : 99)} each
+                          {!isExactCombo && bestPlan && (
+                            <span className="ml-2 text-amber-600">
+                              · 💡{' '}<button
+                                className="underline hover:no-underline"
+                                onClick={() => selectCombo(COMBO_DEFS.find(c => c.planId === bestPlan.planId)?.services ?? [])}
+                              >{bestPlan.name} {formatPrice(bestPlan.price)}</button>{' '}includes {bestPlan.extras.length} more — save {bestPlan.savingsPct}
+                            </span>
+                          )}
+                          {isExactCombo && bestPlan?.savingsPct && (
+                            <span className="ml-2 text-green-600 font-semibold">· Matched: {bestPlan.name} — save {bestPlan.savingsPct}</span>
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Center: promo code */}
+                      <div className="hidden sm:flex items-center gap-2">
+                        {promoValidation?.valid && selectedPlan === (bestPlan?.planId ?? '') ? (
+                          <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>{promoValidation.code} −{formatPrice(promoValidation.discountAmount)}</span>
+                            <button onClick={clearPromo}><X className="w-3.5 h-3.5 text-green-500 hover:text-green-700" /></button>
                           </div>
                         ) : (
-                          <div className="flex gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <Tag className="w-3.5 h-3.5 text-gray-400" />
                             <input
                               type="text"
-                              placeholder="Enter code (e.g. SAVE20)"
-                              value={selectedPlan === activePlanId ? promoInput : ''}
+                              placeholder="Promo code"
+                              value={selectedPlan === (bestPlan?.planId ?? '') ? promoInput : ''}
                               onChange={e => {
-                                setSelectedPlan(activePlanId);
-                                setPromoInput(e.target.value.toUpperCase());
-                                setPromoValidation(null);
+                                if (bestPlan) { setSelectedPlan(bestPlan.planId); setPromoInput(e.target.value.toUpperCase()); setPromoValidation(null); }
                               }}
-                              onFocus={() => setSelectedPlan(activePlanId)}
-                              onKeyDown={e => { if (e.key === 'Enter') { setSelectedPlan(activePlanId); applyPromo(activePlanId); } }}
-                              className="flex-1 min-w-0 text-sm border border-violet-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent bg-white uppercase placeholder:normal-case placeholder:text-gray-400"
+                              onKeyDown={e => { if (e.key === 'Enter' && bestPlan) { setSelectedPlan(bestPlan.planId); applyPromo(bestPlan.planId); } }}
+                              className="w-28 text-xs border border-gray-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-400 uppercase placeholder:normal-case placeholder:text-gray-400"
                             />
                             <button
-                              onClick={() => { setSelectedPlan(activePlanId); applyPromo(activePlanId); }}
-                              disabled={promoLoading || !(selectedPlan === activePlanId ? promoInput : '').trim()}
-                              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg disabled:opacity-40 whitespace-nowrap transition-colors"
+                              onClick={() => { if (bestPlan) { setSelectedPlan(bestPlan.planId); applyPromo(bestPlan.planId); } }}
+                              disabled={promoLoading || !promoInput.trim()}
+                              className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium disabled:opacity-40 transition-colors"
                             >
-                              {promoLoading && selectedPlan === activePlanId
-                                ? <Loader2 className="w-4 h-4 animate-spin" />
-                                : 'Apply'}
+                              {promoLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Apply'}
                             </button>
                           </div>
                         )}
                       </div>
-                    )}
-                    <button
-                      onClick={() => handleUpgrade(activePlanId)}
-                      disabled={paying !== null || isCurrent || isLowerThan}
-                      className={`w-full py-3 rounded-xl font-medium transition-all ${
-                        isCurrent
-                          ? 'bg-green-500 text-white cursor-not-allowed'
-                          : isLowerThan
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : `${btnClass} text-white`
-                      } disabled:opacity-80`}
-                    >
-                      {paying === activePlanId ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Processing...
-                        </span>
-                      ) : isCurrent ? (
-                        'Current Plan'
-                      ) : isLowerThan ? (
-                        'Not Available'
-                      ) : promoValidation?.valid && selectedPlan === activePlanId ? (
-                        `Pay ₹${promoValidation.finalAmount.toLocaleString()}`
-                      ) : (
-                        `Get ${plan.name || plan.plan}`
-                      )}
-                    </button>
-                  </>
-                )}
-              </div>
-            );
-          })}
+
+                      {/* Right: price + CTA */}
+                      <div className="flex items-center gap-4 shrink-0">
+                        <div className="text-right">
+                          <div className="text-xl font-extrabold text-gray-900">
+                            {promoValidation?.valid && selectedPlan === (bestPlan?.planId ?? '')
+                              ? formatPrice(promoValidation.finalAmount)
+                              : formatPrice(checkoutPrice)}
+                            <span className="text-xs font-normal text-gray-400 ml-1">/{billingCycle === 'yearly' ? 'yr' : 'mo'}</span>
+                          </div>
+                          {savings > 0 && (
+                            <div className="text-xs text-green-600 font-medium">saves {formatPrice(savings)}</div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => { if (bestPlan) handleUpgrade(bestPlan.planId); }}
+                          disabled={paying !== null || !bestPlan}
+                          className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm disabled:opacity-60 transition-all shadow-lg shadow-green-200 active:scale-95"
+                        >
+                          {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                            <>{billingCycle === 'yearly' ? 'Subscribe Yearly' : 'Subscribe Monthly'} <ArrowLeft className="w-4 h-4 rotate-180" /></>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })()}
-
-        {/* Extra Messages Add-On */}
-        {subscription?.isActive && subscription.messageLimit > 0 && subscription.plan !== 'free' && (
-          <div className="mb-8 p-4 sm:p-5 rounded-2xl border border-amber-200 bg-amber-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div>
-              <p className="font-semibold text-amber-900">Need more messages?</p>
-              <p className="text-sm text-amber-700 mt-0.5">
-                Buy an extra 1,000 messages for ₹{(livePricing?.addon_messages?.amount ?? 199).toLocaleString()} — added instantly to your current plan.
-              </p>
-            </div>
-            <button
-              onClick={() => handleUpgrade('addon_messages')}
-              disabled={paying !== null}
-              className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
-            >
-              {paying === 'addon_messages' ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
-              ) : (
-                <>+ Buy 1,000 Messages</>
-              )}
-            </button>
-          </div>
-        )}
 
         {/* Developer API Section */}
         <div className="mt-12">

@@ -197,7 +197,7 @@ export function LoginPage() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Invalid code');
       loginWithToken(data.data.token, data.data.user);
-      navigate(getPostAuthDest());
+      navigate('/setup');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {

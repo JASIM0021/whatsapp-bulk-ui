@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '@/config/api';
 import {
@@ -23,6 +23,11 @@ import {
   Mail,
   CalendarClock,
   MailCheck,
+  MessageSquare,
+  Facebook,
+  Search,
+  Sparkles,
+  X,
 } from 'lucide-react';
 
 /* ─────────────── Hero ─────────────── */
@@ -479,186 +484,341 @@ interface PublicPlan {
   highlight?: boolean;
 }
 
-function planBillingSuffix(p: PublicPlan): string {
-  const d = p.durationDays ?? 0;
-  if (d >= 365) return '/yr';
-  if (d >= 28) return '/mo';
-  if (d > 0) return `/${d}d`;
-  return '';
+type PricingMap = Record<string, PublicPlan>;
+
+const HP_SVC_META = [
+  { id: 'whatsapp',     planM: 'wa',       planY: 'wa_yr',       label: 'WhatsApp Sender', desc: 'Bulk messaging at scale',    colorBg: 'bg-green-500',   Icon: MessageSquare },
+  { id: 'whatsapp_bot', planM: 'wa_bot',   planY: 'wa_bot_yr',   label: 'WhatsApp AI Bot', desc: '24/7 auto-reply chatbot',   colorBg: 'bg-emerald-600', Icon: Bot },
+  { id: 'email',        planM: 'email',    planY: 'email_yr',    label: 'Email Marketing', desc: 'Bulk campaigns & tracking', colorBg: 'bg-blue-500',    Icon: Mail },
+  { id: 'chatbot',      planM: 'chatbot',  planY: 'chatbot_yr',  label: 'Website Chatbot', desc: 'Embeddable AI widget',      colorBg: 'bg-sky-500',     Icon: MessageCircle },
+  { id: 'facebook',     planM: 'facebook', planY: 'facebook_yr', label: 'Facebook',        desc: 'Schedule & publish posts',  colorBg: 'bg-indigo-600',  Icon: Facebook },
+  { id: 'linkedin',     planM: 'li',       planY: 'li_yr',       label: 'LinkedIn',        desc: 'Publish & schedule posts',  colorBg: 'bg-blue-700',    Icon: null },
+  { id: 'linkedin_bot', planM: 'li_bot',   planY: 'li_bot_yr',   label: 'LinkedIn AI Bot', desc: 'Automated AI posting',     colorBg: 'bg-cyan-600',    Icon: Bot },
+  { id: 'seo',          planM: 'seo',      planY: 'seo_yr',      label: 'SEO Manager',     desc: 'Audit & health tracking',  colorBg: 'bg-violet-600',  Icon: Search },
+  { id: 'seo_bot',      planM: 'seo_bot',  planY: 'seo_bot_yr',  label: 'SEO AI Bot',      desc: 'AI blog & recommendations',colorBg: 'bg-purple-600',  Icon: Sparkles },
+] as const;
+
+const HP_COMBO_DEFS = [
+  { planId: 'starter',  name: 'Starter',        services: ['whatsapp','email'] as const,                                                                                          savingsPct: '15%' },
+  { planId: 'social',   name: 'Social Suite',   services: ['whatsapp','facebook','linkedin'] as const,                                                                            savingsPct: '16%' },
+  { planId: 'growth',   name: 'Growth Pack',    services: ['whatsapp','email','linkedin','seo'] as const,                                                                         savingsPct: '25%', highlight: true },
+  { planId: 'business', name: 'Business Suite', services: ['whatsapp','whatsapp_bot','email','linkedin','linkedin_bot','seo'] as const,                                           savingsPct: '24%' },
+  { planId: 'ultimate', name: 'Ultimate',       services: ['whatsapp','whatsapp_bot','chatbot','email','facebook','linkedin','linkedin_bot','seo','seo_bot'] as const,            savingsPct: '33%', highlight: true },
+];
+
+const HP_SVC_TO_PLAN: Record<string, string> = {
+  whatsapp: 'wa', whatsapp_bot: 'wa_bot', email: 'email',
+  chatbot: 'chatbot', facebook: 'facebook', linkedin: 'li',
+  linkedin_bot: 'li_bot', seo: 'seo', seo_bot: 'seo_bot',
+};
+
+// LinkedIn & SEO each collapsed into one grouped card
+const HP_SVC_GROUPS = [
+  { ids: ['whatsapp'],                 label: 'WhatsApp Sender', desc: 'Bulk messaging at scale',    colorBg: 'bg-green-500',   Icon: MessageSquare as React.ElementType | null, subLabels: [] as string[] },
+  { ids: ['whatsapp_bot'],             label: 'WhatsApp AI Bot', desc: '24/7 auto-reply chatbot',   colorBg: 'bg-emerald-600', Icon: Bot as React.ElementType | null,           subLabels: [] as string[] },
+  { ids: ['email'],                    label: 'Email Marketing', desc: 'Bulk campaigns & tracking', colorBg: 'bg-blue-500',    Icon: Mail as React.ElementType | null,          subLabels: [] as string[] },
+  { ids: ['chatbot'],                  label: 'Website Chatbot', desc: 'Embeddable AI widget',      colorBg: 'bg-sky-500',     Icon: MessageCircle as React.ElementType | null, subLabels: [] as string[] },
+  { ids: ['facebook'],                 label: 'Facebook',        desc: 'Schedule & publish posts',  colorBg: 'bg-indigo-600',  Icon: Facebook as React.ElementType | null,      subLabels: [] as string[] },
+  { ids: ['linkedin', 'linkedin_bot'], label: 'LinkedIn',        desc: 'Publisher + AI Bot',        colorBg: 'bg-blue-700',    Icon: null,                                      subLabels: ['Publisher', 'AI Bot'] },
+  { ids: ['seo', 'seo_bot'],           label: 'SEO',             desc: 'Manager + AI Bot',          colorBg: 'bg-violet-600',  Icon: Search as React.ElementType | null,        subLabels: ['Manager', 'AI Bot'] },
+];
+
+function LinkedInSvg() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+    </svg>
+  );
 }
 
-function defaultFeaturesFor(p: PublicPlan): string[] {
-  const out: string[] = [];
-  if (p.messageLimit === 0) out.push('Unlimited messages');
-  else out.push(`${p.messageLimit.toLocaleString()} messages/month`);
-  if (p.services.includes('whatsapp')) out.push('WhatsApp included');
-  if (p.services.includes('chatbot')) out.push('Website Chatbot included');
-  if (p.services.includes('email')) out.push('Email Service included');
-  return out;
+function hpMatchBestPlan(sel: Set<string>, cycle: 'monthly' | 'yearly', pricing: PricingMap | null): { planId: string; name: string; price: number; isExact: boolean; savingsPct: string; extras: string[] } | null {
+  const suffix = cycle === 'yearly' ? '_yr' : '';
+  const selArr = Array.from(sel);
+  if (!sel.size) return null;
+
+  if (sel.size === 1) {
+    const pid = HP_SVC_TO_PLAN[selArr[0]] + suffix;
+    const p = pricing?.[pid];
+    return p ? { planId: pid, name: p.name ?? pid, price: p.amount, isExact: true, savingsPct: '', extras: [] } : null;
+  }
+  for (const c of HP_COMBO_DEFS) {
+    const cset = new Set<string>(c.services);
+    if (selArr.length === c.services.length && selArr.every(s => cset.has(s))) {
+      const pid = c.planId + suffix;
+      const p = pricing?.[pid];
+      return p ? { planId: pid, name: p.name ?? c.name, price: p.amount, isExact: true, savingsPct: c.savingsPct, extras: [] } : null;
+    }
+  }
+  for (const c of HP_COMBO_DEFS) {
+    const cset = new Set<string>(c.services);
+    if (selArr.every(s => cset.has(s))) {
+      const pid = c.planId + suffix;
+      const p = pricing?.[pid];
+      return p ? { planId: pid, name: p.name ?? c.name, price: p.amount, isExact: false, savingsPct: c.savingsPct, extras: c.services.filter(s => !sel.has(s)) } : null;
+    }
+  }
+  return null;
 }
 
 function Pricing() {
-  const [plans, setPlans] = useState<PublicPlan[]>([]);
+  const [pricing, setPricing] = useState<PricingMap | null>(null);
   const [currency, setCurrency] = useState({ symbol: '₹', isIndia: true, rate: 1 });
-  const [loading, setLoading] = useState(true);
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [unavailable, setUnavailable] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/subscription/plans`)
       .then(r => r.json())
+      .then(d => { if (d.success && d.data) setPricing(d.data); })
+      .catch(() => {});
+
+    fetch(`${API_BASE_URL}/api/services/availability`)
+      .then(r => r.json())
       .then(d => {
         if (d.success && d.data) {
-          const arr = (Object.values(d.data) as PublicPlan[])
-            .filter(p => p && p.isVisible && !p.isAdminOnly)
-            .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.amount - b.amount);
-          setPlans(arr);
+          setUnavailable(new Set((d.data as { service: string; isUnavailable: boolean }[])
+            .filter((s) => s.isUnavailable).map((s) => s.service)));
         }
       })
-      .catch(() => { })
-      .finally(() => setLoading(false));
+      .catch(() => {});
 
-    // Support ?testCurrency=US in the browser URL for local dev testing
     const testCountry = new URLSearchParams(window.location.search).get('testCurrency');
-    const currencyUrl = `${API_BASE_URL}/api/payment/currency${testCountry ? `?country=${testCountry}` : ''}`;
-    fetch(currencyUrl)
+    fetch(`${API_BASE_URL}/api/payment/currency${testCountry ? `?country=${testCountry}` : ''}`)
       .then(r => r.json())
       .then(d => { if (d.success && d.data) setCurrency({ symbol: d.data.symbol, isIndia: d.data.isIndia, rate: d.data.exchangeRate }); })
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   const fmt = (inr: number) =>
     currency.isIndia ? `₹${inr.toLocaleString('en-IN')}` : `$${(inr * currency.rate).toFixed(2)}`;
 
-  const visiblePlans = plans.filter(p => {
-    const d = p.durationDays ?? 0;
-    if (p.amount === 0) return true; // free plan always visible
-    if (billing === 'yearly') return d >= 365;
-    return d < 365 && d > 0;
+  const toggleGroup = (ids: string[]) => setSelected(prev => {
+    const n = new Set(prev);
+    if (ids.every(id => n.has(id))) { ids.forEach(id => n.delete(id)); } else { ids.forEach(id => n.add(id)); }
+    return n;
   });
 
-  const cols = visiblePlans.length >= 4 ? 'lg:grid-cols-4' : visiblePlans.length === 3 ? 'lg:grid-cols-3' : visiblePlans.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1';
-  const wrap = visiblePlans.length <= 2 ? 'max-w-3xl mx-auto' : '';
+  const selectCombo = (svcs: readonly string[]) => setSelected(new Set(svcs));
+
+  const bestPlan = hpMatchBestPlan(selected, billing, pricing);
+  const rawTotal = Array.from(selected).reduce((sum, svc) => {
+    const pid = HP_SVC_TO_PLAN[svc] + (billing === 'yearly' ? '_yr' : '');
+    return sum + (pricing?.[pid]?.amount ?? (billing === 'yearly' ? 950 : 99));
+  }, 0);
+  // Only apply combo discount when services exactly match a bundle
+  const isExactCombo = bestPlan?.isExact ?? false;
+  const checkoutPrice = isExactCombo ? (bestPlan?.price ?? rawTotal) : rawTotal;
+  const savings = Math.max(0, rawTotal - checkoutPrice);
 
   return (
-    <section id="pricing" className="bg-white py-24 sm:py-32">
+    <section id="pricing" className="bg-white py-20 sm:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <p className="text-sm font-semibold text-green-600 tracking-wide uppercase mb-3">Pricing</p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
+
+        {/* Header + toggle */}
+        <div className="text-center mb-10">
+          <p className="text-xs font-bold text-green-600 uppercase tracking-widest mb-2">Pricing</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
             Simple, transparent pricing
           </h2>
-          <p className="text-lg text-gray-500">No hidden fees. Cancel anytime.</p>
+          <p className="text-gray-500 mb-6">Pick any service — add more for bigger savings. Cancel anytime.</p>
 
-          {/* Billing toggle */}
-          <div className="inline-flex items-center mt-6 bg-gray-100 rounded-xl p-1 gap-1">
+          <div className="inline-flex items-center bg-gray-100 p-1 rounded-xl gap-1">
             <button
               onClick={() => setBilling('monthly')}
-              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                billing === 'monthly'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${billing === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Monthly
             </button>
             <button
               onClick={() => setBilling('yearly')}
-              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-                billing === 'yearly'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${billing === 'yearly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Yearly
-              <span className="text-xs font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">Save 20%</span>
+              <span className="text-[11px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">-20%</span>
             </button>
           </div>
-
-          {!currency.isIndia && (
-            <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full">
-              <Globe size={13} className="text-blue-500" />
-              <span className="text-xs font-medium text-blue-700">Prices shown in USD for your region</span>
-            </div>
+          {billing === 'yearly' && (
+            <p className="text-xs text-green-600 mt-2 font-medium">🎁 2 months free on every yearly plan</p>
           )}
         </div>
 
-        {/* Cards */}
-        <div className={`grid grid-cols-1 sm:grid-cols-2 ${cols} ${wrap} gap-6`}>
-          {loading && plans.length === 0 && (
-            <div className="col-span-full text-center text-gray-400 text-sm py-16">Loading plans…</div>
-          )}
-          {visiblePlans.map((plan) => {
-            const isFree = plan.amount === 0;
-            const features = plan.features.length > 0 ? plan.features : defaultFeaturesFor(plan);
+        {/* Individual service add-on cards */}
+        <div className="mb-10">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-4">
+            Add-ons · {fmt(billing === 'yearly' ? 950 : 99)}/{billing === 'yearly' ? 'yr' : 'mo'} each
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {HP_SVC_GROUPS.map(g => {
+              const groupPrice = g.ids.reduce((sum, id) => {
+                const planId = HP_SVC_TO_PLAN[id] + (billing === 'yearly' ? '_yr' : '');
+                return sum + (pricing?.[planId]?.amount ?? (billing === 'yearly' ? 950 : 99));
+              }, 0);
+              const isGroupSel = g.ids.every(id => selected.has(id));
+              const isUnavail = g.ids.some(id => unavailable.has(id));
 
-            return (
-              <div key={plan.plan} className={`relative rounded-2xl p-8 flex flex-col transition-all duration-300 ${plan.highlight
-                ? 'bg-gradient-to-b from-gray-900 to-gray-950 text-white border-2 border-green-500/30 shadow-2xl shadow-green-500/10 scale-[1.02]'
-                : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg'
-                }`}>
-                {plan.highlight && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-xs font-bold text-white tracking-wide shadow-lg whitespace-nowrap">
-                    BEST VALUE
-                  </div>
-                )}
-
-                {/* Name */}
-                <div className="mb-6">
-                  <h3 className={`text-lg font-bold mb-1 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>{plan.name || plan.plan}</h3>
-                  {plan.description && (
-                    <p className={`text-sm ${plan.highlight ? 'text-gray-400' : 'text-gray-500'}`}>{plan.description}</p>
+              return (
+                <button
+                  key={g.ids.join('+')}
+                  onClick={() => !isUnavail && toggleGroup(g.ids)}
+                  disabled={isUnavail}
+                  className={`relative text-left rounded-2xl border-2 p-4 transition-all focus:outline-none ${
+                    isUnavail
+                      ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                      : isGroupSel
+                      ? 'border-green-500 bg-green-50 shadow-md shadow-green-100'
+                      : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-sm'
+                  }`}
+                >
+                  {isUnavail && (
+                    <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-bold rounded-full">UNAVAILABLE</div>
                   )}
-                </div>
+                  {isGroupSel && !isUnavail && (
+                    <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                      <Check size={11} strokeWidth={3} className="text-white" />
+                    </div>
+                  )}
+                  <div className={`w-9 h-9 rounded-xl ${isUnavail ? 'bg-gray-300' : g.colorBg} flex items-center justify-center mb-3 text-white`}>
+                    {g.Icon ? <g.Icon className="w-5 h-5" /> : <LinkedInSvg />}
+                  </div>
+                  <p className="text-sm font-bold text-gray-900 leading-tight">{g.label}</p>
+                  {g.subLabels.length > 0 ? (
+                    <p className="text-[9px] text-gray-400 mt-0.5 mb-3 leading-tight">{g.subLabels.join(' + ')}</p>
+                  ) : (
+                    <p className="text-[11px] text-gray-400 mt-0.5 mb-3 leading-snug">{g.desc}</p>
+                  )}
+                  {isUnavail ? (
+                    <p className="text-[11px] text-amber-600 font-medium">Temporarily unavailable</p>
+                  ) : (
+                    <div>
+                      <span className="text-lg font-extrabold text-gray-900">{fmt(groupPrice)}</span>
+                      <span className="text-xs text-gray-400">/{billing === 'yearly' ? 'yr' : 'mo'}</span>
+                      {g.ids.length > 1 && <span className="text-[10px] text-gray-400 ml-1">({g.ids.length} svcs)</span>}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-                {/* Price */}
-                <div className="mb-2 min-h-[56px]">
-                  <div className="flex items-baseline gap-1">
-                    <span className={`text-4xl font-extrabold tracking-tight ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
-                      {isFree ? 'Free' : fmt(plan.amount)}
-                    </span>
-                    {!isFree && (
-                      <span className={`text-base ${plan.highlight ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {planBillingSuffix(plan)}
+        {/* Popular bundle cards */}
+        <div className="mb-20">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-4">
+            Popular bundles — combine &amp; save
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            {HP_COMBO_DEFS.map(combo => {
+              const pid = billing === 'yearly' ? combo.planId + '_yr' : combo.planId;
+              const price = pricing?.[pid]?.amount;
+              const selMatch = Array.from(selected).length === combo.services.length &&
+                combo.services.every(s => selected.has(s));
+
+              return (
+                <button
+                  key={combo.planId}
+                  onClick={() => selectCombo(combo.services)}
+                  className={`relative text-left rounded-2xl border-2 p-5 transition-all focus:outline-none ${
+                    combo.highlight
+                      ? 'border-gray-900 bg-gray-900 text-white shadow-xl'
+                      : selMatch
+                      ? 'border-green-500 bg-green-50 shadow-md'
+                      : 'border-gray-200 bg-white hover:border-gray-400 hover:shadow-md'
+                  }`}
+                >
+                  {combo.highlight && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">Best Value</span>
+                    </div>
+                  )}
+                  {selMatch && !combo.highlight && (
+                    <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                      <Check size={11} strokeWidth={3} className="text-white" />
+                    </div>
+                  )}
+                  <p className={`text-sm font-bold mb-2 ${combo.highlight ? 'text-white' : 'text-gray-900'}`}>{combo.name}</p>
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {combo.services.map(s => {
+                      const meta = HP_SVC_META.find(m => m.id === s);
+                      return (
+                        <span key={s} className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${combo.highlight ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                          {meta?.label ?? s}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <span className={`text-2xl font-extrabold ${combo.highlight ? 'text-white' : 'text-gray-900'}`}>
+                        {price !== undefined ? fmt(price) : '—'}
                       </span>
-                    )}
+                      <span className={`text-xs ${combo.highlight ? 'text-white/70' : 'text-gray-400'}`}>/{billing === 'yearly' ? 'yr' : 'mo'}</span>
+                    </div>
+                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${combo.highlight ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700'}`}>
+                      save {combo.savingsPct}
+                    </span>
                   </div>
-                  {!isFree && (plan.durationDays ?? 0) >= 365 && plan.amount > 0 && (
-                    <p className={`text-xs mt-0.5 font-medium ${plan.highlight ? 'text-green-400' : 'text-green-600'}`}>
-                      ≈ {fmt(Math.round(plan.amount / 12))}/month
-                    </p>
-                  )}
-                  {!currency.isIndia && !isFree && plan.amount > 0 && (
-                    <p className={`text-xs mt-0.5 flex items-center gap-1 ${plan.highlight ? 'text-gray-500' : 'text-gray-400'}`}>
-                      <Globe size={10} />≈ ₹{plan.amount.toLocaleString('en-IN')} INR
-                    </p>
-                  )}
-                </div>
-
-                {/* Features */}
-                <ul className="space-y-3 mb-8 flex-1 mt-6">
-                  {features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5">
-                      <Check size={16} className={`mt-0.5 flex-shrink-0 ${plan.highlight ? 'text-green-400' : 'text-green-600'}`} />
-                      <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* CTA */}
-                <Link to={isFree ? '/signup' : '/subscription'}
-                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold transition-all ${plan.highlight
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-[1.02]'
-                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                    }`}>
-                  {isFree ? 'Get Started' : 'Subscribe Now'}
-                  <ChevronRight size={16} />
-                </Link>
-              </div>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
+
+      {/* Sticky bottom summary bar */}
+      {selected.size > 0 && (
+        <div className="fixed bottom-0 inset-x-0 z-50 bg-white border-t-2 border-gray-200 shadow-2xl">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              {/* Selected pills */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                  {HP_SVC_GROUPS.filter(g => g.ids.some(id => selected.has(id))).map(g => (
+                    <button
+                      key={g.ids.join('+')}
+                      onClick={() => toggleGroup(g.ids)}
+                      className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold text-white ${g.colorBg}`}
+                    >
+                      {g.label}
+                      <X size={11} className="opacity-80" />
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {selected.size} service{selected.size !== 1 ? 's' : ''} × {fmt(billing === 'yearly' ? 950 : 99)} each
+                  {!isExactCombo && bestPlan && (
+                    <span className="ml-2 text-amber-600">
+                      · 💡 <button onClick={() => selectCombo(HP_COMBO_DEFS.find(c => c.planId === bestPlan.planId.replace('_yr',''))?.services ?? [])} className="underline font-semibold hover:text-amber-700">{bestPlan.name} {fmt(bestPlan.price)}</button> includes {bestPlan.extras.length} more — save {bestPlan.savingsPct}
+                    </span>
+                  )}
+                  {isExactCombo && bestPlan?.savingsPct && (
+                    <span className="ml-2 text-green-600 font-semibold">· Matched: {bestPlan.name} — save {bestPlan.savingsPct}</span>
+                  )}
+                </p>
+              </div>
+
+              {/* Price + CTA */}
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="text-right">
+                  <div className="text-xl font-extrabold text-gray-900">
+                    {fmt(checkoutPrice)}
+                    <span className="text-xs font-normal text-gray-400 ml-1">/{billing === 'yearly' ? 'yr' : 'mo'}</span>
+                  </div>
+                  {savings > 0 && (
+                    <div className="text-xs text-green-600 font-medium">saves {fmt(savings)}</div>
+                  )}
+                </div>
+                <Link
+                  to={`/signup?plan=${bestPlan?.planId ?? ''}&billing=${billing}`}
+                  className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-green-200 active:scale-95"
+                >
+                  Get Started <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

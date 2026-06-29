@@ -13,6 +13,7 @@ interface Props {
 const CALLBACK_URL = 'https://bulksenderapi.todayintech.in/api/linkedin/callback';
 
 export function LinkedInConnectTab({ session }: Props) {
+  const isPlatformAuth = session.hasPlatformAuth === true;
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
   const [saving, setSaving] = useState(false);
@@ -86,7 +87,25 @@ export function LinkedInConnectTab({ session }: Props) {
     );
   }
 
-  // ── Save credentials & connect ───────────────────────────────────────────────
+  const handleConnect = async () => {
+    setError('');
+    setConnecting(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.linkedin.authUrl);
+      const data = await res.json();
+      if (!data.success || !data.url) {
+        setError(data.error || 'Failed to get authorization URL');
+        setConnecting(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setError('Failed to initiate OAuth flow');
+      setConnecting(false);
+    }
+  };
+
+  // ── Save credentials & connect (manual credentials flow) ─────────────────────
   const copyCallbackURL = async () => {
     await navigator.clipboard.writeText(session.callbackUrl || CALLBACK_URL);
     setCopied(true);
@@ -97,8 +116,6 @@ export function LinkedInConnectTab({ session }: Props) {
     e.preventDefault();
     if (!clientId.trim() || !clientSecret.trim()) return;
     setError('');
-
-    // Step 1: save credentials
     setSaving(true);
     try {
       const res = await apiFetch(API_ENDPOINTS.linkedin.credentials, {
@@ -117,26 +134,57 @@ export function LinkedInConnectTab({ session }: Props) {
       return;
     }
     setSaving(false);
-
-    // Step 2: get OAuth URL and redirect
-    setConnecting(true);
-    try {
-      const res = await apiFetch(API_ENDPOINTS.linkedin.authUrl);
-      const data = await res.json();
-      if (!data.success || !data.url) {
-        setError(data.error || 'Failed to get authorization URL');
-        setConnecting(false);
-        return;
-      }
-      window.location.href = data.url;
-    } catch {
-      setError('Failed to initiate OAuth flow');
-      setConnecting(false);
-    }
+    handleConnect();
   };
 
   const callbackURL = session.callbackUrl || CALLBACK_URL;
 
+  // ── Platform OAuth flow (platform-managed LinkedIn app) ───────────────────────
+  if (isPlatformAuth) {
+    return (
+      <div className="max-w-lg mx-auto py-8 space-y-5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm text-center">
+          <div className="w-16 h-16 rounded-2xl bg-[#0A66C2] flex items-center justify-center mx-auto mb-5 shadow-lg">
+            <Linkedin size={32} className="text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Connect LinkedIn</h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Sign in with your LinkedIn account to enable automated posting and scheduling.
+          </p>
+
+          {error && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-5 text-sm text-red-700 text-left">
+              <AlertCircle size={15} className="flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button
+            onClick={handleConnect}
+            disabled={connecting}
+            className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[#0A66C2] hover:bg-[#004182] text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {connecting ? (
+              <><Loader2 size={17} className="animate-spin" /> Redirecting to LinkedIn…</>
+            ) : (
+              <><Linkedin size={17} /> Sign in with LinkedIn <ArrowRight size={15} /></>
+            )}
+          </button>
+
+          <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-3 text-left">
+            <div className="flex items-start gap-2">
+              <Info size={13} className="text-blue-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-blue-700">
+                You'll be redirected to LinkedIn to authorize the app. We request permission to create posts on your behalf. We never store your LinkedIn password.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Manual credentials flow ───────────────────────────────────────────────────
   return (
     <div className="max-w-lg mx-auto py-8 space-y-5">
 

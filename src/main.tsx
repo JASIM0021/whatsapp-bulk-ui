@@ -37,7 +37,10 @@ import { DataDeletionPage } from './pages/DataDeletionPage';
 import { FacebookPage } from './pages/facebook/FacebookPage';
 import { FacebookCallbackPage } from './pages/facebook/FacebookCallbackPage';
 import { LinkedInPage } from './pages/linkedin/LinkedInPage';
+import { SEOPage } from './pages/seo/SEOPage';
+import { SEOBlogCallbackPage } from './pages/seo/SEOBlogCallbackPage';
 import { CampaignPage } from '@/pages/CampaignPage';
+import InfluencerDashboard from '@/pages/influencer/InfluencerDashboard';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -210,6 +213,18 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
 
+      {/* SEO Extension */}
+      <Route path="/seo" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <SEOPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+      <Route path="/seo/blog/callback" element={
+        <ProtectedRoute><SEOBlogCallbackPage /></ProtectedRoute>
+      } />
+
       {/* Campaigns channel */}
       <Route path="/campaigns" element={
         <ProtectedRoute>
@@ -217,6 +232,11 @@ function AppRoutes() {
             <CampaignPage />
           </AppProvider>
         </ProtectedRoute>
+      } />
+
+      {/* Influencer / affiliate portal */}
+      <Route path="/influencer" element={
+        <ProtectedRoute><InfluencerDashboard /></ProtectedRoute>
       } />
 
         {/* Catch-all */}
