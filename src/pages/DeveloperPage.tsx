@@ -33,7 +33,7 @@ export function DeveloperPage() {
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
   const [codeTab, setCodeTab] = useState<'curl' | 'js' | 'python'>('curl');
   const [emailCodeTab, setEmailCodeTab] = useState<'curl' | 'js' | 'python'>('curl');
-  const [mcpClient, setMcpClient] = useState<'claude' | 'cursor' | 'generic'>('claude');
+  const [mcpClient, setMcpClient] = useState<'claudecode' | 'claude' | 'cursor' | 'generic'>('claudecode');
 
   useEffect(() => {
     loadKeys();
@@ -229,6 +229,10 @@ response = requests.post(
     }
 )
 print(response.json())`;
+
+  const mcpClaudeCodeCmd = `claude mcp add --transport http whatsapp https://nexbotix.todayintech.in/api/mcp \\
+  -H "X-API-Key: your_bsk_key" \\
+  -s user`;
 
   const mcpClaudeConfig = `{
   "mcpServers": {
@@ -632,6 +636,7 @@ curl -X POST https://nexbotix.todayintech.in/api/mcp \\
 
   function renderMCP() {
     const mcpConfigs: Record<typeof mcpClient, string> = {
+      claudecode: mcpClaudeCodeCmd,
       claude: mcpClaudeConfig,
       cursor: mcpCursorConfig,
       generic: `URL: https://nexbotix.todayintech.in/api/mcp
@@ -640,6 +645,7 @@ Protocol Version: 2024-11-05
 Auth Header: X-API-Key: bsk_your_key`,
     };
     const mcpConfigPaths: Record<typeof mcpClient, string> = {
+      claudecode: 'Run once in your terminal — no config file needed',
       claude: '~/Library/Application Support/Claude/claude_desktop_config.json',
       cursor: '.cursor/mcp.json (project root)',
       generic: 'Any MCP Streamable HTTP client',
@@ -692,24 +698,47 @@ Auth Header: X-API-Key: bsk_your_key`,
         {/* Client setup */}
         <div className="mb-8">
           <p className="text-base font-semibold text-gray-800 mb-3">Client Configuration</p>
-          <div className="flex gap-1 mb-4">
+          <div className="flex flex-wrap gap-1 mb-4">
             {([
+              { id: 'claudecode' as const, label: 'Claude Code', badge: 'Easiest' },
               { id: 'claude' as const, label: 'Claude Desktop' },
               { id: 'cursor' as const, label: 'Cursor' },
               { id: 'generic' as const, label: 'Generic' },
             ]).map(c => (
               <button key={c.id} onClick={() => setMcpClient(c.id)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${mcpClient === c.id ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${mcpClient === c.id ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
                 {c.label}
+                {'badge' in c && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${mcpClient === c.id ? 'bg-white/20 text-white' : 'bg-green-100 text-green-700'}`}>{c.badge}</span>}
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-500 mb-2 font-mono">{mcpConfigPaths[mcpClient]}</p>
-          <CodeBlock
-            id={`mcp-config-${mcpClient}`}
-            language={mcpClient === 'generic' ? 'text' : 'json'}
-            code={mcpConfigs[mcpClient]}
-          />
+
+          {mcpClient === 'claudecode' ? (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Terminal size={13} className="text-gray-400" />
+                <p className="text-xs text-gray-500 font-mono">{mcpConfigPaths.claudecode}</p>
+              </div>
+              <CodeBlock id="mcp-config-claudecode" language="bash" code={mcpConfigs.claudecode} />
+              <div className="mt-3 bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800 space-y-1">
+                <p><strong>What each flag does:</strong></p>
+                <p><code className="bg-green-100 px-1 rounded">--transport http</code> — use Streamable HTTP (MCP 2024-11-05)</p>
+                <p><code className="bg-green-100 px-1 rounded">whatsapp</code> — the name shown in Claude Code's MCP list</p>
+                <p><code className="bg-green-100 px-1 rounded">-H "X-API-Key: ..."</code> — your NexBotix API key header</p>
+                <p><code className="bg-green-100 px-1 rounded">-s user</code> — saves to your user-level config (available across all projects)</p>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">Verify with: <code className="font-mono bg-gray-100 px-1 rounded">claude mcp list</code></p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs text-gray-500 mb-2 font-mono">{mcpConfigPaths[mcpClient]}</p>
+              <CodeBlock
+                id={`mcp-config-${mcpClient}`}
+                language={mcpClient === 'generic' ? 'text' : 'json'}
+                code={mcpConfigs[mcpClient]}
+              />
+            </div>
+          )}
         </div>
 
         {/* Tools table */}
