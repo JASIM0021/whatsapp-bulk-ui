@@ -1,324 +1,278 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Loader2, Sparkles, MapPin, Search, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Download, Key, Copy, Check, RefreshCw, Chrome, Github, Zap, AlertCircle, Globe } from 'lucide-react';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
 
-interface ScrapedLog {
-	time: string;
-	message: string;
-	type: 'info' | 'success' | 'error';
+function ServerUrlCopy() {
+  const [copied, setCopied] = useState(false);
+  const url = window.location.origin;
+  const copy = async () => {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <Globe size={13} className="text-blue-500 flex-shrink-0" />
+      <code className="flex-1 text-xs font-mono bg-white border border-blue-200 rounded px-2 py-1.5 truncate text-blue-900">{url}</code>
+      <button
+        onClick={copy}
+        className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex-shrink-0"
+        title="Copy server URL"
+      >
+        {copied ? <Check size={12} /> : <Copy size={12} />}
+      </button>
+    </div>
+  );
 }
 
+interface APIKey {
+  id: string;
+  name: string;
+  key?: string;
+  maskedKey?: string;
+  createdAt: string;
+}
+
+interface LeadStats {
+  todayCount: number;
+  dailyLimit: number;
+  totalCount: number;
+  totalLimit: number; // -1 = unlimited
+}
+
+const GITHUB_ZIP_URL = 'https://github.com/nexbotix/leads-extension/releases/latest/download/nexbotix-leads-extension.zip';
+
 export function LeadsScraperTab() {
-	const [niche, setNiche] = useState('');
-	const [location, setLocation] = useState('');
-	const [loading, setLoading] = useState(false);
-	const [scraping, setScraping] = useState(false);
-	const [jobId, setJobId] = useState<string | null>(null);
-	const [totalScraped, setTotalScraped] = useState(0);
-	const [emailsFound, setEmailsFound] = useState(0);
-	const [latestName, setLatestName] = useState('');
-	const [error, setError] = useState<string | null>(null);
-	const [logs, setLogs] = useState<ScrapedLog[]>([]);
+  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const [newKey, setNewKey] = useState<APIKey | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [stats, setStats] = useState<LeadStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-	const eventSourceRef = useRef<EventSource | null>(null);
-	const logsEndRef = useRef<HTMLDivElement | null>(null);
+  const fetchKeys = useCallback(async () => {
+    try {
+      const res = await apiFetch(API_ENDPOINTS.apiKeys.list);
+      const data = await res.json();
+      if (data.success) setApiKeys(data.data || []);
+    } catch {}
+  }, []);
 
-	const addLog = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
-		const time = new Date().toLocaleTimeString();
-		setLogs(prev => [...prev, { time, message, type }]);
-	};
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.leads.stats);
+      const data = await res.json();
+      if (data.success) setStats(data.data);
+    } catch {} finally {
+      setStatsLoading(false);
+    }
+  }, []);
 
-	useEffect(() => {
-		if (logsEndRef.current) {
-			logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
-		}
-	}, [logs]);
+  useEffect(() => {
+    fetchKeys();
+    fetchStats();
+  }, [fetchKeys, fetchStats]);
 
-	useEffect(() => {
-		return () => {
-			if (eventSourceRef.current) {
-				eventSourceRef.current.close();
-			}
-		};
-	}, []);
+  const createKey = async () => {
+    setCreatingKey(true);
+    setError(null);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.apiKeys.create, {
+        method: 'POST',
+        body: JSON.stringify({ name: 'Leads Extension' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewKey(data.data);
+        fetchKeys();
+      } else {
+        setError(data.error || 'Failed to create key');
+      }
+    } catch {
+      setError('Network error');
+    } finally {
+      setCreatingKey(false);
+    }
+  };
 
-	const handleStartScrape = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!niche.trim() || !location.trim()) return;
+  const copyKey = async (key: string) => {
+    await navigator.clipboard.writeText(key);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-		setLoading(true);
-		setError(null);
-		setLogs([]);
-		setTotalScraped(0);
-		setEmailsFound(0);
-		setLatestName('');
+  const quotaPct = stats && stats.dailyLimit > 0
+    ? Math.min(100, Math.round(stats.todayCount / stats.dailyLimit * 100))
+    : 0;
 
-		try {
-			const response = await apiFetch(API_ENDPOINTS.leads.startScrape, {
-				method: 'POST',
-				body: JSON.stringify({ niche: niche.trim(), location: location.trim() }),
-			});
-			const res = await response.json();
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
 
-			if (!res.success) {
-				throw new Error(res.error || 'Failed to start scraping job.');
-			}
+      {/* Usage Stats */}
+      {stats && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-900 text-sm">Today's Usage</h3>
+            <button onClick={fetchStats} className="text-gray-400 hover:text-gray-600 transition-colors" title="Refresh">
+              <RefreshCw size={14} className={statsLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+            <span>{stats.todayCount} leads ingested today</span>
+            <span className="font-medium text-gray-700">{stats.todayCount} / {stats.dailyLimit}</span>
+          </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${quotaPct >= 90 ? 'bg-red-500' : 'bg-amber-500'}`}
+              style={{ width: `${quotaPct}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-gray-400">
+            <span>Total stored: <strong className="text-gray-600">{stats.totalCount}</strong></span>
+            <span>{stats.totalLimit === -1 ? '✓ Unlimited (Pro)' : `Limit: ${stats.totalLimit}`}</span>
+          </div>
+        </div>
+      )}
 
-			const newJobId = res.jobId;
-			setJobId(newJobId);
-			setScraping(true);
-			addLog(`Scraping job started. ID: ${newJobId}`, 'info');
-			addLog(`Searching Bing Maps for "${niche}" in "${location}"...`, 'info');
+      {/* Steps */}
+      <div className="space-y-4">
+        {/* Step 1 */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 font-bold text-sm flex items-center justify-center flex-shrink-0">1</div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 mb-1">Download the Extension</h3>
+              <p className="text-sm text-gray-500 mb-3">Download the NexBotix Leads Extension for Chrome.</p>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={GITHUB_ZIP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                  <Download size={14} />
+                  Download ZIP (GitHub)
+                </a>
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-400 text-sm font-semibold rounded-lg cursor-not-allowed">
+                  <Chrome size={14} />
+                  Chrome Web Store (coming soon)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-			// Connect to SSE stream
-			const token = localStorage.getItem('auth_token') || '';
-			const streamUrl = `${API_ENDPOINTS.leads.stream}?job_id=${newJobId}&token=${encodeURIComponent(token)}`;
-			const eventSource = new EventSource(streamUrl, { withCredentials: true });
-			eventSourceRef.current = eventSource;
+        {/* Step 2 */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 font-bold text-sm flex items-center justify-center flex-shrink-0">2</div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 mb-1">Install in Chrome</h3>
+              <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                <li>Extract the downloaded <code className="bg-gray-100 px-1 rounded text-xs">.zip</code> file to a folder</li>
+                <li>Open Chrome and go to <code className="bg-gray-100 px-1 rounded text-xs">chrome://extensions</code></li>
+                <li>Enable <strong>Developer Mode</strong> (top-right toggle)</li>
+                <li>Click <strong>Load unpacked</strong> and select the extracted folder</li>
+              </ol>
+            </div>
+          </div>
+        </div>
 
-			eventSource.addEventListener('connected', (_event: any) => {
-				addLog('Live stream connected. Receiving real-time updates.', 'success');
-			});
+        {/* Step 3 — API Key */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 font-bold text-sm flex items-center justify-center flex-shrink-0">3</div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 mb-1">Get Your API Key</h3>
+              <p className="text-sm text-gray-500 mb-3">Create an API key to connect the extension to your account.</p>
 
-			eventSource.addEventListener('progress', (event: any) => {
-				try {
-					const data = JSON.parse(event.data);
-					if (data.totalScraped !== undefined) setTotalScraped(data.totalScraped);
-					if (data.emailsFound !== undefined) setEmailsFound(data.emailsFound);
-					if (data.latestName) {
-						setLatestName(data.latestName);
-						addLog(`Found lead: ${data.latestName}`, 'success');
-					}
-					if (data.emailsFound > emailsFound) {
-						addLog(`Enriched emails: ${data.emailsFound} found total`, 'success');
-					}
-				} catch (err) {
-					console.error('Failed to parse progress data:', err);
-				}
-			});
+              {error && (
+                <div className="flex items-center gap-2 text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+                  <AlertCircle size={12} />
+                  {error}
+                </div>
+              )}
 
-			eventSource.addEventListener('done', (event: any) => {
-				try {
-					const data = JSON.parse(event.data);
-					setTotalScraped(data.totalScraped || 0);
-					setEmailsFound(data.emailsFound || 0);
-					setScraping(false);
-					setJobId(null);
-					eventSource.close();
+              {newKey?.key && (
+                <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2.5 mb-3">
+                  <p className="text-xs text-green-700 font-semibold mb-1.5">Key created — copy it now, it won't be shown again:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs font-mono bg-white border border-green-200 rounded px-2 py-1 truncate">{newKey.key}</code>
+                    <button
+                      onClick={() => copyKey(newKey.key!)}
+                      className="p-1.5 bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex-shrink-0"
+                    >
+                      {copied ? <Check size={12} /> : <Copy size={12} />}
+                    </button>
+                  </div>
+                </div>
+              )}
 
-					if (data.status === 'completed') {
-						addLog(`Job completed successfully! Scraped ${data.totalScraped} leads, enriched ${data.emailsFound} emails.`, 'success');
-					} else if (data.status === 'stopped') {
-						addLog(`Job stopped by user. Scraped ${data.totalScraped} leads.`, 'info');
-					} else if (data.status === 'failed') {
-						addLog(`Job failed: ${data.error}`, 'error');
-						setError(data.error || 'Scraper job failed.');
-					}
-				} catch (err) {
-					setScraping(false);
-					setJobId(null);
-					eventSource.close();
-				}
-			});
+              {apiKeys.length > 0 ? (
+                <div className="space-y-2 mb-3">
+                  {apiKeys.map(k => (
+                    <div key={k.id} className="flex items-center gap-2 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                      <Key size={11} className="text-gray-400 flex-shrink-0" />
+                      <span className="font-medium text-gray-700 mr-1">{k.name}</span>
+                      <code className="text-gray-400 truncate flex-1">{k.maskedKey || '••••••••••••'}</code>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
-			eventSource.onerror = (err) => {
-				console.error('SSE Error:', err);
-				addLog('Lost stream connection or finished receiving logs.', 'info');
-				setScraping(false);
-				setJobId(null);
-				eventSource.close();
-			};
+              <button
+                onClick={createKey}
+                disabled={creatingKey}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
+              >
+                <Zap size={13} />
+                {creatingKey ? 'Creating...' : 'Create Key for Leads Extension'}
+              </button>
+            </div>
+          </div>
+        </div>
 
-		} catch (err: any) {
-			setError(err.message || 'Failed to start scraping.');
-			addLog(`Error: ${err.message || 'Failed to start scraping.'}`, 'error');
-		} finally {
-			setLoading(false);
-		}
-	};
+        {/* Step 4 */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 font-bold text-sm flex items-center justify-center flex-shrink-0">4</div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 mb-1">Configure the Extension</h3>
+              <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside mb-4">
+                <li>Click the extension icon in your Chrome toolbar</li>
+                <li>Go to the <strong>NexBotix</strong> tab inside the extension</li>
+                <li>Paste your <strong>API Key</strong> and the <strong>Server URL</strong> below</li>
+                <li>Click <strong>Save &amp; Connect</strong> — leads sync automatically!</li>
+              </ol>
 
-	const handleStopScrape = async () => {
-		if (!jobId) return;
-		addLog('Stopping scraper job...', 'info');
+              {/* Server URL copy box */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                <p className="text-xs font-semibold text-blue-800 mb-2">Server URL — paste this into the extension:</p>
+                <ServerUrlCopy />
+              </div>
 
-		try {
-			const response = await apiFetch(API_ENDPOINTS.leads.stopScrape, {
-				method: 'POST',
-				body: JSON.stringify({ jobId }),
-			});
-			const res = await response.json();
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                <strong>Tip:</strong> Email &amp; WhatsApp campaigns in the extension use your NexBotix connected accounts — no extra SMTP or phone setup needed.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-			if (!res.success) {
-				throw new Error(res.error || 'Failed to stop scraping job.');
-			}
-
-			addLog('Scraper stop signal sent successfully.', 'info');
-			setScraping(false);
-			setJobId(null);
-			if (eventSourceRef.current) {
-				eventSourceRef.current.close();
-			}
-		} catch (err: any) {
-			addLog(`Failed to stop job: ${err.message}`, 'error');
-		}
-	};
-
-	return (
-		<div className="space-y-6">
-			{/* Page title */}
-			<div>
-				<h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-					<Sparkles className="text-amber-500" />
-					<span>Map Leads Scraper</span>
-				</h2>
-				<p className="text-slate-400 text-sm mt-1">
-					Enter a niche and location below to automatically search Bing Maps, scrape listings, and enrich leads with website emails.
-				</p>
-			</div>
-
-			{/* Form & Stats Grid */}
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-				{/* Form Card */}
-				<div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
-					<form onSubmit={handleStartScrape} className="space-y-4">
-						<div>
-							<label className="block text-slate-300 text-xs font-semibold mb-2 uppercase tracking-wider">
-								Business Niche
-							</label>
-							<div className="relative">
-								<Search className="absolute left-3 top-2.5 text-slate-500" size={18} />
-								<input
-									type="text"
-									placeholder="e.g. Restaurants, Dentists, Gyms"
-									value={niche}
-									onChange={e => setNiche(e.target.value)}
-									disabled={scraping}
-									className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 disabled:opacity-50 text-sm"
-									required
-								/>
-							</div>
-						</div>
-
-						<div>
-							<label className="block text-slate-300 text-xs font-semibold mb-2 uppercase tracking-wider">
-								Location / Area
-							</label>
-							<div className="relative">
-								<MapPin className="absolute left-3 top-2.5 text-slate-500" size={18} />
-								<input
-									type="text"
-									placeholder="e.g. Brooklyn NY, London, Toronto"
-									value={location}
-									onChange={e => setLocation(e.target.value)}
-									disabled={scraping}
-									className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 disabled:opacity-50 text-sm"
-									required
-								/>
-							</div>
-						</div>
-
-						{error && (
-							<div className="p-3 bg-red-950/40 border border-red-900/60 text-red-400 rounded-xl text-xs flex items-start gap-2">
-								<AlertCircle size={15} className="shrink-0 mt-0.5" />
-								<span>{error}</span>
-							</div>
-						)}
-
-						<div className="pt-2">
-							{scraping ? (
-								<button
-									type="button"
-									onClick={handleStopScrape}
-									className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-900/20"
-								>
-									<Square size={16} fill="white" />
-									<span>Stop Scraping</span>
-								</button>
-							) : (
-								<button
-									type="submit"
-									disabled={loading || !niche.trim() || !location.trim()}
-									className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-900/20"
-								>
-									{loading ? (
-										<Loader2 size={16} className="animate-spin" />
-									) : (
-										<Play size={16} fill="white" />
-									)}
-									<span>Start Scraping</span>
-								</button>
-							)}
-						</div>
-					</form>
-				</div>
-
-				{/* Live Stats */}
-				<div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-					<div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between relative overflow-hidden">
-						<div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-5">
-							<Search size={120} className="text-amber-500" />
-						</div>
-						<div>
-							<p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Leads Collected</p>
-							<p className="text-5xl font-black text-white mt-4">{totalScraped}</p>
-						</div>
-						<div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-							{scraping && <Loader2 size={12} className="animate-spin text-amber-500" />}
-							<span>{scraping ? `Currently scraping maps...` : 'Idle'}</span>
-						</div>
-					</div>
-
-					<div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between relative overflow-hidden">
-						<div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-5">
-							<Sparkles size={120} className="text-amber-500" />
-						</div>
-						<div>
-							<p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Emails Enriched</p>
-							<p className="text-5xl font-black text-amber-500 mt-4">{emailsFound}</p>
-						</div>
-						<div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-							{totalScraped > 0 && (
-								<span>Enrichment rate: {Math.round((emailsFound / totalScraped) * 100)}%</span>
-							)}
-							{totalScraped === 0 && <span>No data</span>}
-						</div>
-					</div>
-				</div>
-			</div>
-
-			{/* Console Logs Card */}
-			<div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col h-96">
-				<div className="flex items-center justify-between pb-4 border-b border-slate-800">
-					<h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-						<span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
-						<span>Live Scraper Console</span>
-					</h3>
-					{scraping && latestName && (
-						<span className="text-xs text-slate-400 truncate max-w-xs">
-							Scraping: <strong className="text-slate-200">{latestName}</strong>
-						</span>
-					)}
-				</div>
-
-				<div className="flex-1 overflow-y-auto mt-4 space-y-2 font-mono text-xs bg-slate-950 p-4 rounded-xl border border-slate-900">
-					{logs.length === 0 ? (
-						<p className="text-slate-600 italic">Console is ready. Enter keywords above and start scraping to see live logs.</p>
-					) : (
-						logs.map((log, index) => (
-							<div key={index} className="flex gap-2 leading-relaxed">
-								<span className="text-slate-600 select-none">[{log.time}]</span>
-								<span className={
-									log.type === 'success' ? 'text-emerald-400' :
-									log.type === 'error' ? 'text-red-400' : 'text-slate-300'
-								}>
-									{log.message}
-								</span>
-							</div>
-						))
-					)}
-					<div ref={logsEndRef} />
-				</div>
-			</div>
-		</div>
-	);
+      {/* GitHub link */}
+      <div className="flex items-center justify-center">
+        <a
+          href="https://github.com/nexbotix/leads-extension"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <Github size={12} />
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  );
 }

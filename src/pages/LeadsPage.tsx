@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-	Search, Database, Play, ArrowLeft, Crown, LogOut, MessageSquare, Menu, X, Mail
+	Download, Database, ArrowLeft, Crown, LogOut, MessageSquare, Menu, X, Mail, Search
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LeadsScraperTab } from './leads/LeadsScraperTab';
@@ -10,12 +10,12 @@ import { LeadsDatabaseTab } from './leads/LeadsDatabaseTab';
 type Tab = 'scraper' | 'database';
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
-	{ id: 'scraper',  label: 'Scrape Leads',   icon: <Play size={20} />,       desc: 'Run scraping jobs' },
-	{ id: 'database', label: 'Leads Database', icon: <Database size={20} />,   desc: 'Browse & contact leads' },
+	{ id: 'scraper',  label: 'Extension Setup', icon: <Download size={20} />,   desc: 'Install & connect' },
+	{ id: 'database', label: 'Leads Database',  icon: <Database size={20} />,   desc: 'Browse & contact leads' },
 ];
 
 const TAB_LABELS: Record<Tab, string> = {
-	scraper: 'Scrape New Leads',
+	scraper: 'Extension Setup',
 	database: 'Leads Database',
 };
 

@@ -208,12 +208,10 @@ export const API_ENDPOINTS = {
   },
   // ── Leads Manager ──────────────────────────────────────────────────────────
   leads: {
-    startScrape:  `${API_BASE_URL}/api/leads/scrape/start`,
-    stopScrape:   `${API_BASE_URL}/api/leads/scrape/stop`,
-    list:         `${API_BASE_URL}/api/leads`,
-    delete:       `${API_BASE_URL}/api/leads`,
-    export:       `${API_BASE_URL}/api/leads/export`,
-    stream:       `${SSE_BASE_URL}/api/leads/stream`,
+    list:   `${API_BASE_URL}/api/leads`,
+    delete: `${API_BASE_URL}/api/leads`,
+    export: `${API_BASE_URL}/api/leads/export`,
+    stats:  `${API_BASE_URL}/api/leads/stats`,
   },
   health: `${API_BASE_URL}/api/health`,
   // ── Chatbot Demo (public marketing tool) ─────────────────────────────────
