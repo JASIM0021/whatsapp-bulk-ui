@@ -41,6 +41,7 @@ import {
   DollarSign,
   LinkIcon,
   Zap,
+  Receipt,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -72,7 +73,7 @@ interface AdminUser {
   };
 }
 
-type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers';
+type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers' | 'transactions';
 
 interface Invoice {
   id: string;
@@ -112,8 +113,11 @@ interface ActivityData {
     id: string;
     txnId: string;
     amount: number;
+    originalAmount?: number;
     plan: string;
     status: string;
+    promoCode?: string;
+    payuResponse?: string;
     createdAt: string;
   }>;
   subscription: {
@@ -121,6 +125,9 @@ interface ActivityData {
     messageLimit: number;
     plan: string;
     status: string;
+    startDate?: string;
+    expiryDate?: string;
+    enabledServices?: string[];
   };
 }
 
@@ -2035,10 +2042,10 @@ function UserActivityModal({ open, user, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden max-h-[80vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 overflow-hidden max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{user.name}'s Activity</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{user.name}'s Activity & Purchases</h3>
             <p className="text-xs text-gray-500">{user.email}</p>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
@@ -2061,34 +2068,77 @@ function UserActivityModal({ open, user, onClose }: {
                       <span className="text-sm font-normal text-blue-600">/{activity.subscription.messageLimit}</span>
                     )}
                   </p>
+                  {activity.subscription.plan && (
+                    <p className="text-xs text-blue-700 mt-1 capitalize font-medium">Plan: {activity.subscription.plan}</p>
+                  )}
                 </div>
                 <div className="bg-green-50 rounded-xl p-4">
                   <p className="text-xs text-green-600 font-medium mb-1">Total Paid</p>
                   <p className="text-2xl font-bold text-green-900">₹{totalPaid.toLocaleString()}</p>
+                  {activity.subscription.expiryDate && (
+                    <p className="text-xs text-green-700 mt-1">
+                      Expires: {new Date(activity.subscription.expiryDate).toLocaleDateString()}
+                    </p>
+                  )}
                 </div>
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Payment History</h4>
-                {activity.payments.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">No payments yet</p>
-                ) : (
-                  <div className="space-y-2">
-                    {activity.payments.map((p, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900 capitalize">{p.plan} plan</p>
-                          <p className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-gray-900">₹{(p.amount || 0).toLocaleString()}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            p.status === 'success' ? 'bg-green-100 text-green-700' :
-                            p.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>{p.status}</span>
-                        </div>
-                      </div>
+
+              {activity.subscription.enabledServices && activity.subscription.enabledServices.length > 0 && (
+                <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
+                  <p className="text-xs text-purple-700 font-semibold mb-1.5">Unlocked Services</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activity.subscription.enabledServices.map((svc, idx) => (
+                      <span key={idx} className="px-2 py-0.5 bg-white text-purple-800 rounded-md text-xs font-medium shadow-sm border border-purple-200 uppercase">
+                        {svc}
+                      </span>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center justify-between">
+                  <span>Service & Plan Purchase Logs</span>
+                  <span className="text-xs font-normal text-gray-500">{activity.payments.length} record(s)</span>
+                </h4>
+                {activity.payments.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6 bg-gray-50 rounded-xl">No purchase or assignment records found</p>
+                ) : (
+                  <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+                    {activity.payments.map((p, i) => {
+                      const isTrial = p.payuResponse === 'free_trial_start' || p.plan === 'trial';
+                      const isAdmin = p.payuResponse === 'assigned_by_admin' || p.txnId?.startsWith('ADMIN_');
+                      const isPromo = !!p.promoCode;
+
+                      return (
+                        <div key={i} className="flex items-start justify-between p-3 bg-gray-50 hover:bg-gray-100/80 rounded-xl border border-gray-100 transition-colors">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-gray-900 capitalize">{p.plan}</p>
+                              {isTrial ? (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">Free Trial</span>
+                              ) : isAdmin ? (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">Admin Assigned</span>
+                              ) : isPromo ? (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">Promo: {p.promoCode}</span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">Online Gateway</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleString()}</p>
+                            <p className="text-[10px] text-gray-400 font-mono">Txn: {p.txnId}</p>
+                          </div>
+                          <div className="text-right shrink-0 ml-2">
+                            <p className="text-sm font-bold text-gray-900">{p.amount === 0 ? 'Free / ₹0' : `₹${(p.amount || 0).toLocaleString()}`}</p>
+                            <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full capitalize ${
+                              p.status === 'success' ? 'bg-green-100 text-green-700' :
+                              p.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>{p.status}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -2825,6 +2875,183 @@ function ServiceAvailabilityTab() {
   );
 }
 
+/* ─── Transactions / Purchase Logs Tab ─── */
+interface TransactionItem {
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  txnId: string;
+  amount: number;
+  originalAmount?: number;
+  plan: string;
+  status: string;
+  payuResponse?: string;
+  mihpayId?: string;
+  promoCode?: string;
+  createdAt: string;
+}
+
+function TransactionsTab() {
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const fetchTransactions = useCallback(() => {
+    setLoading(true);
+    apiFetch(API_ENDPOINTS.admin.transactions)
+      .then(r => r.json())
+      .then(data => { if (data.success) setTransactions(data.data || []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
+
+  const filtered = transactions.filter(t => {
+    const matchesSearch = !search || 
+      t.userName?.toLowerCase().includes(search.toLowerCase()) ||
+      t.userEmail?.toLowerCase().includes(search.toLowerCase()) ||
+      t.plan?.toLowerCase().includes(search.toLowerCase()) ||
+      t.txnId?.toLowerCase().includes(search.toLowerCase()) ||
+      t.promoCode?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Purchase & Assignment Logs</h2>
+          <p className="text-xs text-gray-500">Track all user service purchases, trial activations, and admin plan grants across the platform</p>
+        </div>
+        <button
+          onClick={fetchTransactions}
+          className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 shadow-sm"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Refresh Logs
+        </button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by user name, email, plan, txn ID, promo code..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+          <option value="all">All Statuses</option>
+          <option value="success">Success / Granted</option>
+          <option value="pending">Pending</option>
+          <option value="failure">Failed</option>
+        </select>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <RefreshCw size={24} className="animate-spin text-purple-600" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <Receipt size={32} className="mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No transaction or purchase logs found</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <tr>
+                  <th className="px-4 py-3">Date & Time</th>
+                  <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3">Service / Plan</th>
+                  <th className="px-4 py-3">Method / Source</th>
+                  <th className="px-4 py-3 text-right">Amount</th>
+                  <th className="px-4 py-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filtered.map(t => {
+                  const isTrial = t.payuResponse === 'free_trial_start' || t.plan === 'trial';
+                  const isAdmin = t.payuResponse === 'assigned_by_admin' || t.txnId?.startsWith('ADMIN_');
+                  const isPromo = !!t.promoCode;
+
+                  return (
+                    <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500">
+                        {new Date(t.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900">{t.userName || 'Unknown User'}</div>
+                        <div className="text-xs text-gray-500">{t.userEmail || `ID: ${t.userId.slice(-6)}`}</div>
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-800 capitalize">
+                        {t.plan}
+                      </td>
+                      <td className="px-4 py-3">
+                        {isTrial ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                            Free Trial
+                          </span>
+                        ) : isAdmin ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                            Admin Assigned
+                          </span>
+                        ) : isPromo ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                            Promo: {t.promoCode}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                            Online Gateway
+                          </span>
+                        )}
+                        <div className="text-[10px] text-gray-400 mt-0.5 font-mono truncate max-w-[150px]" title={t.txnId}>
+                          {t.txnId}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-gray-900">
+                        {t.amount === 0 ? (
+                          <span className="text-gray-500 font-normal">Free / ₹0</span>
+                        ) : (
+                          `₹${t.amount.toLocaleString()}`
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                          t.status === 'success' ? 'bg-green-100 text-green-700' :
+                          t.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {t.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Admin Panel ─── */
 export function AdminPanel() {
   const { user } = useAuth();
@@ -2853,6 +3080,7 @@ export function AdminPanel() {
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
+    { id: 'transactions', label: 'Purchase Logs', icon: Receipt },
     { id: 'invoices', label: 'Invoices', icon: FileText },
     { id: 'plans', label: 'Plans', icon: Settings },
     { id: 'promos', label: 'Promos', icon: Tag },
@@ -2911,6 +3139,7 @@ export function AdminPanel() {
         {/* Content */}
         {tab === 'dashboard' && <DashboardTab stats={stats} loading={statsLoading} />}
         {tab === 'users' && <UsersTab />}
+        {tab === 'transactions' && <TransactionsTab />}
         {tab === 'invoices' && <InvoicesTab />}
         {tab === 'plans' && <PlansTab />}
         {tab === 'promos' && <PromosTab />}

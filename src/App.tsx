@@ -55,6 +55,37 @@ function App() {
   const [showTour, setShowTour] = useState(false);
   const [mobileTab, setMobileTab] = useState<'send' | 'contacts' | 'schedule' | 'more'>('send');
 
+  // Load bridged contacts from Leads Scraper if present
+  useEffect(() => {
+    const raw = sessionStorage.getItem('temp_leads_whatsapp');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const formatted = parsed.map((item: any) => ({
+            id: item.id || Math.random().toString(36).substring(2, 9),
+            phone: item.phone,
+            formattedPhone: item.phone,
+            isValid: true,
+            name: item.name || '',
+          }));
+          setContacts(formatted);
+
+          // Select all loaded contacts by default
+          const newSelection: Record<string, boolean> = {};
+          formatted.forEach((c: any) => {
+            newSelection[c.id] = true;
+          });
+          setSelection(newSelection);
+        }
+      } catch (e) {
+        console.error('Failed to load bridged leads:', e);
+      } finally {
+        sessionStorage.removeItem('temp_leads_whatsapp');
+      }
+    }
+  }, [setContacts, setSelection]);
+
   // Define before useEffect so the closure captures the correct binding
   const checkWhatsAppStatus = useCallback(async () => {
     try {
@@ -461,7 +492,7 @@ function App() {
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors shrink-0 ${
                 !user?.subscription?.isActive
                   ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
-                  : user?.subscription?.plan === 'free'
+                  : user?.subscription?.plan === 'free' || user?.subscription?.plan === 'trial'
                     ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                     : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
               }`}
@@ -469,18 +500,18 @@ function App() {
               <Crown size={11} />
               <span>{(() => {
                 const plan = user?.subscription?.plan || ''
-                if (plan === 'free') return 'Trial'
+                if (plan === 'free' || plan === 'trial') return 'Trial'
                 if (plan.includes('yearly')) return 'Yearly'
                 if (plan.includes('monthly')) return 'Monthly'
                 if (plan.includes('chatbot')) return 'Chatbot'
                 return plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : 'Free'
               })()}</span>
-              {user?.subscription?.isActive && user?.subscription?.plan === 'free' && (
+              {user?.subscription?.isActive && (user?.subscription?.plan === 'free' || user?.subscription?.plan === 'trial') && (
                 <span className={`font-normal ${user.subscription.messagesUsed >= user.subscription.messageLimit - 10 ? 'text-red-600 font-bold' : 'opacity-70'}`}>
                   · {user.subscription.messagesUsed}/{user.subscription.messageLimit}
                 </span>
               )}
-              {user?.subscription?.isActive && user?.subscription?.plan !== 'free' && user?.subscription?.daysLeft > 0 && user?.subscription?.daysLeft <= 90 && (
+              {user?.subscription?.isActive && user?.subscription?.plan !== 'free' && user?.subscription?.plan !== 'trial' && user?.subscription?.daysLeft > 0 && user?.subscription?.daysLeft <= 90 && (
                 <span className={`font-normal ${user.subscription.daysLeft <= 7 ? 'text-red-600 font-bold' : 'opacity-70'}`}>
                   · {user.subscription.daysLeft}d
                 </span>
@@ -607,7 +638,7 @@ function App() {
             </div>
           </div>
         )}
-        {user?.subscription?.isActive && user.subscription.plan === 'free' && (
+        {user?.subscription?.isActive && (user.subscription.plan === 'free' || user.subscription.plan === 'trial') && (
           <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <p className="text-xs sm:text-sm font-medium">
@@ -801,9 +832,9 @@ function App() {
                       <Crown size={18} className="text-amber-500" />
                       <div className="text-left">
                         <p className="text-sm font-medium text-gray-800">Subscription</p>
-                        <p className="text-xs text-gray-500 capitalize">
-                          {user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'Free'}
-                          {user?.subscription?.isActive && user.subscription.plan === 'free'
+                         <p className="text-xs text-gray-500 capitalize">
+                          {user?.subscription?.plan === 'free' || user?.subscription?.plan === 'trial' ? 'Trial' : user?.subscription?.plan || 'Free'}
+                          {user?.subscription?.isActive && (user.subscription.plan === 'free' || user.subscription.plan === 'trial')
                             ? ` · ${user.subscription.messagesUsed}/${user.subscription.messageLimit} msgs`
                             : user?.subscription?.isActive
                               ? ` · ${user?.subscription?.daysLeft}d left`

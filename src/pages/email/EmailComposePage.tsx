@@ -63,6 +63,27 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
 
   useEffect(() => { if (isPaid) loadTemplates(); }, [isPaid]);
 
+  // Load bridged contacts from Leads Scraper if present
+  useEffect(() => {
+    const raw = sessionStorage.getItem('temp_leads_email');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const formatted = parsed.map((item: any) => ({
+            email: item.email,
+            name: item.name || '',
+          }));
+          setContacts(formatted);
+        }
+      } catch (e) {
+        console.error('Failed to load bridged emails:', e);
+      } finally {
+        sessionStorage.removeItem('temp_leads_email');
+      }
+    }
+  }, [setContacts]);
+
   const loadTemplates = async () => {
     try {
       const r = await apiFetch(API_ENDPOINTS.email.templates);

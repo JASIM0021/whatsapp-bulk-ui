@@ -100,6 +100,18 @@ export function DashboardPage() {
       path: '/seo',
       dbId: 'seo',
     },
+    {
+      id: 'leads',
+      title: 'Leads Manager',
+      description: 'Scrape business leads from maps by niche and location, enrich with email addresses, and launch campaigns.',
+      icon: <Search size={32} className="text-amber-600" />,
+      bg: 'bg-amber-50',
+      border: 'border-amber-100',
+      hoverBorder: 'hover:border-amber-300',
+      iconBg: 'bg-amber-100',
+      path: '/leads',
+      dbId: 'leads',
+    },
   ];
 
   return (
@@ -123,7 +135,7 @@ export function DashboardPage() {
             )}
             <button onClick={() => navigate('/subscription')} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors shadow-sm">
               <Crown size={16} />
-              <span className="text-sm font-semibold capitalize">{user?.subscription?.plan === 'free' ? 'Trial' : user?.subscription?.plan || 'Free'}</span>
+              <span className="text-sm font-semibold capitalize">{user?.subscription?.plan === 'free' || user?.subscription?.plan === 'trial' ? 'Trial' : user?.subscription?.plan || 'Free'}</span>
             </button>
             <div className="w-px h-6 bg-gray-200"></div>
             <button onClick={() => navigate('/sessions')} title="Active Sessions" className="p-2 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
@@ -156,7 +168,7 @@ export function DashboardPage() {
           {services.map((service) => {
             const plan = user?.subscription?.plan || 'free';
             const enabled = user?.subscription?.enabledServices ?? [];
-            const isLocked = !user?.subscription?.isActive || (plan === 'free' ? service.dbId !== 'whatsapp' : !enabled.includes(service.dbId));
+            const isLocked = !user?.subscription?.isActive || ((plan !== 'free' && plan !== 'trial' && plan !== 'admin_all') && !enabled.includes(service.dbId));
             return (
               <div
                 key={service.id}

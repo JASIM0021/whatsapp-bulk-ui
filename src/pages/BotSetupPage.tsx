@@ -59,7 +59,7 @@ export function BotSetupPage() {
 
 
   const isActive = user?.subscription?.isActive ?? false;
-  const isFree = user?.subscription?.plan === 'free';
+  const isFree = user?.subscription?.plan === 'free' || user?.subscription?.plan === 'trial';
 
   useEffect(() => {
     const load = async () => {
@@ -281,7 +281,7 @@ export function BotSetupPage() {
               : isFree ? 'bg-amber-50 text-amber-700 border-amber-200'
               : 'bg-green-50 text-green-700 border-green-200'
             }`}>
-              {user.subscription.plan === 'free' ? 'Free Trial' : user.subscription.plan}
+              {isFree ? 'Free Trial' : user.subscription.plan}
             </span>
           )}
         </div>

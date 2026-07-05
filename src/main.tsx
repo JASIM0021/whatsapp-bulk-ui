@@ -23,6 +23,7 @@ import { SecurityPage } from './pages/SecurityPage'
 import { ContactPage } from './pages/ContactPage'
 import { AboutPage } from './pages/AboutPage'
 import { EmailPage } from './pages/EmailPage'
+import { LeadsPage } from './pages/LeadsPage'
 import { WebsiteChatbotSetupPage } from './pages/WebsiteChatbotSetupPage'
 import { WebsiteChatbotLeadsPage } from './pages/WebsiteChatbotLeadsPage'
 import { WebsiteChatbotEmbedPage } from './pages/WebsiteChatbotEmbedPage'
@@ -168,6 +169,13 @@ function AppRoutes() {
         <ProtectedRoute>
           <AppProvider>
             <EmailPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+      <Route path="/leads" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <LeadsPage />
           </AppProvider>
         </ProtectedRoute>
       } />

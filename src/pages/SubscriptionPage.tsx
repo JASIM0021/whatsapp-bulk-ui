@@ -16,6 +16,7 @@ const SVC_META = [
   { id: 'linkedin_bot', planMonthly: 'li_bot',   planYearly: 'li_bot_yr',   label: 'LinkedIn AI Bot', desc: 'Automated AI posting',       colorBg: 'bg-cyan-600',    icon: 'Bot' },
   { id: 'seo',          planMonthly: 'seo',      planYearly: 'seo_yr',      label: 'SEO Manager',     desc: 'Audit & health tracking',    colorBg: 'bg-violet-600',  icon: 'Search' },
   { id: 'seo_bot',      planMonthly: 'seo_bot',  planYearly: 'seo_bot_yr',  label: 'SEO AI Bot',      desc: 'AI blog & recommendations',  colorBg: 'bg-purple-600',  icon: 'Sparkles' },
+  { id: 'leads',        planMonthly: 'leads',    planYearly: 'leads_yr',    label: 'Leads Manager',   desc: 'Scrape & enrich maps leads', colorBg: 'bg-amber-500',   icon: 'Sparkles' },
 ] as const;
 
 const COMBO_DEFS = [
@@ -23,13 +24,13 @@ const COMBO_DEFS = [
   { planId: 'social',   name: 'Social Suite',   services: ['whatsapp', 'facebook', 'linkedin'] as const,                                                                          savingsPct: '16%', highlight: false },
   { planId: 'growth',   name: 'Growth Pack',    services: ['whatsapp', 'email', 'linkedin', 'seo'] as const,                                                                      savingsPct: '25%', highlight: true  },
   { planId: 'business', name: 'Business Suite', services: ['whatsapp', 'whatsapp_bot', 'email', 'linkedin', 'linkedin_bot', 'seo'] as const,                                      savingsPct: '24%', highlight: false },
-  { planId: 'ultimate', name: 'Ultimate',       services: ['whatsapp', 'whatsapp_bot', 'chatbot', 'email', 'facebook', 'linkedin', 'linkedin_bot', 'seo', 'seo_bot'] as const,   savingsPct: '33%', highlight: true  },
+  { planId: 'ultimate', name: 'Ultimate',       services: ['whatsapp', 'whatsapp_bot', 'chatbot', 'email', 'facebook', 'linkedin', 'linkedin_bot', 'seo', 'seo_bot', 'leads'] as const,   savingsPct: '33%', highlight: true  },
 ];
 
 const SVC_TO_PLAN: Record<string, string> = {
   whatsapp: 'wa', whatsapp_bot: 'wa_bot', email: 'email',
   chatbot: 'chatbot', facebook: 'facebook', linkedin: 'li',
-  linkedin_bot: 'li_bot', seo: 'seo', seo_bot: 'seo_bot',
+  linkedin_bot: 'li_bot', seo: 'seo', seo_bot: 'seo_bot', leads: 'leads',
 };
 
 // Display groups — LinkedIn & SEO each collapse their sub-bot into one card
@@ -41,6 +42,7 @@ const SVC_GROUPS = [
   { ids: ['facebook'],                  label: 'Facebook',        desc: 'Schedule & publish posts',  colorBg: 'bg-indigo-600',  icon: 'Facebook',      subLabels: [] as string[] },
   { ids: ['linkedin', 'linkedin_bot'],  label: 'LinkedIn',        desc: 'Publisher + AI Bot',        colorBg: 'bg-blue-700',    icon: 'LI',            subLabels: ['Publisher', 'AI Bot'] },
   { ids: ['seo', 'seo_bot'],            label: 'SEO',             desc: 'Manager + AI Bot',          colorBg: 'bg-violet-600',  icon: 'Search',        subLabels: ['Manager', 'AI Bot'] },
+  { ids: ['leads'],                     label: 'Leads Manager',   desc: 'Scrape & enrich local leads', colorBg: 'bg-amber-500',   icon: 'Sparkles',      subLabels: [] as string[] },
 ];
 
 type BestPlan = { planId: string; name: string; price: number; isExact: boolean; savingsPct: string | null; extras: string[] };
@@ -682,7 +684,7 @@ export function SubscriptionPage() {
   }, [selectedServices, billingCycle]);
 
   const handleUpgrade = async (plan: string) => {
-    if (plan === 'free') return;
+    if (plan === 'free' || plan === 'trial') return;
     setPaying(plan);
     const appliedPromo = promoValidation?.valid && promoValidation.code ? promoValidation.code : '';
     try {
@@ -1145,13 +1147,14 @@ export function SubscriptionPage() {
           {(!subscription?.isActive) ? (
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">
               <Code className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">API access requires an active subscription.</p>
-              <p className="text-sm text-gray-400 mt-1">Subscribe to any plan to enable developer API access.</p>
+              <p className="text-gray-500 font-medium">API access requires an active subscription or free trial.</p>
+              <p className="text-sm text-gray-400 mt-1">Subscribe to any plan or start a free trial to enable developer API access. Note: When your trial or subscription expires, API keys automatically cease to function.</p>
             </div>
           ) : (
             <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
               <p className="text-sm text-gray-600">
                 Use your API key to send WhatsApp messages directly from your own software — OTP delivery, promotional campaigns, and more.
+                <span className="block mt-1 text-xs text-amber-600 font-medium">⚡ Free Trial Note: API keys created during a free trial will automatically cease to function when the trial expires.</span>
               </p>
 
               {/* New key shown once */}

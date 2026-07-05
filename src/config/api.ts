@@ -86,6 +86,7 @@ export const API_ENDPOINTS = {
     promos: `${API_BASE_URL}/api/admin/promos`,
     promo: (id: string) => `${API_BASE_URL}/api/admin/promos/${id}`,
     serviceAvailability: `${API_BASE_URL}/api/admin/services/availability`,
+    transactions: `${API_BASE_URL}/api/admin/transactions`,
   },
   services: {
     availability: `${API_BASE_URL}/api/services/availability`,
@@ -204,6 +205,15 @@ export const API_ENDPOINTS = {
     chat: `${API_BASE_URL}/api/website-chatbot/chat`,
     leads: `${API_BASE_URL}/api/website-chatbot/leads`,
     submitLead: `${API_BASE_URL}/api/website-chatbot/leads/submit`,
+  },
+  // ── Leads Manager ──────────────────────────────────────────────────────────
+  leads: {
+    startScrape:  `${API_BASE_URL}/api/leads/scrape/start`,
+    stopScrape:   `${API_BASE_URL}/api/leads/scrape/stop`,
+    list:         `${API_BASE_URL}/api/leads`,
+    delete:       `${API_BASE_URL}/api/leads`,
+    export:       `${API_BASE_URL}/api/leads/export`,
+    stream:       `${SSE_BASE_URL}/api/leads/stream`,
   },
   health: `${API_BASE_URL}/api/health`,
   // ── Chatbot Demo (public marketing tool) ─────────────────────────────────
