@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useCallback } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
@@ -43,14 +43,16 @@ import { SEOBlogCallbackPage } from './pages/seo/SEOBlogCallbackPage';
 import { CampaignPage } from '@/pages/CampaignPage';
 import InfluencerDashboard from '@/pages/influencer/InfluencerDashboard';
 import { DeveloperPage } from './pages/DeveloperPage';
+import BlogPage from './pages/BlogPage';
+import BlogPostPage from './pages/BlogPostPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600" />
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -67,13 +69,12 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600" />
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  // If already logged in and visiting login, redirect to app
   if (isAuthenticated) {
     return <Navigate to="/app" replace />;
   }
@@ -82,25 +83,23 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function SetupGuard() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  const { isComplete, isLoading: setupLoading } = useSetupStatus();
   const navigate = useNavigate();
   const location = useLocation();
-  const { step1Done, isComplete, isLoading: statusLoading } = useSetupStatus();
 
-  const doRedirect = useCallback(() => {
-    if (authLoading || statusLoading) return;
-    if (!isAuthenticated) return;
-    if (location.pathname === '/setup') return;
-    if (localStorage.getItem('botx_setup_complete')) return;
-    if (!step1Done) return;
-    if (isComplete) {
-      localStorage.setItem('botx_setup_complete', '1');
-      return;
+  useEffect(() => {
+    if (isLoading || setupLoading || !isAuthenticated) return;
+
+    const isExemptRoute =
+      location.pathname.startsWith('/setup') ||
+      location.pathname.startsWith('/login') ||
+      location.pathname.startsWith('/signup');
+
+    if (!isExemptRoute && !isComplete) {
+      navigate('/setup', { replace: true });
     }
-    navigate('/setup', { replace: true });
-  }, [authLoading, statusLoading, isAuthenticated, step1Done, isComplete, navigate, location.pathname]);
-
-  useEffect(() => { doRedirect(); }, [doRedirect]);
+  }, [isLoading, setupLoading, isAuthenticated, isComplete, location.pathname, navigate]);
 
   return null;
 }
@@ -130,6 +129,10 @@ function AppRoutes() {
       <Route path="/contact" element={<LandingLayout><ContactPage /></LandingLayout>} />
       <Route path="/about" element={<LandingLayout><AboutPage /></LandingLayout>} />
       <Route path="/data-deletion" element={<LandingLayout><DataDeletionPage /></LandingLayout>} />
+
+      {/* Public Blog Platform */}
+      <Route path="/blog" element={<BlogPage />} />
+      <Route path="/blog/:slug" element={<BlogPostPage />} />
 
       {/* Public chatbot demo tool (no auth required) */}
       <Route path="/check-chatbot" element={<CheckChatbotPage />} />

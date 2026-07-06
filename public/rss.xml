@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>NexBotix AI &amp; WhatsApp MCP Blog</title>
+    <link>https://nexbotix.io/blog</link>
+    <description>Insights, tutorials, and best practices on Model Context Protocol (MCP), WhatsApp AI automation, bulk messaging infrastructure, and agentic workflows.</description>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 06 Jul 2026 12:00:00 GMT</lastBuildDate>
+    <atom:link href="https://nexbotix.io/rss.xml" rel="self" type="application/rss+xml" />
+
+    <item>
+      <title>WhatsApp MCP Server: How to Control WhatsApp from AI Agents (Claude, Cursor, Windsurf)</title>
+      <link>https://nexbotix.io/blog/whatsapp-mcp-server-ai-agents-guide</link>
+      <guid isPermaLink="true">https://nexbotix.io/blog/whatsapp-mcp-server-ai-agents-guide</guid>
+      <description>Discover how to integrate WhatsApp into Claude Desktop, Cursor, and Windsurf using the Model Context Protocol (MCP). Learn how to give AI agents tools to send messages, read replies, and automate workflows.</description>
+      <pubDate>Mon, 06 Jul 2026 09:00:00 GMT</pubDate>
+      <author>alex@nexbotix.io (Alex Rivera)</author>
+    </item>
+
+    <item>
+      <title>The Complete Guide to Building an AI-Powered WhatsApp Bot in 10 Minutes</title>
+      <link>https://nexbotix.io/blog/build-ai-whatsapp-bot-claude-mcp</link>
+      <guid isPermaLink="true">https://nexbotix.io/blog/build-ai-whatsapp-bot-claude-mcp</guid>
+      <description>Learn how to deploy an intelligent, autonomous WhatsApp customer support bot using Claude 3.5 Sonnet and NexBotix MCP without complex webhook boilerplate or server setup.</description>
+      <pubDate>Sun, 05 Jul 2026 14:30:00 GMT</pubDate>
+      <author>sarah@nexbotix.io (Sarah Chen)</author>
+    </item>
+
+    <item>
+      <title>How to Check WhatsApp Bot Health: Detection, Diagnostics, and Uptime Monitoring</title>
+      <link>https://nexbotix.io/blog/how-to-check-whatsapp-bot-health-detection</link>
+      <guid isPermaLink="true">https://nexbotix.io/blog/how-to-check-whatsapp-bot-health-detection</guid>
+      <description>Explore how to use NexBotix built-in Bot Detection and Diagnostic tools to ensure 99.99% uptime, monitor session health, and prevent message delivery bottlenecks.</description>
+      <pubDate>Sat, 04 Jul 2026 11:15:00 GMT</pubDate>
+      <author>marcus@nexbotix.io (Marcus Vance)</author>
+    </item>
+
+    <item>
+      <title>AI SEO Automation: Using WhatsApp MCP &amp; AI Agents to Scale Your Content Strategy</title>
+      <link>https://nexbotix.io/blog/ai-seo-automation-whatsapp-marketing</link>
+      <guid isPermaLink="true">https://nexbotix.io/blog/ai-seo-automation-whatsapp-marketing</guid>
+      <description>See how modern growth teams combine AI agents, programmatic SEO, and WhatsApp notifications to build automated marketing engines that rank higher and convert faster.</description>
+      <pubDate>Fri, 03 Jul 2026 16:20:00 GMT</pubDate>
+      <author>elena@nexbotix.io (Elena Rostova)</author>
+    </item>
+
+    <item>
+      <title>WhatsApp Bulk Messaging Best Practices for 2026: High Delivery &amp; Zero Spam</title>
+      <link>https://nexbotix.io/blog/whatsapp-bulk-messaging-best-practices-2026</link>
+      <guid isPermaLink="true">https://nexbotix.io/blog/whatsapp-bulk-messaging-best-practices-2026</guid>
+      <description>Master the art of high-volume WhatsApp campaigns without getting blocked. Learn about smart throttling, dynamic variables, opt-in compliance, and warming up sender numbers.</description>
+      <pubDate>Thu, 02 Jul 2026 10:00:00 GMT</pubDate>
+      <author>marcus@nexbotix.io (Marcus Vance)</author>
+    </item>
+
+    <item>
+      <title>Why MCP is Replacing Traditional WhatsApp Business API Webhooks</title>
+      <link>https://nexbotix.io/blog/whatsapp-mcp-vs-traditional-whatsapp-business-api</link>
+      <guid isPermaLink="true">https://nexbotix.io/blog/whatsapp-mcp-vs-traditional-whatsapp-business-api</guid>
+      <description>A deep technical comparison between legacy REST webhooks and streamable HTTP MCP endpoints for AI agent communication and real-time messaging automation.</description>
+      <pubDate>Wed, 01 Jul 2026 13:45:00 GMT</pubDate>
+      <author>alex@nexbotix.io (Alex Rivera)</author>
+    </item>
+
+    <item>
+      <title>Top 5 WhatsApp Automation Use Cases for AI Agents in Enterprise</title>
+      <link>https://nexbotix.io/blog/top-5-whatsapp-automation-use-cases-ai-agents</link>
+      <guid isPermaLink="true">https://nexbotix.io/blog/top-5-whatsapp-automation-use-cases-ai-agents</guid>
+      <description>From instant OTP delivery to autonomous lead qualification and CRM synchronization, discover the top 5 enterprise workflows supercharged by WhatsApp MCP.</description>
+      <pubDate>Tue, 30 Jun 2026 09:30:00 GMT</pubDate>
+      <author>sarah@nexbotix.io (Sarah Chen)</author>
+    </item>
+
+    <item>
+      <title>How to Prevent WhatsApp Number Banning in High-Volume Campaigns</title>
+      <link>https://nexbotix.io/blog/how-to-prevent-whatsapp-number-banning-bulk-messaging</link>
+      <guid isPermaLink="true">https://nexbotix.io/blog/how-to-prevent-whatsapp-number-banning-bulk-messaging</guid>
+      <description>Learn the technical strategies used by top growth marketers to protect sender reputation, maintain high quality ratings, and avoid WhatsApp number bans.</description>
+      <pubDate>Mon, 29 Jun 2026 15:10:00 GMT</pubDate>
+      <author>marcus@nexbotix.io (Marcus Vance)</author>
+    </item>
+
+    <item>
+      <title>Converting Website Visitors into Instant WhatsApp Leads with AI Chatbots</title>
+      <link>https://nexbotix.io/blog/converting-website-visitors-to-whatsapp-leads-ai-chatbots</link>
+      <guid isPermaLink="true">https://nexbotix.io/blog/converting-website-visitors-to-whatsapp-leads-ai-chatbots</guid>
+      <description>See how embedded AI web widgets bridge the gap between anonymous browser traffic and high-converting WhatsApp conversations with automated lead capture.</description>
+      <pubDate>Sun, 28 Jun 2026 11:00:00 GMT</pubDate>
+      <author>elena@nexbotix.io (Elena Rostova)</author>
+    </item>
+
+    <item>
+      <title>The Future of Agentic Commerce: How AI Agents Will Shop via WhatsApp in 2026</title>
+      <link>https://nexbotix.io/blog/future-of-agentic-commerce-whatsapp-mcp-2026</link>
+      <guid isPermaLink="true">https://nexbotix.io/blog/future-of-agentic-commerce-whatsapp-mcp-2026</guid>
+      <description>Explore the emerging world of agent-to-agent transactions, automated negotiation, and instant checkout flows powered by WhatsApp MCP and LLMs.</description>
+      <pubDate>Sat, 27 Jun 2026 10:20:00 GMT</pubDate>
+      <author>alex@nexbotix.io (Alex Rivera)</author>
+    </item>
+  </channel>
+</rss>
