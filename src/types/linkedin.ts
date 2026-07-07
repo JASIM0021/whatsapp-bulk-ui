@@ -19,6 +19,8 @@ export interface LinkedInBotConfig {
   postGapMinutes: number;  // gap between posts when postsPerDay > 1
   generateImage: boolean;
   adText?: string;
+  systemPrompt?: string;
+  engagementType?: 'technical' | 'marketing' | 'learning' | 'storytelling';
   lastRunAt?: string;
 }
 

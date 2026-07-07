@@ -165,6 +165,7 @@ export const API_ENDPOINTS = {
     cancelSchedule: (id: string) => `${API_BASE_URL}/api/linkedin/schedule/${id}`,
     bot:            `${API_BASE_URL}/api/linkedin/bot`,
     botRun:         `${API_BASE_URL}/api/linkedin/bot/run`,
+    botSuggest:     `${API_BASE_URL}/api/linkedin/bot/suggest`,
   },
   // ── SEO Extension ─────────────────────────────────────────────────────────
   seo: {

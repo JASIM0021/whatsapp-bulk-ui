@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Loader2, Bot, Play, Save, Plus, X, Clock, Image, Zap, AlertCircle,
-  CheckCircle2, Globe, Calendar, Megaphone,
+  CheckCircle2, Globe, Calendar, Megaphone, Sparkles,
 } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { LinkedInSessionHook } from '@/hooks/useLinkedInSession';
@@ -34,6 +34,8 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
     postGapMinutes: 120,
     generateImage: true,
     adText: '',
+    systemPrompt: '',
+    engagementType: 'learning',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,6 +44,47 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
   const [lastRun, setLastRun] = useState<LinkedInBotRunResult | null>(null);
   const [error, setError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // AI assistant state
+  const [assistantPrompt, setAssistantPrompt] = useState('');
+  const [generatingConfig, setGeneratingConfig] = useState(false);
+  const [assistantSuccess, setAssistantSuccess] = useState(false);
+
+  const handleAIAssist = async () => {
+    if (!assistantPrompt.trim()) return;
+    setError('');
+    setGeneratingConfig(true);
+    setAssistantSuccess(false);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.linkedin.botSuggest, {
+        method: 'POST',
+        body: JSON.stringify({ prompt: assistantPrompt.trim() }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || 'Failed to generate configuration');
+      } else {
+        const suggested = data.data;
+        setConfig(c => ({
+          ...c,
+          keywords: suggested.keywords || [],
+          geos: suggested.geos || ['US'],
+          postsPerDay: suggested.postsPerDay || 1,
+          postTime: suggested.postTime || '09:00',
+          postGapMinutes: suggested.postGapMinutes || 120,
+          generateImage: suggested.generateImage !== undefined ? suggested.generateImage : true,
+          adText: suggested.adText || '',
+          systemPrompt: suggested.systemPrompt || '',
+          engagementType: suggested.engagementType || 'learning',
+        }));
+        setAssistantSuccess(true);
+        setTimeout(() => setAssistantSuccess(false), 5000);
+      }
+    } catch {
+      setError('Failed to generate configuration');
+    }
+    setGeneratingConfig(false);
+  };
 
   useEffect(() => {
     (async () => {
@@ -154,6 +197,60 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
         <p className="text-sm text-blue-100 mt-3">
           The bot automatically creates professional LinkedIn posts based on your keywords and current trending topics, with AI-generated images. Up to 3 posts per day.
         </p>
+      </div>
+
+      {/* AI Configuration Assistant */}
+      <div className="bg-[#0A66C2]/5 border border-[#0A66C2]/15 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+            <Sparkles size={16} className="text-[#0A66C2] animate-pulse" />
+            AI Config Assistant
+          </h3>
+          <span className="text-[10px] bg-blue-100 text-[#0A66C2] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">Smart Fill</span>
+        </div>
+        <p className="text-xs text-gray-500">
+          Describe your business, how often you want to post, target region, or specific rules. The AI will instantly auto-fill all the settings below.
+        </p>
+        <div className="space-y-3">
+          <textarea
+            value={assistantPrompt}
+            onChange={e => setAssistantPrompt(e.target.value)}
+            disabled={generatingConfig}
+            placeholder="e.g. I want to post twice a day for promoting my B2B software consulting firm. I target business decision makers in the US. Let's write daily genuine stories and naturally link to our website https://todayintech.in."
+            rows={3}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent resize-none placeholder:text-gray-400 text-gray-800 bg-white"
+          />
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-gray-400 italic">Fast & fully automated setup.</p>
+            <button
+              onClick={handleAIAssist}
+              disabled={generatingConfig || !assistantPrompt.trim()}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#0A66C2] text-white text-xs font-semibold rounded-xl hover:bg-[#004182] transition-colors disabled:opacity-50"
+            >
+              {generatingConfig ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  Generating Config...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={12} />
+                  Auto-Fill Config
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {assistantSuccess && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-700 flex items-start gap-2">
+            <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5 text-green-600" />
+            <div>
+              <p className="font-semibold">Successfully filled!</p>
+              <p className="mt-0.5 text-green-600">Review the auto-filled fields below, then click <strong>Save Config</strong> at the bottom.</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Last run result */}
@@ -295,6 +392,58 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
             <p className="text-xs text-amber-600 flex items-start gap-1.5">
               <Megaphone size={11} className="flex-shrink-0 mt-0.5" />
               Ad will be woven into every auto-generated post. Keep it concise for best results.
+            </p>
+          )}
+        </div>
+
+        {/* Custom system prompt / AI persona */}
+        {/* Engagement Style */}
+        <div className="pt-3 border-t border-gray-100 space-y-2">
+          <label className="block text-xs font-semibold text-gray-500 mb-2 flex items-center gap-1.5">
+            <Zap size={12} className="text-[#0A66C2]" /> Post Engagement Style
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { id: 'technical', label: 'Technical', desc: 'Sleek system diagrams & deep engineering breakdowns' },
+              { id: 'learning', label: 'Learning', desc: 'Explainer guides, cheat-sheets & tutorials' },
+              { id: 'marketing', label: 'Marketing', desc: 'ROI impact, case benefits & business values' },
+              { id: 'storytelling', label: 'Storytelling', desc: 'Personal anecdotes, founder journeys & client stories' }
+            ].map(item => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setConfig(c => ({ ...c, engagementType: item.id as any }))}
+                className={`p-3 text-left rounded-xl border flex flex-col justify-between transition-all duration-200 hover:shadow-sm ${
+                  config.engagementType === item.id
+                    ? 'bg-[#0A66C2]/5 border-[#0A66C2] text-[#0A66C2] ring-1 ring-[#0A66C2]'
+                    : 'bg-white border-gray-200 text-gray-700 hover:border-[#0A66C2]/40'
+                }`}
+              >
+                <div>
+                  <p className="text-xs font-bold capitalize leading-none">{item.label}</p>
+                  <p className="text-[10px] text-gray-400 mt-1.5 leading-tight">{item.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom AI Persona / System Prompt */}
+        <div className="pt-3 border-t border-gray-100 space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500">
+            <Zap size={12} className="text-amber-500" /> Custom AI Persona / System Prompt <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          <textarea
+            value={config.systemPrompt ?? ''}
+            onChange={e => setConfig(c => ({ ...c, systemPrompt: e.target.value }))}
+            rows={5}
+            placeholder={`Instruct the AI on writing style, constraints, target audience, or specific guidelines.\n\nExample: "Write in a conversational founder-to-founder style. Maximum length: 1200 characters. No hashtags inside paragraphs. Add 3-5 relevant hashtags only at the end."`}
+            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent resize-none placeholder:text-gray-400 text-gray-800"
+          />
+          {config.systemPrompt && config.systemPrompt.trim().length > 0 && (
+            <p className="text-xs text-amber-600 flex items-start gap-1.5">
+              <Zap size={11} className="flex-shrink-0 mt-0.5 text-amber-500" />
+              Custom system instructions will override the default bot writing persona.
             </p>
           )}
         </div>
