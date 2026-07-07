@@ -96,7 +96,9 @@ function SetupGuard() {
       location.pathname.startsWith('/login') ||
       location.pathname.startsWith('/signup');
 
-    if (!isExemptRoute && !isComplete) {
+    const skipped = localStorage.getItem('botx_setup_complete') === '1';
+
+    if (!isExemptRoute && !isComplete && !skipped) {
       navigate('/setup', { replace: true });
     }
   }, [isLoading, setupLoading, isAuthenticated, isComplete, location.pathname, navigate]);
