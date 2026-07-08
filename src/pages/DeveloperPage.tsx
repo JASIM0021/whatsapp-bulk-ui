@@ -18,6 +18,15 @@ interface APIKeyInfo {
   lastUsed: string | null;
 }
 
+interface ConnectedAgentInfo {
+  id: string;
+  client_id: string;
+  name: string;
+  scope: string;
+  created_at: string;
+  expires_at: string;
+}
+
 export function DeveloperPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -25,6 +34,9 @@ export function DeveloperPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [apiKeys, setApiKeys] = useState<APIKeyInfo[]>([]);
   const [keysLoading, setKeysLoading] = useState(false);
+  const [connectedAgents, setConnectedAgents] = useState<ConnectedAgentInfo[]>([]);
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  const [revokingAgent, setRevokingAgent] = useState<string | null>(null);
   const [newKeyName, setNewKeyName] = useState('');
   const [creatingKey, setCreatingKey] = useState(false);
   const [newKeyFull, setNewKeyFull] = useState<string | null>(null);
@@ -37,6 +49,7 @@ export function DeveloperPage() {
 
   useEffect(() => {
     loadKeys();
+    loadConnectedAgents();
   }, []);
 
   function loadKeys() {
@@ -45,6 +58,30 @@ export function DeveloperPage() {
       .then(r => r.json())
       .then(d => { if (d.success) setApiKeys(d.data ?? []); })
       .finally(() => setKeysLoading(false));
+  }
+
+  function loadConnectedAgents() {
+    setAgentsLoading(true);
+    apiFetch('/api/oauth/connected-agents')
+      .then(r => r.json())
+      .then(d => { if (d.success) setConnectedAgents(d.data ?? []); })
+      .finally(() => setAgentsLoading(false));
+  }
+
+  async function revokeAgent(clientId: string) {
+    if (!confirm('Are you sure you want to disconnect this AI agent? It will lose access to your WhatsApp actions immediately.')) return;
+    setRevokingAgent(clientId);
+    try {
+      const res = await apiFetch(`/api/oauth/connected-agents/revoke?client_id=${encodeURIComponent(clientId)}`, {
+        method: 'DELETE',
+      });
+      const d = await res.json();
+      if (d.success) {
+        setConnectedAgents(prev => prev.filter(a => a.client_id !== clientId));
+      }
+    } finally {
+      setRevokingAgent(null);
+    }
   }
 
   async function createKey() {
@@ -692,6 +729,60 @@ Auth Header: X-API-Key: bsk_your_key`,
             <span><strong>Auth:</strong> X-API-Key header</span>
             <span><strong>Protocol:</strong> JSON-RPC 2.0</span>
             <span><strong>Version:</strong> MCP 2024-11-05</span>
+          </div>
+        </div>
+
+        {/* Connected OAuth AI Agents */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                <Shield size={16} className="text-violet-600" />
+                Connected AI Agents (OAuth)
+              </h2>
+              <p className="text-xs text-gray-500">Manage AI applications (like ChatGPT, Claude, etc.) authorized to access your account via OAuth.</p>
+            </div>
+            <button onClick={loadConnectedAgents} disabled={agentsLoading}
+              className="text-xs px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium">
+              {agentsLoading ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            {agentsLoading && connectedAgents.length === 0 ? (
+              <div className="p-6 text-center text-xs text-gray-500">Loading connected agents...</div>
+            ) : connectedAgents.length === 0 ? (
+              <div className="p-6 text-center text-xs text-gray-500">
+                No AI agents currently connected via OAuth. Connect your account inside ChatGPT using <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono">https://nexbotix.online/api/mcp</code>.
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {connectedAgents.map(a => (
+                  <div key={a.client_id} className="p-4 flex items-center justify-between gap-4 flex-wrap hover:bg-gray-50/50 transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                        <h3 className="text-sm font-semibold text-gray-900 truncate">{a.name}</h3>
+                        <span className="text-[10px] px-2 py-0.5 bg-violet-100 text-violet-700 font-mono font-bold rounded-full">Active</span>
+                      </div>
+                      <p className="text-xs text-gray-500 font-mono truncate mb-1">Client ID: {a.client_id}</p>
+                      <p className="text-[11px] text-gray-400">
+                        Connected on: {new Date(a.created_at).toLocaleDateString()} at {new Date(a.created_at).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    <div>
+                      <button
+                        onClick={() => revokeAgent(a.client_id)}
+                        disabled={revokingAgent === a.client_id}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50">
+                        <Trash2 size={13} />
+                        {revokingAgent === a.client_id ? 'Revoking...' : 'Revoke Access'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
