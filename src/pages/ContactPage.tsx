@@ -50,7 +50,7 @@ export function ContactPage() {
               <h2 className="text-xl font-bold text-white mb-6">How can we help?</h2>
               <div className="space-y-5">
                 {[
-                  { icon: Mail, label: 'Email Support', value: 'contact@todayintech.in' },
+                  { icon: Mail, label: 'Email Support', value: 'contact@nexbotix.online' },
                   { icon: Phone, label: 'WhatsApp', value: '+91 76793 49780' },
                   { icon: MapPin, label: 'Based in', value: 'India' },
                 ].map(({ icon: Icon, label, value }) => (

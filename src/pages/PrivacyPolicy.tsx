@@ -4,7 +4,7 @@ export function PrivacyPolicy() {
   useSEO({
     title: 'Privacy Policy - NexBotix',
     description: 'Learn how we collect, use, and protect your personal information when you use NexBotix.',
-    url: 'https://nexbotix.todayintech.in/privacy'
+    url: 'https://nexbotix.online/privacy'
   });
 
   return (
@@ -110,7 +110,7 @@ export function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">11. Contact Us</h2>
             <p className="text-gray-600 leading-relaxed">
-              If you have any questions about this Privacy Policy, please contact us at <a href="mailto:contact@todayintech.in" className="text-green-600 hover:underline">contact@todayintech.in</a>.
+              If you have any questions about this Privacy Policy, please contact us at <a href="mailto:contact@nexbotix.online" className="text-green-600 hover:underline">contact@nexbotix.online</a>.
             </p>
           </section>
         </div>

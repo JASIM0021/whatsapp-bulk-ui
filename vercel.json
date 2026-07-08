@@ -2,10 +2,14 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://bulksenderapi.todayintech.in/api/$1"
+      "destination": "https://api.nexbotix.online/api/$1"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/.well-known/(.*)",
+      "destination": "https://api.nexbotix.online/.well-known/$1"
+    },
+    {
+      "source": "/((?!api/|\\.well-known/).*)",
       "destination": "/index.html"
     }
   ]

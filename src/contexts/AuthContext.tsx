@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!raw) return;
     try {
       const draft = JSON.parse(raw);
-      if (!draft.completedAt) return;
+      if (!draft.businessName) return;
       await fetch(API_ENDPOINTS.bot.upsert, {
         method: 'POST',
         headers: {

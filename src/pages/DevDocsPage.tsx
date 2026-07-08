@@ -22,7 +22,7 @@ Never hardcode the key in source code or commit it to a repository.
 Get your actual key from: Subscription page → Developer API section.
 
 ## Base URL
-https://nexbotix.todayintech.in
+https://nexbotix.online
 
 ## Authentication
 Every request must include the header:
@@ -641,7 +641,7 @@ export function DevDocsPage() {
   useSEO({
     title: 'Developer API Docs - NexBotix',
     description: 'Documentation for integrating NexBotix API to send automated basic and bulk messages programmatically.',
-    url: 'https://nexbotix.todayintech.in/docs'
+    url: 'https://nexbotix.online/docs'
   });
 
   return (

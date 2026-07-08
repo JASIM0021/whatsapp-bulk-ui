@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Send, CalendarClock, LayoutGrid, BarChart2,
-  ArrowLeft, Crown, LogOut, User, Zap, MessageSquare, Mail, Menu, X, Link2
+  ArrowLeft, Crown, LogOut, User, Zap, MessageSquare, Mail, Menu, X, Link2, Linkedin
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
@@ -127,6 +127,16 @@ export function FacebookPage() {
           <Mail size={18} />
           <div>
             <p className="text-sm font-semibold leading-none">Email</p>
+            <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
+          </div>
+        </button>
+        <button
+          onClick={() => navigate('/linkedin')}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+        >
+          <Linkedin size={18} />
+          <div>
+            <p className="text-sm font-semibold leading-none">LinkedIn</p>
             <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
           </div>
         </button>

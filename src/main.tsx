@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useCallback } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
@@ -23,6 +23,7 @@ import { SecurityPage } from './pages/SecurityPage'
 import { ContactPage } from './pages/ContactPage'
 import { AboutPage } from './pages/AboutPage'
 import { EmailPage } from './pages/EmailPage'
+import { LeadsPage } from './pages/LeadsPage'
 import { WebsiteChatbotSetupPage } from './pages/WebsiteChatbotSetupPage'
 import { WebsiteChatbotLeadsPage } from './pages/WebsiteChatbotLeadsPage'
 import { WebsiteChatbotEmbedPage } from './pages/WebsiteChatbotEmbedPage'
@@ -36,15 +37,23 @@ import { useSetupStatus } from './hooks/useSetupStatus';
 import { DataDeletionPage } from './pages/DataDeletionPage';
 import { FacebookPage } from './pages/facebook/FacebookPage';
 import { FacebookCallbackPage } from './pages/facebook/FacebookCallbackPage';
+import { LinkedInPage } from './pages/linkedin/LinkedInPage';
+import { SEOPage } from './pages/seo/SEOPage';
+import { SEOBlogCallbackPage } from './pages/seo/SEOBlogCallbackPage';
 import { CampaignPage } from '@/pages/CampaignPage';
+import InfluencerDashboard from '@/pages/influencer/InfluencerDashboard';
+import { DeveloperPage } from './pages/DeveloperPage';
+import BlogPage from './pages/BlogPage';
+import BlogPostPage from './pages/BlogPostPage';
+import { MCPOAuthApprovePage } from './pages/MCPOAuthApprovePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600" />
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -61,13 +70,12 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600" />
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  // If already logged in and visiting login, redirect to app
   if (isAuthenticated) {
     return <Navigate to="/app" replace />;
   }
@@ -76,25 +84,25 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function SetupGuard() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  const { isComplete, isLoading: setupLoading } = useSetupStatus();
   const navigate = useNavigate();
   const location = useLocation();
-  const { step1Done, isComplete, isLoading: statusLoading } = useSetupStatus();
 
-  const doRedirect = useCallback(() => {
-    if (authLoading || statusLoading) return;
-    if (!isAuthenticated) return;
-    if (location.pathname === '/setup') return;
-    if (localStorage.getItem('botx_setup_complete')) return;
-    if (!step1Done) return;
-    if (isComplete) {
-      localStorage.setItem('botx_setup_complete', '1');
-      return;
+  useEffect(() => {
+    if (isLoading || setupLoading || !isAuthenticated) return;
+
+    const isExemptRoute =
+      location.pathname.startsWith('/setup') ||
+      location.pathname.startsWith('/login') ||
+      location.pathname.startsWith('/signup');
+
+    const skipped = localStorage.getItem('botx_setup_complete') === '1';
+
+    if (!isExemptRoute && !isComplete && !skipped) {
+      navigate('/setup', { replace: true });
     }
-    navigate('/setup', { replace: true });
-  }, [authLoading, statusLoading, isAuthenticated, step1Done, isComplete, navigate, location.pathname]);
-
-  useEffect(() => { doRedirect(); }, [doRedirect]);
+  }, [isLoading, setupLoading, isAuthenticated, isComplete, location.pathname, navigate]);
 
   return null;
 }
@@ -103,7 +111,7 @@ function AppRoutes() {
 
   useEffect(() => {
     const s = document.createElement('script');
-    s.src = 'https://nexbotix.todayintech.in/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
+    s.src = 'https://nexbotix.online/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
     s.async = true;
     document.body.appendChild(s);
     return () => {
@@ -125,6 +133,10 @@ function AppRoutes() {
       <Route path="/about" element={<LandingLayout><AboutPage /></LandingLayout>} />
       <Route path="/data-deletion" element={<LandingLayout><DataDeletionPage /></LandingLayout>} />
 
+      {/* Public Blog Platform */}
+      <Route path="/blog" element={<BlogPage />} />
+      <Route path="/blog/:slug" element={<BlogPostPage />} />
+
       {/* Public chatbot demo tool (no auth required) */}
       <Route path="/check-chatbot" element={<CheckChatbotPage />} />
       <Route path="/demo/:id" element={<ChatbotDemoPage />} />
@@ -135,6 +147,9 @@ function AppRoutes() {
 
       {/* Setup flow — protected, no app shell */}
       <Route path="/setup" element={<ProtectedRoute><SetupPage /></ProtectedRoute>} />
+
+      {/* MCP OAuth Approval Flow */}
+      <Route path="/mcp-auth" element={<ProtectedRoute><MCPOAuthApprovePage /></ProtectedRoute>} />
 
       {/* Payment result pages (accessible without auth - user returns from PayU) */}
       <Route path="/payment/success" element={<PaymentSuccess />} />
@@ -163,6 +178,13 @@ function AppRoutes() {
         <ProtectedRoute>
           <AppProvider>
             <EmailPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+      <Route path="/leads" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <LeadsPage />
           </AppProvider>
         </ProtectedRoute>
       } />
@@ -200,6 +222,27 @@ function AppRoutes() {
         <ProtectedRoute><FacebookCallbackPage /></ProtectedRoute>
       } />
 
+      {/* LinkedIn channel */}
+      <Route path="/linkedin" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <LinkedInPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+
+      {/* SEO Extension */}
+      <Route path="/seo" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <SEOPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+      <Route path="/seo/blog/callback" element={
+        <ProtectedRoute><SEOBlogCallbackPage /></ProtectedRoute>
+      } />
+
       {/* Campaigns channel */}
       <Route path="/campaigns" element={
         <ProtectedRoute>
@@ -207,6 +250,16 @@ function AppRoutes() {
             <CampaignPage />
           </AppProvider>
         </ProtectedRoute>
+      } />
+
+      {/* Influencer / affiliate portal */}
+      <Route path="/influencer" element={
+        <ProtectedRoute><InfluencerDashboard /></ProtectedRoute>
+      } />
+
+      {/* Developer Hub — API keys, REST docs, MCP docs */}
+      <Route path="/developer" element={
+        <ProtectedRoute><DeveloperPage /></ProtectedRoute>
       } />
 
         {/* Catch-all */}

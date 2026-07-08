@@ -4,7 +4,7 @@ export function TermsConditions() {
   useSEO({
     title: 'Terms & Conditions - NexBotix',
     description: 'Read the terms and conditions for using NexBotix.',
-    url: 'https://nexbotix.todayintech.in/terms'
+    url: 'https://nexbotix.online/terms'
   });
 
   return (
@@ -128,7 +128,7 @@ export function TermsConditions() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">14. Contact Us</h2>
             <p className="text-gray-600 leading-relaxed">
-              If you have any questions about these Terms, please contact us at <a href="mailto:contact@todayintech.in" className="text-green-600 hover:underline">contact@todayintech.in</a>.
+              If you have any questions about these Terms, please contact us at <a href="mailto:contact@nexbotix.online" className="text-green-600 hover:underline">contact@nexbotix.online</a>.
             </p>
           </section>
         </div>

@@ -41,7 +41,7 @@ export function LoginPage() {
   useSEO({
     title: mode === 'login' ? 'Sign In - NexBotix' : 'Sign Up - NexBotix',
     description: mode === 'login' ? 'Sign in to access your NexBotix dashboard.' : 'Create a new account on NexBotix and get started with free messages today.',
-    url: mode === 'login' ? 'https://nexbotix.todayintech.in/login' : 'https://nexbotix.todayintech.in/signup'
+    url: mode === 'login' ? 'https://nexbotix.online/login' : 'https://nexbotix.online/signup'
   });
 
   const [step, setStep] = useState<Step>('form');
@@ -197,7 +197,7 @@ export function LoginPage() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Invalid code');
       loginWithToken(data.data.token, data.data.user);
-      navigate(getPostAuthDest());
+      navigate('/setup');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {

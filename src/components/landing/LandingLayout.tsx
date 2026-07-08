@@ -10,6 +10,7 @@ function Navbar() {
     { to: '/', label: 'Home' },
     { to: '/#features', label: 'Features' },
     { to: '/#pricing', label: 'Pricing' },
+    { to: '/blog', label: 'Blog' },
     { to: '/docs', label: 'API Docs' },
     { to: '/contact', label: 'Contact' },
   ];
@@ -98,18 +99,29 @@ function Navbar() {
               to={link.to}
               onClick={() => {
                 if (link.to.includes('#')) scrollToSection(`#${link.to.split('#')[1]}`);
-                else setMobileOpen(false);
+                setMobileOpen(false);
               }}
-              className="block px-4 py-2.5 text-sm font-medium text-gray-300 rounded-lg hover:bg-white/5"
+              className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive(link.to)
+                  ? 'text-green-400 bg-green-500/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
             >
               {link.label}
             </Link>
           ))}
-          <div className="pt-3 border-t border-gray-800 space-y-2">
+          <div className="pt-2 border-t border-gray-800 flex flex-col gap-2">
             <Link
               to="/login"
               onClick={() => setMobileOpen(false)}
-              className="block w-full text-center px-4 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-xl"
+              className="w-full py-2.5 text-center text-sm font-medium text-gray-400 hover:text-white rounded-lg hover:bg-white/5"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/login"
+              onClick={() => setMobileOpen(false)}
+              className="w-full py-2.5 text-center text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 shadow-lg shadow-green-600/25"
             >
               Get Started Free
             </Link>
@@ -122,9 +134,8 @@ function Navbar() {
 
 function Footer() {
   return (
-    <footer className="bg-gray-950 text-gray-400">
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <footer className="bg-gray-950 border-t border-gray-800/60 text-gray-400 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="md:col-span-1">
@@ -145,6 +156,7 @@ function Footer() {
             <ul className="space-y-2.5">
               <li><Link to="/#features" className="text-sm hover:text-white transition-colors">Features</Link></li>
               <li><Link to="/#pricing" className="text-sm hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link to="/blog" className="text-sm hover:text-white transition-colors">Blog</Link></li>
               <li><Link to="/#how-it-works" className="text-sm hover:text-white transition-colors">How It Works</Link></li>
               <li><Link to="/docs" className="text-sm hover:text-white transition-colors">API Documentation</Link></li>
             </ul>
