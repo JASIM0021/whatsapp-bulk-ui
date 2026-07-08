@@ -20,7 +20,7 @@ type VerifyState =
   | { status: 'success'; pageCount: number; domain?: string; lastSeenAt?: string }
   | { status: 'failed' };
 
-const BACKEND_URL = WIDGET_BASE_URL || 'https://bulksenderapi.todayintech.in';
+const BACKEND_URL = WIDGET_BASE_URL || 'https://api.nexbotix.online';
 
 export function SEOSetupTab({ session }: Props) {
   const { user } = useAuth();

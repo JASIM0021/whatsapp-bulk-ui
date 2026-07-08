@@ -5,9 +5,9 @@
 ## About NexBotix
 NexBotix provides a streamable HTTP Model Context Protocol (MCP) server that connects modern AI development environments and agents—including Claude Desktop, Cursor, Windsurf, LangChain, and custom LLM applications—directly to WhatsApp messaging infrastructure.
 
-- **Website**: https://nexbotix.todayintech.in
-- **API Documentation**: https://nexbotix.todayintech.in/docs
-- **Blog & Tutorials**: https://nexbotix.todayintech.in/blog
+- **Website**: https://nexbotix.online
+- **API Documentation**: https://nexbotix.online/docs
+- **Blog & Tutorials**: https://nexbotix.online/blog
 - **Free Trial**: 3-day unlimited trial with full API access upon signup (no credit card required)
 
 ## Core Features & Capabilities
@@ -31,22 +31,22 @@ NexBotix provides a streamable HTTP Model Context Protocol (MCP) server that con
 
 ## Key Resources & Documentation
 
-- [API Reference & SDK Guide](https://nexbotix.todayintech.in/docs): Complete REST and MCP documentation with code snippets in Python, TypeScript, cURL, and Go.
-- [Check Chatbot Health Tool](https://nexbotix.todayintech.in/check-chatbot): Free diagnostic tool to verify WhatsApp bot readiness and webhook health.
-- [Pricing & Plans](https://nexbotix.todayintech.in/#pricing): Transparent pricing tiers starting with a 3-day free trial.
+- [API Reference & SDK Guide](https://nexbotix.online/docs): Complete REST and MCP documentation with code snippets in Python, TypeScript, cURL, and Go.
+- [Check Chatbot Health Tool](https://nexbotix.online/check-chatbot): Free diagnostic tool to verify WhatsApp bot readiness and webhook health.
+- [Pricing & Plans](https://nexbotix.online/#pricing): Transparent pricing tiers starting with a 3-day free trial.
 
 ## Top Blog Articles & Technical Guides
 
-- [WhatsApp MCP Server Guide](https://nexbotix.todayintech.in/blog/whatsapp-mcp-server-ai-agents-guide): How to control WhatsApp from AI agents (Claude, Cursor, Windsurf).
-- [Build an AI WhatsApp Bot in 10 Minutes](https://nexbotix.todayintech.in/blog/build-ai-whatsapp-bot-claude-mcp): Step-by-step tutorial using Claude 3.5 Sonnet and MCP.
-- [Checking WhatsApp Bot Health](https://nexbotix.todayintech.in/blog/how-to-check-whatsapp-bot-health-detection): Diagnostics, uptime monitoring, and detection best practices.
-- [AI SEO Automation & WhatsApp Marketing](https://nexbotix.todayintech.in/blog/ai-seo-automation-whatsapp-marketing): Scaling content strategy and lead nurturing with AI agents.
-- [WhatsApp Bulk Messaging Best Practices 2026](https://nexbotix.todayintech.in/blog/whatsapp-bulk-messaging-best-practices-2026): How to achieve high delivery rates with zero spam flags.
-- [MCP vs. Traditional WhatsApp Business API](https://nexbotix.todayintech.in/blog/whatsapp-mcp-vs-traditional-whatsapp-business-api): Why streamable HTTP MCP is replacing REST webhooks.
-- [Top 5 Enterprise WhatsApp Automation Use Cases](https://nexbotix.todayintech.in/blog/top-5-whatsapp-automation-use-cases-ai-agents): OTPs, CRM sync, autonomous lead qualification, and support.
-- [Preventing WhatsApp Number Banning](https://nexbotix.todayintech.in/blog/how-to-prevent-whatsapp-number-banning-bulk-messaging): Sender reputation protection and warm-up strategies.
-- [Converting Website Visitors into WhatsApp Leads](https://nexbotix.todayintech.in/blog/converting-website-visitors-to-whatsapp-leads-ai-chatbots): How to bridge web traffic and instant messaging.
-- [The Future of Agentic Commerce in 2026](https://nexbotix.todayintech.in/blog/future-of-agentic-commerce-whatsapp-mcp-2026): AI-to-AI transactions and automated checkout via WhatsApp.
+- [WhatsApp MCP Server Guide](https://nexbotix.online/blog/whatsapp-mcp-server-ai-agents-guide): How to control WhatsApp from AI agents (Claude, Cursor, Windsurf).
+- [Build an AI WhatsApp Bot in 10 Minutes](https://nexbotix.online/blog/build-ai-whatsapp-bot-claude-mcp): Step-by-step tutorial using Claude 3.5 Sonnet and MCP.
+- [Checking WhatsApp Bot Health](https://nexbotix.online/blog/how-to-check-whatsapp-bot-health-detection): Diagnostics, uptime monitoring, and detection best practices.
+- [AI SEO Automation & WhatsApp Marketing](https://nexbotix.online/blog/ai-seo-automation-whatsapp-marketing): Scaling content strategy and lead nurturing with AI agents.
+- [WhatsApp Bulk Messaging Best Practices 2026](https://nexbotix.online/blog/whatsapp-bulk-messaging-best-practices-2026): How to achieve high delivery rates with zero spam flags.
+- [MCP vs. Traditional WhatsApp Business API](https://nexbotix.online/blog/whatsapp-mcp-vs-traditional-whatsapp-business-api): Why streamable HTTP MCP is replacing REST webhooks.
+- [Top 5 Enterprise WhatsApp Automation Use Cases](https://nexbotix.online/blog/top-5-whatsapp-automation-use-cases-ai-agents): OTPs, CRM sync, autonomous lead qualification, and support.
+- [Preventing WhatsApp Number Banning](https://nexbotix.online/blog/how-to-prevent-whatsapp-number-banning-bulk-messaging): Sender reputation protection and warm-up strategies.
+- [Converting Website Visitors into WhatsApp Leads](https://nexbotix.online/blog/converting-website-visitors-to-whatsapp-leads-ai-chatbots): How to bridge web traffic and instant messaging.
+- [The Future of Agentic Commerce in 2026](https://nexbotix.online/blog/future-of-agentic-commerce-whatsapp-mcp-2026): AI-to-AI transactions and automated checkout via WhatsApp.
 
 ## Contact & Support
 - **Support Email**: support@nexbotix.io

@@ -9,7 +9,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const BACKEND_URL = process.env.VITE_BACKEND_URL || 'https://bulksenderapi.todayintech.in';
+const BACKEND_URL = process.env.VITE_BACKEND_URL || 'https://api.nexbotix.online';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {

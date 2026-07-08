@@ -247,6 +247,9 @@ export const API_ENDPOINTS = {
     update: (id: string) => `${API_BASE_URL}/api/admin/influencers/${id}`,
     payout: (id: string) => `${API_BASE_URL}/api/admin/influencers/${id}/payout`,
   },
+  oauth: {
+    approve: `${API_BASE_URL}/api/oauth/approve`,
+  },
 };
 
 /**

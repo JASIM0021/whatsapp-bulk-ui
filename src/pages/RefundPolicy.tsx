@@ -4,7 +4,7 @@ export function RefundPolicy() {
   useSEO({
     title: 'Refund Policy - NexBotix',
     description: 'Read the refund policy for NexBotix.',
-    url: 'https://nexbotix.todayintech.in/refund'
+    url: 'https://nexbotix.online/refund'
   });
 
   return (
@@ -70,8 +70,8 @@ export function RefundPolicy() {
             <h2 className="text-xl font-bold text-gray-900 mb-3">5. How to Request a Refund</h2>
             <p className="text-gray-600 leading-relaxed mb-3">
               To request a refund, please contact our support team at{' '}
-              <a href="mailto:contact@todayintech.in" className="text-green-600 hover:underline">
-                contact@todayintech.in
+              <a href="mailto:contact@nexbotix.online" className="text-green-600 hover:underline">
+                contact@nexbotix.online
               </a>{' '}
               with the following information:
             </p>
@@ -118,8 +118,8 @@ export function RefundPolicy() {
             <h2 className="text-xl font-bold text-gray-900 mb-3">10. Contact Us</h2>
             <p className="text-gray-600 leading-relaxed">
               For refund requests or questions about this policy, contact us at{' '}
-              <a href="mailto:contact@todayintech.in" className="text-green-600 hover:underline">
-                contact@todayintech.in
+              <a href="mailto:contact@nexbotix.online" className="text-green-600 hover:underline">
+                contact@nexbotix.online
               </a>
               . We aim to respond to all inquiries within 2 business days.
             </p>

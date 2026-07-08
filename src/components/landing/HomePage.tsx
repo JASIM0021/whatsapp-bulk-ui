@@ -484,7 +484,7 @@ function MCPSection() {
   const configSnippet = `{
   "mcpServers": {
     "whatsapp": {
-      "url": "https://nexbotix.todayintech.in/api/mcp",
+      "url": "https://nexbotix.online/api/mcp",
       "headers": {
         "X-API-Key": "bsk_your_api_key"
       }
@@ -1084,7 +1084,7 @@ export function HomePage() {
     title: 'NexBotix - WhatsApp MCP Server, Bulk Marketing & AI Chatbots',
     description: 'WhatsApp MCP server for AI agents — connect Claude Desktop, Cursor, or any AI agent to WhatsApp with one API key. Plus bulk WhatsApp marketing, email campaigns, and AI website chatbots.',
     keywords: 'whatsapp mcp server, whatsapp api ai agent, claude desktop whatsapp, whatsapp automation mcp, mcp whatsapp integration, whatsapp bulk sender, email campaigns, website chatbot, lead capture, marketing automation, nexbotix, ai agent whatsapp, whatsapp model context protocol',
-    url: 'https://nexbotix.todayintech.in/'
+    url: 'https://nexbotix.online/'
   });
 
   return (

@@ -368,7 +368,7 @@ function CodeExamples() {
 
 // ── MCP Setup Card ────────────────────────────────────────────────────────────
 
-const MCP_ENDPOINT = 'https://nexbotix.todayintech.in/api/mcp';
+const MCP_ENDPOINT = 'https://nexbotix.online/api/mcp';
 
 const MCP_CLIENTS = [
   {

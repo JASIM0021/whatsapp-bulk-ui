@@ -216,7 +216,7 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
             value={assistantPrompt}
             onChange={e => setAssistantPrompt(e.target.value)}
             disabled={generatingConfig}
-            placeholder="e.g. I want to post twice a day for promoting my B2B software consulting firm. I target business decision makers in the US. Let's write daily genuine stories and naturally link to our website https://todayintech.in."
+            placeholder="e.g. I want to post twice a day for promoting my B2B software consulting firm. I target business decision makers in the US. Let's write daily genuine stories and naturally link to our website https://nexbotix.online."
             rows={3}
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent resize-none placeholder:text-gray-400 text-gray-800 bg-white"
           />

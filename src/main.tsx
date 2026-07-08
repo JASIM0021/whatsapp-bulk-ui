@@ -45,6 +45,7 @@ import InfluencerDashboard from '@/pages/influencer/InfluencerDashboard';
 import { DeveloperPage } from './pages/DeveloperPage';
 import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
+import { MCPOAuthApprovePage } from './pages/MCPOAuthApprovePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -110,7 +111,7 @@ function AppRoutes() {
 
   useEffect(() => {
     const s = document.createElement('script');
-    s.src = 'https://nexbotix.todayintech.in/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
+    s.src = 'https://nexbotix.online/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
     s.async = true;
     document.body.appendChild(s);
     return () => {
@@ -146,6 +147,9 @@ function AppRoutes() {
 
       {/* Setup flow — protected, no app shell */}
       <Route path="/setup" element={<ProtectedRoute><SetupPage /></ProtectedRoute>} />
+
+      {/* MCP OAuth Approval Flow */}
+      <Route path="/mcp-auth" element={<ProtectedRoute><MCPOAuthApprovePage /></ProtectedRoute>} />
 
       {/* Payment result pages (accessible without auth - user returns from PayU) */}
       <Route path="/payment/success" element={<PaymentSuccess />} />

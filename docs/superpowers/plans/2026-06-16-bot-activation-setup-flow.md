@@ -803,7 +803,7 @@ In `AppRoutes`, add `<SetupGuard />` right after `<BotOnboardingModal />`:
 function AppRoutes() {
   useEffect(() => {
     const s = document.createElement('script');
-    s.src = 'https://nexbotix.todayintech.in/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
+    s.src = 'https://nexbotix.online/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
     s.async = true;
     document.body.appendChild(s);
     return () => {

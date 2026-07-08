@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://bulksenderapi.todayintech.in/api/$1"
+      "destination": "https://api.nexbotix.online/api/$1"
     },
     {
       "source": "/((?!api/).*)",

@@ -135,7 +135,7 @@ export function DeveloperPage() {
   ];
 
   // ── code snippets ───────────────────────────────────────────────────────────
-  const waSendCurl = `curl -X POST https://nexbotix.todayintech.in/api/v1/send \\
+  const waSendCurl = `curl -X POST https://nexbotix.online/api/v1/send \\
   -H "X-API-Key: bsk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -143,7 +143,7 @@ export function DeveloperPage() {
     "message": { "text": "Hello! This is a test message." }
   }'`;
 
-  const waSendJs = `const res = await fetch('https://nexbotix.todayintech.in/api/v1/send', {
+  const waSendJs = `const res = await fetch('https://nexbotix.online/api/v1/send', {
   method: 'POST',
   headers: {
     'X-API-Key': 'bsk_your_key',
@@ -160,7 +160,7 @@ console.log(data);`;
   const waSendPython = `import requests
 
 response = requests.post(
-    'https://nexbotix.todayintech.in/api/v1/send',
+    'https://nexbotix.online/api/v1/send',
     headers={
         'X-API-Key': 'bsk_your_key',
         'Content-Type': 'application/json'
@@ -172,7 +172,7 @@ response = requests.post(
 )
 print(response.json())`;
 
-  const waBulkCurl = `curl -X POST https://nexbotix.todayintech.in/api/v1/send \\
+  const waBulkCurl = `curl -X POST https://nexbotix.online/api/v1/send \\
   -H "X-API-Key: bsk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -183,7 +183,7 @@ print(response.json())`;
     "message": { "text": "Hi {{name}}, check out our latest offer!" }
   }'`;
 
-  const emailSendCurl = `curl -X POST https://nexbotix.todayintech.in/api/v1/email/send \\
+  const emailSendCurl = `curl -X POST https://nexbotix.online/api/v1/email/send \\
   -H "X-API-Key: bsk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -195,7 +195,7 @@ print(response.json())`;
     }
   }'`;
 
-  const emailSendJs = `const res = await fetch('https://nexbotix.todayintech.in/api/v1/email/send', {
+  const emailSendJs = `const res = await fetch('https://nexbotix.online/api/v1/email/send', {
   method: 'POST',
   headers: {
     'X-API-Key': 'bsk_your_key',
@@ -215,7 +215,7 @@ console.log(data);`;
   const emailSendPython = `import requests
 
 response = requests.post(
-    'https://nexbotix.todayintech.in/api/v1/email/send',
+    'https://nexbotix.online/api/v1/email/send',
     headers={
         'X-API-Key': 'bsk_your_key',
         'Content-Type': 'application/json'
@@ -230,14 +230,14 @@ response = requests.post(
 )
 print(response.json())`;
 
-  const mcpClaudeCodeCmd = `claude mcp add --transport http whatsapp https://nexbotix.todayintech.in/api/mcp \\
+  const mcpClaudeCodeCmd = `claude mcp add --transport http whatsapp https://nexbotix.online/api/mcp \\
   -H "X-API-Key: your_bsk_key" \\
   -s user`;
 
   const mcpClaudeConfig = `{
   "mcpServers": {
     "whatsapp": {
-      "url": "https://nexbotix.todayintech.in/api/mcp",
+      "url": "https://nexbotix.online/api/mcp",
       "headers": {
         "X-API-Key": "bsk_your_key"
       }
@@ -248,7 +248,7 @@ print(response.json())`;
   const mcpCursorConfig = `{
   "mcpServers": {
     "whatsapp": {
-      "url": "https://nexbotix.todayintech.in/api/mcp",
+      "url": "https://nexbotix.online/api/mcp",
       "headers": {
         "X-API-Key": "bsk_your_key"
       }
@@ -257,19 +257,19 @@ print(response.json())`;
 }`;
 
   const mcpInitCurl = `# Step 1 — Initialize
-curl -X POST https://nexbotix.todayintech.in/api/mcp \\
+curl -X POST https://nexbotix.online/api/mcp \\
   -H "X-API-Key: bsk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}'
 
 # Step 2 — List tools
-curl -X POST https://nexbotix.todayintech.in/api/mcp \\
+curl -X POST https://nexbotix.online/api/mcp \\
   -H "X-API-Key: bsk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 
 # Step 3 — Send a WhatsApp message
-curl -X POST https://nexbotix.todayintech.in/api/mcp \\
+curl -X POST https://nexbotix.online/api/mcp \\
   -H "X-API-Key: bsk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"whatsapp_send_message","arguments":{"phone":"919876543210","message":"Hello from MCP!"}}}'`;
@@ -307,8 +307,8 @@ curl -X POST https://nexbotix.todayintech.in/api/mcp \\
           <p className="text-sm font-semibold text-gray-700 mb-2">Base URL</p>
           <div className="flex items-center gap-2 bg-gray-900 rounded-xl px-4 py-3 border border-gray-700">
             <Globe size={14} className="text-gray-400 flex-shrink-0" />
-            <code className="flex-1 text-sm font-mono text-green-400">https://nexbotix.todayintech.in</code>
-            <button onClick={() => copySnippet('baseurl', 'https://nexbotix.todayintech.in')}
+            <code className="flex-1 text-sm font-mono text-green-400">https://nexbotix.online</code>
+            <button onClick={() => copySnippet('baseurl', 'https://nexbotix.online')}
               className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors">
               {copiedSnippet === 'baseurl' ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
               {copiedSnippet === 'baseurl' ? 'Copied' : 'Copy'}
@@ -567,13 +567,13 @@ curl -X POST https://nexbotix.todayintech.in/api/mcp \\
         {/* Schedules */}
         <div className="mb-8">
           <EndpointHeader method="GET" path="/api/v1/schedules" description="List all scheduled messages" />
-          <CodeBlock id="wa-list-sched" language="bash" code={`curl https://nexbotix.todayintech.in/api/v1/schedules \\
+          <CodeBlock id="wa-list-sched" language="bash" code={`curl https://nexbotix.online/api/v1/schedules \\
   -H "X-API-Key: bsk_your_key"`} />
         </div>
 
         <div className="mb-4">
           <EndpointHeader method="DELETE" path="/api/v1/schedules/{id}" description="Cancel a pending scheduled message" />
-          <CodeBlock id="wa-cancel-sched" language="bash" code={`curl -X DELETE https://nexbotix.todayintech.in/api/v1/schedules/JOB_ID \\
+          <CodeBlock id="wa-cancel-sched" language="bash" code={`curl -X DELETE https://nexbotix.online/api/v1/schedules/JOB_ID \\
   -H "X-API-Key: bsk_your_key"`} />
         </div>
       </div>
@@ -639,7 +639,7 @@ curl -X POST https://nexbotix.todayintech.in/api/mcp \\
       claudecode: mcpClaudeCodeCmd,
       claude: mcpClaudeConfig,
       cursor: mcpCursorConfig,
-      generic: `URL: https://nexbotix.todayintech.in/api/mcp
+      generic: `URL: https://nexbotix.online/api/mcp
 Transport: Streamable HTTP
 Protocol Version: 2024-11-05
 Auth Header: X-API-Key: bsk_your_key`,
@@ -685,7 +685,7 @@ Auth Header: X-API-Key: bsk_your_key`,
           <div className="flex items-center gap-2 flex-wrap">
             <MethodBadge method="POST" />
             <code className="text-sm font-mono bg-white border border-gray-200 px-2.5 py-1 rounded-lg text-gray-800">
-              https://nexbotix.todayintech.in/api/mcp
+              https://nexbotix.online/api/mcp
             </code>
           </div>
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-gray-600">

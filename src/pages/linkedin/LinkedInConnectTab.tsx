@@ -10,7 +10,7 @@ interface Props {
   session: LinkedInSessionHook;
 }
 
-const CALLBACK_URL = 'https://bulksenderapi.todayintech.in/api/linkedin/callback';
+const CALLBACK_URL = 'https://api.nexbotix.online/api/linkedin/callback';
 
 export function LinkedInConnectTab({ session }: Props) {
   const isPlatformAuth = session.hasPlatformAuth === true;

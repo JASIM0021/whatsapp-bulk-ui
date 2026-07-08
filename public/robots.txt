@@ -5,4 +5,4 @@ Disallow: /admin
 Disallow: /subscription
 Disallow: /payment/
 
-Sitemap: https://nexbotix.todayintech.in/sitemap.xml
+Sitemap: https://nexbotix.online/sitemap.xml

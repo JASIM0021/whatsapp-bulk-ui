@@ -7,7 +7,7 @@ export function DataDeletionPage() {
   useSEO({
     title: 'Data Deletion Request - NexBotix',
     description: 'Request deletion of your personal data from NexBotix.',
-    url: 'https://nexbotix.todayintech.in/data-deletion',
+    url: 'https://nexbotix.online/data-deletion',
   });
 
   const [form, setForm] = useState({ name: '', email: '', reason: '' });

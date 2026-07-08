@@ -876,7 +876,7 @@ function EmailTab() {
       Your message body goes here...
     </p>
     <div style="text-align:center;margin:32px 0;">
-      <a href="https://bulksender.todayintech.in" style="background:#16a34a;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">
+      <a href="https://nexbotix.online" style="background:#16a34a;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">
         Go to Dashboard
       </a>
     </div>
