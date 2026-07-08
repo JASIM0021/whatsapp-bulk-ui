@@ -45,7 +45,7 @@ export function DeveloperPage() {
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
   const [codeTab, setCodeTab] = useState<'curl' | 'js' | 'python'>('curl');
   const [emailCodeTab, setEmailCodeTab] = useState<'curl' | 'js' | 'python'>('curl');
-  const [mcpClient, setMcpClient] = useState<'claudecode' | 'claude' | 'cursor' | 'generic'>('claudecode');
+  const [mcpClient, setMcpClient] = useState<'opencode' | 'claudecode' | 'claude' | 'cursor' | 'generic'>('opencode');
 
   useEffect(() => {
     loadKeys();
@@ -266,6 +266,12 @@ response = requests.post(
     }
 )
 print(response.json())`;
+
+  const mcpOpenCodeCmd = `# Step 1: Add NexBotix MCP Server
+opencode mcp add nexbotix --url https://nexbotix.online/api/mcp
+
+# Step 2: Authenticate (opens browser for 1-Click OAuth Login)
+opencode mcp auth nexbotix`;
 
   const mcpClaudeCodeCmd = `claude mcp add --transport http whatsapp https://nexbotix.online/api/mcp \\
   -H "X-API-Key: your_bsk_key" \\
@@ -673,6 +679,7 @@ curl -X POST https://nexbotix.online/api/mcp \\
 
   function renderMCP() {
     const mcpConfigs: Record<typeof mcpClient, string> = {
+      opencode: mcpOpenCodeCmd,
       claudecode: mcpClaudeCodeCmd,
       claude: mcpClaudeConfig,
       cursor: mcpCursorConfig,
@@ -682,6 +689,7 @@ Protocol Version: 2024-11-05
 Auth Header: X-API-Key: bsk_your_key`,
     };
     const mcpConfigPaths: Record<typeof mcpClient, string> = {
+      opencode: 'Run in your terminal (`~/.config/opencode/opencode.jsonc`)',
       claudecode: 'Run once in your terminal — no config file needed',
       claude: '~/Library/Application Support/Claude/claude_desktop_config.json',
       cursor: '.cursor/mcp.json (project root)',
@@ -791,6 +799,7 @@ Auth Header: X-API-Key: bsk_your_key`,
           <p className="text-base font-semibold text-gray-800 mb-3">Client Configuration</p>
           <div className="flex flex-wrap gap-1 mb-4">
             {([
+              { id: 'opencode' as const, label: 'OpenCode', badge: 'New' },
               { id: 'claudecode' as const, label: 'Claude Code', badge: 'Easiest' },
               { id: 'claude' as const, label: 'Claude Desktop' },
               { id: 'cursor' as const, label: 'Cursor' },
@@ -804,7 +813,21 @@ Auth Header: X-API-Key: bsk_your_key`,
             ))}
           </div>
 
-          {mcpClient === 'claudecode' ? (
+          {mcpClient === 'opencode' ? (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Terminal size={13} className="text-gray-400" />
+                <p className="text-xs text-gray-500 font-mono">{mcpConfigPaths.opencode}</p>
+              </div>
+              <CodeBlock id="mcp-config-opencode" language="bash" code={mcpConfigs.opencode} />
+              <div className="mt-3 bg-violet-50 border border-violet-200 rounded-xl p-3 text-xs text-violet-900 space-y-1">
+                <p><strong>OpenCode Integration Highlights:</strong></p>
+                <p>• <strong>1-Click OAuth Login:</strong> Running <code className="bg-violet-100 px-1.5 py-0.5 rounded font-mono">opencode mcp auth nexbotix</code> opens your browser to securely authorize without copying API keys.</p>
+                <p>• <strong>API Key Fallback:</strong> If you prefer API keys or CI/CD pipelines, pass <code className="bg-violet-100 px-1.5 py-0.5 rounded font-mono">-H "X-API-Key: your_key"</code> during <code className="bg-violet-100 px-1.5 py-0.5 rounded font-mono">mcp add</code>.</p>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">Verify with: <code className="font-mono bg-gray-100 px-1 rounded">opencode mcp list</code></p>
+            </div>
+          ) : mcpClient === 'claudecode' ? (
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Terminal size={13} className="text-gray-400" />
