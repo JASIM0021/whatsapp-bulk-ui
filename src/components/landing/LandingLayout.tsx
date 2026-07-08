@@ -83,6 +83,7 @@ function Navbar() {
           {/* Mobile toggle */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             className="md:hidden p-2 rounded-lg text-gray-400 hover:bg-white/5"
           >
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
