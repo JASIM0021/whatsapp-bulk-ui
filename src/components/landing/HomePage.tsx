@@ -404,11 +404,11 @@ function Features() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <p className="text-sm font-semibold text-green-600 tracking-wide uppercase mb-3">Features</p>
+          <p className="text-sm font-semibold text-green-700 tracking-wide uppercase mb-3">Features</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
             Everything you need to send at scale
           </h2>
-          <p className="text-lg text-gray-500">
+          <p className="text-lg text-gray-600">
             Powerful tools designed for marketers, support teams, and businesses of all sizes.
           </p>
         </div>
@@ -424,7 +424,7 @@ function Features() {
                 <f.icon size={20} className="text-white" />
               </div>
               <h3 className="text-base font-bold text-gray-900 mb-2">{f.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
+              <p className="text-sm text-gray-600 leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>
@@ -457,11 +457,11 @@ function HowItWorks() {
     <section id="how-it-works" className="bg-gray-50 py-24 sm:py-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <p className="text-sm font-semibold text-green-600 tracking-wide uppercase mb-3">How It Works</p>
+          <p className="text-sm font-semibold text-green-700 tracking-wide uppercase mb-3">How It Works</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
             Three steps. That's it.
           </h2>
-          <p className="text-lg text-gray-500">
+          <p className="text-lg text-gray-600">
             Go from zero to sending bulk messages in under 2 minutes.
           </p>
         </div>
@@ -474,9 +474,9 @@ function HowItWorks() {
                 <div className="hidden md:block absolute top-10 left-[calc(100%)] w-full h-px border-t-2 border-dashed border-gray-300 -z-0" />
               )}
               <div className="bg-white rounded-2xl p-8 border border-gray-200 relative z-10 h-full">
-                <div className="text-5xl font-black text-green-100 mb-4">{step.num}</div>
+                <div className="text-5xl font-black text-green-300 mb-4">{step.num}</div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{step.desc}</p>
               </div>
             </div>
           ))}
@@ -613,7 +613,7 @@ function MCPSection() {
           {/* Config snippet */}
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              <span className="text-xs text-gray-500">Works with:</span>
+              <span className="text-xs text-gray-400">Works with:</span>
               {agentApps.map(a => (
                 <span key={a.name} className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border ${a.bg}`}>
                   {a.name}
@@ -629,7 +629,7 @@ function MCPSection() {
                   <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
                   <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
                   <Code2 size={13} className="text-gray-500 ml-2" />
-                  <span className="text-xs text-gray-500 font-mono">claude_desktop_config.json</span>
+                  <span className="text-xs text-gray-400 font-mono">claude_desktop_config.json</span>
                 </div>
                 <button
                   onClick={copyConfig}
@@ -644,7 +644,7 @@ function MCPSection() {
               </pre>
             </div>
 
-            <p className="text-sm text-gray-500 mt-3 leading-relaxed">
+            <p className="text-sm text-gray-400 mt-3 leading-relaxed">
               Add this to your AI agent config. Your WhatsApp — contacts, schedules, bulk messaging — becomes a set of natural-language commands available in any conversation.
             </p>
           </div>
@@ -659,7 +659,7 @@ function MCPSection() {
                 <div key={t.name} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/70 border border-gray-800 hover:border-gray-700 transition-all">
                   <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" />
                   <code className="text-xs font-mono text-violet-300 flex-1 min-w-0 truncate">{t.name}</code>
-                  <span className="text-xs text-gray-500 flex-shrink-0">{t.desc}</span>
+                  <span className="text-xs text-gray-400 flex-shrink-0">{t.desc}</span>
                 </div>
               ))}
             </div>
@@ -694,7 +694,7 @@ function MCPSection() {
             Get Your API Key Free
             <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
           </Link>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-400">
             Compatible with MCP Streamable HTTP (v2024-11-05)
           </span>
         </div>
@@ -852,11 +852,11 @@ function Pricing() {
 
         {/* Header + toggle */}
         <div className="text-center mb-10">
-          <p className="text-xs font-bold text-green-600 uppercase tracking-widest mb-2">Pricing</p>
+          <p className="text-xs font-bold text-green-700 uppercase tracking-widest mb-2">Pricing</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
             Simple, transparent pricing
           </h2>
-          <p className="text-gray-500 mb-6">Pick any service — add more for bigger savings. Cancel anytime.</p>
+          <p className="text-gray-600 mb-6">Pick any service — add more for bigger savings. Cancel anytime.</p>
 
           <div className="inline-flex items-center bg-gray-100 p-1 rounded-xl gap-1">
             <button
@@ -870,7 +870,7 @@ function Pricing() {
               className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${billing === 'yearly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Yearly
-              <span className="text-[11px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">-20%</span>
+              <span className="text-[11px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">-20%</span>
             </button>
           </div>
           {billing === 'yearly' && (
@@ -880,7 +880,7 @@ function Pricing() {
 
         {/* Individual service add-on cards */}
         <div className="mb-10">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest text-center mb-4">
             Add-ons · {fmt(billing === 'yearly' ? 950 : 99)}/{billing === 'yearly' ? 'yr' : 'mo'} each
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -918,17 +918,17 @@ function Pricing() {
                   </div>
                   <p className="text-sm font-bold text-gray-900 leading-tight">{g.label}</p>
                   {g.subLabels.length > 0 ? (
-                    <p className="text-[9px] text-gray-400 mt-0.5 mb-3 leading-tight">{g.subLabels.join(' + ')}</p>
+                    <p className="text-[9px] text-gray-500 mt-0.5 mb-3 leading-tight">{g.subLabels.join(' + ')}</p>
                   ) : (
-                    <p className="text-[11px] text-gray-400 mt-0.5 mb-3 leading-snug">{g.desc}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5 mb-3 leading-snug">{g.desc}</p>
                   )}
                   {isUnavail ? (
                     <p className="text-[11px] text-amber-600 font-medium">Temporarily unavailable</p>
                   ) : (
                     <div>
                       <span className="text-lg font-extrabold text-gray-900">{fmt(groupPrice)}</span>
-                      <span className="text-xs text-gray-400">/{billing === 'yearly' ? 'yr' : 'mo'}</span>
-                      {g.ids.length > 1 && <span className="text-[10px] text-gray-400 ml-1">({g.ids.length} svcs)</span>}
+                      <span className="text-xs text-gray-500">/{billing === 'yearly' ? 'yr' : 'mo'}</span>
+                      {g.ids.length > 1 && <span className="text-[10px] text-gray-500 ml-1">({g.ids.length} svcs)</span>}
                     </div>
                   )}
                 </button>
@@ -939,7 +939,7 @@ function Pricing() {
 
         {/* Popular bundle cards */}
         <div className="mb-20">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest text-center mb-4">
             Popular bundles — combine &amp; save
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
@@ -987,7 +987,7 @@ function Pricing() {
                       <span className={`text-2xl font-extrabold ${combo.highlight ? 'text-white' : 'text-gray-900'}`}>
                         {price !== undefined ? fmt(price) : '—'}
                       </span>
-                      <span className={`text-xs ${combo.highlight ? 'text-white/70' : 'text-gray-400'}`}>/{billing === 'yearly' ? 'yr' : 'mo'}</span>
+                      <span className={`text-xs ${combo.highlight ? 'text-white/70' : 'text-gray-500'}`}>/{billing === 'yearly' ? 'yr' : 'mo'}</span>
                     </div>
                     <span className={`text-xs font-bold px-2 py-1 rounded-full ${combo.highlight ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700'}`}>
                       save {combo.savingsPct}
@@ -1019,7 +1019,7 @@ function Pricing() {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-600">
                   {selected.size} service{selected.size !== 1 ? 's' : ''} × {fmt(billing === 'yearly' ? 950 : 99)} each
                   {!isExactCombo && bestPlan && (
                     <span className="ml-2 text-amber-600">
@@ -1037,7 +1037,7 @@ function Pricing() {
                 <div className="text-right">
                   <div className="text-xl font-extrabold text-gray-900">
                     {fmt(checkoutPrice)}
-                    <span className="text-xs font-normal text-gray-400 ml-1">/{billing === 'yearly' ? 'yr' : 'mo'}</span>
+                    <span className="text-xs font-normal text-gray-500 ml-1">/{billing === 'yearly' ? 'yr' : 'mo'}</span>
                   </div>
                   {savings > 0 && (
                     <div className="text-xs text-green-600 font-medium">saves {fmt(savings)}</div>

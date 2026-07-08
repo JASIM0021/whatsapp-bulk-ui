@@ -179,7 +179,7 @@ function Footer() {
           {/* Get started */}
           <div>
             <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">Get Started</p>
-            <p className="text-sm text-gray-500 mb-4">Start sending bulk messages in under 2 minutes.</p>
+            <p className="text-sm text-gray-400 leading-relaxed mb-4">Start sending bulk messages in under 2 minutes.</p>
             <Link
               to="/login"
               className="inline-block px-5 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors"
@@ -190,14 +190,14 @@ function Footer() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-gray-500">
             &copy; {new Date().getFullYear()} NexBotix. All rights reserved.
           </p>
           <div className="flex gap-6">
-            <Link to="/privacy" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Privacy</Link>
-            <Link to="/terms" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Terms</Link>
-            <Link to="/refund" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Refund Policy</Link>
-            <Link to="/data-deletion" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Data Deletion</Link>
+            <Link to="/privacy" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">Privacy</Link>
+            <Link to="/terms" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">Terms</Link>
+            <Link to="/refund" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">Refund Policy</Link>
+            <Link to="/data-deletion" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">Data Deletion</Link>
           </div>
         </div>
       </div>
