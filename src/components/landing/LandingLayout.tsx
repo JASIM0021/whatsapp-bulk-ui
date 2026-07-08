@@ -153,7 +153,7 @@ function Footer() {
 
           {/* Product */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">Product</h4>
+            <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">Product</p>
             <ul className="space-y-2.5">
               <li><Link to="/#features" className="text-sm hover:text-white transition-colors">Features</Link></li>
               <li><Link to="/#pricing" className="text-sm hover:text-white transition-colors">Pricing</Link></li>
@@ -165,7 +165,7 @@ function Footer() {
 
           {/* Company */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">Company</h4>
+            <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">Company</p>
             <ul className="space-y-2.5">
               <li><Link to="/about" className="text-sm hover:text-white transition-colors">About Us</Link></li>
               <li><Link to="/contact" className="text-sm hover:text-white transition-colors">Contact Us</Link></li>
@@ -178,7 +178,7 @@ function Footer() {
 
           {/* Get started */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">Get Started</h4>
+            <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">Get Started</p>
             <p className="text-sm text-gray-500 mb-4">Start sending bulk messages in under 2 minutes.</p>
             <Link
               to="/login"

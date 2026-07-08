@@ -99,7 +99,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function SetupGuard() {
   const { isAuthenticated, isLoading } = useAuth();
-  const { isComplete, isLoading: setupLoading } = useSetupStatus();
+  const { isComplete, isLoading: setupLoading } = useSetupStatus(isAuthenticated);
   const navigate = useNavigate();
   const location = useLocation();
 

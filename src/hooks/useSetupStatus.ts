@@ -10,13 +10,21 @@ export interface SetupStatus {
   refresh: () => Promise<void>;
 }
 
-export function useSetupStatus(): SetupStatus {
+/**
+ * @param enabled  Pass `false` to skip API calls (e.g. when user is not authenticated).
+ *                 Prevents 401 errors on public pages.
+ */
+export function useSetupStatus(enabled = true): SetupStatus {
   const [step1Done, setStep1Done] = useState(false);
   const [step2Done, setStep2Done] = useState(false);
   const [step3Done, setStep3Done] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
+    if (!enabled) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const [botRes, waRes] = await Promise.all([
@@ -37,7 +45,7 @@ export function useSetupStatus(): SetupStatus {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
