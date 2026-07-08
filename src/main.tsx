@@ -1,51 +1,65 @@
-import { StrictMode, useEffect } from 'react'
+import { StrictMode, useEffect, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
-import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext'
-import { AppProvider } from './contexts/AppContext'
 import { useAuth } from './contexts/AuthContext'
+import { AppProvider } from './contexts/AppContext'
+import { useSetupStatus } from './hooks/useSetupStatus'
+
+// ── Eagerly loaded (needed for first paint) ──
 import { LandingLayout } from './components/landing/LandingLayout'
 import { HomePage } from './components/landing/HomePage'
 import { LoginPage } from './components/auth/LoginPage'
-import { PrivacyPolicy } from './pages/PrivacyPolicy'
-import { TermsConditions } from './pages/TermsConditions'
-import { RefundPolicy } from './pages/RefundPolicy'
-import { SubscriptionPage } from './pages/SubscriptionPage'
-import { DevDocsPage } from './pages/DevDocsPage'
-import { AdminPanel } from './pages/AdminPanel'
-import { PaymentSuccess, PaymentFailure } from './pages/PaymentResult'
-import { BotSetupPage } from './pages/BotSetupPage'
-import { BotDetectionPage } from './pages/BotDetectionPage'
-import { SecurityPage } from './pages/SecurityPage'
-import { ContactPage } from './pages/ContactPage'
-import { AboutPage } from './pages/AboutPage'
-import { EmailPage } from './pages/EmailPage'
-import { LeadsPage } from './pages/LeadsPage'
-import { WebsiteChatbotSetupPage } from './pages/WebsiteChatbotSetupPage'
-import { WebsiteChatbotLeadsPage } from './pages/WebsiteChatbotLeadsPage'
-import { WebsiteChatbotEmbedPage } from './pages/WebsiteChatbotEmbedPage'
-import { DashboardPage } from './pages/DashboardPage'
-import { SessionsPage } from './pages/SessionsPage'
-import { CheckChatbotPage } from './pages/CheckChatbotPage'
-import { ChatbotDemoPage } from './pages/ChatbotDemoPage'
-import { BotOnboardingModal } from './components/onboarding/BotOnboardingModal'
-import { SetupPage } from './pages/SetupPage';
-import { useSetupStatus } from './hooks/useSetupStatus';
-import { DataDeletionPage } from './pages/DataDeletionPage';
-import { FacebookPage } from './pages/facebook/FacebookPage';
-import { FacebookCallbackPage } from './pages/facebook/FacebookCallbackPage';
-import { LinkedInPage } from './pages/linkedin/LinkedInPage';
-import { SEOPage } from './pages/seo/SEOPage';
-import { SEOBlogCallbackPage } from './pages/seo/SEOBlogCallbackPage';
-import { CampaignPage } from '@/pages/CampaignPage';
-import InfluencerDashboard from '@/pages/influencer/InfluencerDashboard';
-import { DeveloperPage } from './pages/DeveloperPage';
-import BlogPage from './pages/BlogPage';
-import BlogPostPage from './pages/BlogPostPage';
-import { MCPOAuthApprovePage } from './pages/MCPOAuthApprovePage';
+
+// Loading spinner for lazy-loaded routes
+function RouteSpinner() {
+  return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+// ── Lazy-loaded (route-level code splitting) ──
+const App = lazy(() => import('./App.tsx'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })))
+const TermsConditions = lazy(() => import('./pages/TermsConditions').then(m => ({ default: m.TermsConditions })))
+const RefundPolicy = lazy(() => import('./pages/RefundPolicy').then(m => ({ default: m.RefundPolicy })))
+const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage').then(m => ({ default: m.SubscriptionPage })))
+const DevDocsPage = lazy(() => import('./pages/DevDocsPage').then(m => ({ default: m.DevDocsPage })))
+const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })))
+const PaymentSuccess = lazy(() => import('./pages/PaymentResult').then(m => ({ default: m.PaymentSuccess })))
+const PaymentFailure = lazy(() => import('./pages/PaymentResult').then(m => ({ default: m.PaymentFailure })))
+const BotSetupPage = lazy(() => import('./pages/BotSetupPage').then(m => ({ default: m.BotSetupPage })))
+const BotDetectionPage = lazy(() => import('./pages/BotDetectionPage').then(m => ({ default: m.BotDetectionPage })))
+const SecurityPage = lazy(() => import('./pages/SecurityPage').then(m => ({ default: m.SecurityPage })))
+const ContactPage = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })))
+const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })))
+const EmailPage = lazy(() => import('./pages/EmailPage').then(m => ({ default: m.EmailPage })))
+const LeadsPage = lazy(() => import('./pages/LeadsPage').then(m => ({ default: m.LeadsPage })))
+const WebsiteChatbotSetupPage = lazy(() => import('./pages/WebsiteChatbotSetupPage').then(m => ({ default: m.WebsiteChatbotSetupPage })))
+const WebsiteChatbotLeadsPage = lazy(() => import('./pages/WebsiteChatbotLeadsPage').then(m => ({ default: m.WebsiteChatbotLeadsPage })))
+const WebsiteChatbotEmbedPage = lazy(() => import('./pages/WebsiteChatbotEmbedPage').then(m => ({ default: m.WebsiteChatbotEmbedPage })))
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const SessionsPage = lazy(() => import('./pages/SessionsPage').then(m => ({ default: m.SessionsPage })))
+const CheckChatbotPage = lazy(() => import('./pages/CheckChatbotPage').then(m => ({ default: m.CheckChatbotPage })))
+const ChatbotDemoPage = lazy(() => import('./pages/ChatbotDemoPage').then(m => ({ default: m.ChatbotDemoPage })))
+const BotOnboardingModal = lazy(() => import('./components/onboarding/BotOnboardingModal').then(m => ({ default: m.BotOnboardingModal })))
+const SetupPage = lazy(() => import('./pages/SetupPage').then(m => ({ default: m.SetupPage })))
+const DataDeletionPage = lazy(() => import('./pages/DataDeletionPage').then(m => ({ default: m.DataDeletionPage })))
+const FacebookPage = lazy(() => import('./pages/facebook/FacebookPage').then(m => ({ default: m.FacebookPage })))
+const FacebookCallbackPage = lazy(() => import('./pages/facebook/FacebookCallbackPage').then(m => ({ default: m.FacebookCallbackPage })))
+const LinkedInPage = lazy(() => import('./pages/linkedin/LinkedInPage').then(m => ({ default: m.LinkedInPage })))
+const SEOPage = lazy(() => import('./pages/seo/SEOPage').then(m => ({ default: m.SEOPage })))
+const SEOBlogCallbackPage = lazy(() => import('./pages/seo/SEOBlogCallbackPage').then(m => ({ default: m.SEOBlogCallbackPage })))
+const CampaignPage = lazy(() => import('@/pages/CampaignPage').then(m => ({ default: m.CampaignPage })))
+const InfluencerDashboard = lazy(() => import('@/pages/influencer/InfluencerDashboard'))
+const DeveloperPage = lazy(() => import('./pages/DeveloperPage').then(m => ({ default: m.DeveloperPage })))
+const BlogPage = lazy(() => import('./pages/BlogPage'))
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage'))
+const MCPOAuthApprovePage = lazy(() => import('./pages/MCPOAuthApprovePage').then(m => ({ default: m.MCPOAuthApprovePage })))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -119,7 +133,7 @@ function AppRoutes() {
     };
   }, []);
   return (
-    <>
+    <Suspense fallback={<RouteSpinner />}>
       <BotOnboardingModal />
       <SetupGuard />
       <Routes>
@@ -265,7 +279,7 @@ function AppRoutes() {
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </Suspense>
   );
 }
 

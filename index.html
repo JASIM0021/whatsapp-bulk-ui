@@ -5,6 +5,11 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="/icon-192.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#030712" />
+
+  <!-- Preconnect to critical origins -->
+  <link rel="preconnect" href="https://api.nexbotix.online" crossorigin />
+  <link rel="dns-prefetch" href="https://accounts.google.com" />
   <title>NexBotix — WhatsApp &amp; Email Bulk Messaging Platform</title>
   <meta name="description"
     content="Send bulk WhatsApp &amp; Email messages easily and efficiently. Connect your number, upload contacts, and launch campaigns instantly with NexBotix." />
@@ -31,8 +36,7 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
-  <script
-    src="https://nexbotix.online/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4"></script>
+  <!-- Chatbot script loaded async via React useEffect in main.tsx -->
 </body>
 
 </html>

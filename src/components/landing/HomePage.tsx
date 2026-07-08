@@ -138,12 +138,21 @@ function Hero() {
                     </div>
                   </div>
 
-                  {/* GIF */}
-                  <img
-                    src="/demo-video.gif"
-                    alt="WhatsApp AI bot demo"
+                  {/* Optimized video — was 15MB GIF, now ~300KB MP4/WebM */}
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="metadata"
+                    width={270}
+                    height={585}
                     className="w-full block"
-                  />
+                    poster=""
+                  >
+                    <source src="/demo-video.webm" type="video/webm" />
+                    <source src="/demo-video.mp4" type="video/mp4" />
+                  </video>
 
                   {/* Home indicator */}
                   <div className="bg-black py-2 flex justify-center">

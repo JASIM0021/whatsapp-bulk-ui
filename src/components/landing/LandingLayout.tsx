@@ -30,7 +30,7 @@ function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <img src="/icon-192.png" alt="NexBotix" className="w-9 h-9 rounded-xl object-contain" />
+            <img src="/icon-192.png" alt="NexBotix" width={36} height={36} className="w-9 h-9 rounded-xl object-contain" />
             <span className="text-lg font-bold text-white tracking-tight">
               Nex<span className="text-green-400">Botix</span>
             </span>
@@ -140,7 +140,7 @@ function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
-              <img src="/icon-192.png" alt="NexBotix" className="w-9 h-9 rounded-xl object-contain" />
+              <img src="/icon-192.png" alt="NexBotix" width={36} height={36} loading="lazy" className="w-9 h-9 rounded-xl object-contain" />
               <span className="text-lg font-bold text-white tracking-tight">
                 Nex<span className="text-green-400">Botix</span>
               </span>
