@@ -148,7 +148,7 @@ function Hero() {
                     width={270}
                     height={585}
                     className="w-full block"
-                    poster=""
+                    poster="/demo-video-poster.webp"
                   >
                     <source src="/demo-video.webm" type="video/webm" />
                     <source src="/demo-video.mp4" type="video/mp4" />
