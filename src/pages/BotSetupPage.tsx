@@ -601,6 +601,30 @@ export function BotSetupPage() {
             )}
           </div>
 
+          {/* VoIP Call Bot Section */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+            <div className="flex items-center gap-3 mb-2.5">
+              <div className="w-9 h-9 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
+                <Bot size={18} />
+              </div>
+              <div>
+                <h2 className="font-semibold text-gray-900 leading-tight">AI Voice Calling Bot</h2>
+                <p className="text-[11px] text-gray-500">Auto-answers and handles incoming WhatsApp voice calls with AI</p>
+              </div>
+            </div>
+            <div className="p-4 bg-green-50/50 border border-green-100/80 rounded-xl space-y-2 text-xs text-green-800">
+              <p className="font-semibold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Active &amp; Ready
+              </p>
+              <p>
+                When your WhatsApp account is connected, incoming voice calls will be answered automatically. The AI bot will transcribe the caller's query (Whisper), think using your bot prompt instructions, and reply using natural speech (OpenAI TTS).
+              </p>
+              <p className="font-medium text-green-700 mt-1">
+                💡 How to test: Connect your WhatsApp number in the dashboard and make a WhatsApp voice call to your connected number from another phone.
+              </p>
+            </div>
+          </div>
+
           {/* Human Agent Handoff Settings */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
             <button
