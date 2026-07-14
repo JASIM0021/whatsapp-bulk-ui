@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Database, Search, Filter, Trash2, Download, MessageSquare, Mail, Loader2, ChevronLeft, ChevronRight, CheckSquare, Square, Star, Globe, Phone } from 'lucide-react';
+import { Database, Search, Filter, Trash2, Download, MessageSquare, Mail, Loader2, ChevronLeft, ChevronRight, CheckSquare, Square, Star, Globe, Phone, RefreshCw, X, Save } from 'lucide-react';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
 
 interface Lead {
@@ -13,7 +13,29 @@ interface Lead {
 	category?: string;
 	rating?: number;
 	reviews?: number;
+	status?: string;
+	notes?: string;
 }
+
+const STATUS_COLORS: Record<string, string> = {
+	new: 'bg-slate-850 border-slate-700 text-slate-300',
+	email_sent: 'bg-blue-950/40 border-blue-900/60 text-blue-400',
+	whatsapp_sent: 'bg-green-950/40 border-green-900/60 text-green-400',
+	followup_1: 'bg-indigo-950/40 border-indigo-900/60 text-indigo-400',
+	reminder_1: 'bg-amber-950/40 border-amber-900/60 text-amber-400',
+	interested: 'bg-emerald-950/40 border-emerald-900/60 text-emerald-400',
+	not_interested: 'bg-rose-950/40 border-rose-900/60 text-rose-400',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+	new: 'New',
+	email_sent: 'Email Sent',
+	whatsapp_sent: 'WhatsApp Sent',
+	followup_1: 'Follow-up 1',
+	reminder_1: 'Reminder 1',
+	interested: 'Interested',
+	not_interested: 'Not Interested',
+};
 
 export function LeadsDatabaseTab() {
 	const navigate = useNavigate();
@@ -21,7 +43,7 @@ export function LeadsDatabaseTab() {
 	const [leads, setLeads] = useState<Lead[]>([]);
 	const [total, setTotal] = useState(0);
 	const [page, setPage] = useState(1);
-	const [limit] = useState(50);
+	const [limit, setLimit] = useState(50);
 	const [loading, setLoading] = useState(false);
 
 	// Filters
@@ -33,6 +55,55 @@ export function LeadsDatabaseTab() {
 
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [deleting, setDeleting] = useState(false);
+
+	// Lead Editing Drawer state
+	const [activeLead, setActiveLead] = useState<Lead | null>(null);
+	const [editFields, setEditFields] = useState<Partial<Lead>>({});
+	const [saving, setSaving] = useState(false);
+
+	const handleOpenDrawer = (lead: Lead) => {
+		setActiveLead(lead);
+		setEditFields({
+			name: lead.name,
+			phone: lead.phone || '',
+			email: lead.email || '',
+			website: lead.website || '',
+			category: lead.category || '',
+			address: lead.address || '',
+			status: lead.status || 'new',
+			notes: lead.notes || '',
+		});
+	};
+
+	const handleCloseDrawer = () => {
+		setActiveLead(null);
+		setEditFields({});
+	};
+
+	const handleSaveLead = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!activeLead) return;
+
+		setSaving(true);
+		try {
+			const response = await apiFetch(`${API_ENDPOINTS.leads.list}/${activeLead.id}`, {
+				method: 'PUT',
+				body: JSON.stringify(editFields),
+			});
+			const res = await response.json();
+			if (res.success) {
+				handleCloseDrawer();
+				fetchLeads();
+			} else {
+				alert('Failed to update lead: ' + (res.error || 'Unknown error'));
+			}
+		} catch (err: any) {
+			console.error('Failed to save lead:', err);
+			alert('Failed to save lead: ' + err.message);
+		} finally {
+			setSaving(false);
+		}
+	};
 
 	const fetchLeads = async () => {
 		setLoading(true);
@@ -65,7 +136,7 @@ export function LeadsDatabaseTab() {
 	useEffect(() => {
 		fetchLeads();
 		// Reset page when filters change
-	}, [page, hasPhone, hasEmail, niche, location]);
+	}, [page, limit, hasPhone, hasEmail, niche, location]);
 
 	const handleSearchSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -189,6 +260,18 @@ export function LeadsDatabaseTab() {
 				</div>
 
 				<div className="flex items-center gap-2 shrink-0">
+					<button
+						onClick={fetchLeads}
+						disabled={loading}
+						className="px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+					>
+						{loading ? (
+							<Loader2 size={14} className="animate-spin text-amber-500" />
+						) : (
+							<RefreshCw size={14} className="text-amber-500" />
+						)}
+						<span>Reload Data</span>
+					</button>
 					<button
 						onClick={() => handleExport('excel')}
 						className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
@@ -320,6 +403,7 @@ export function LeadsDatabaseTab() {
 								<th className="p-4">Business Name</th>
 								<th className="p-4">Phone</th>
 								<th className="p-4">Email</th>
+								<th className="p-4">Status</th>
 								<th className="p-4">Website</th>
 								<th className="p-4">Category</th>
 								<th className="p-4 text-center">Rating</th>
@@ -329,14 +413,14 @@ export function LeadsDatabaseTab() {
 						<tbody className="divide-y divide-slate-800/60 text-xs">
 							{loading ? (
 								<tr>
-									<td colSpan={8} className="p-12 text-center text-slate-500">
+									<td colSpan={9} className="p-12 text-center text-slate-500">
 										<Loader2 size={24} className="animate-spin mx-auto text-amber-500 mb-2" />
 										<span>Loading leads from database...</span>
 									</td>
 								</tr>
 							) : leads.length === 0 ? (
 								<tr>
-									<td colSpan={8} className="p-12 text-center text-slate-500 italic">
+									<td colSpan={9} className="p-12 text-center text-slate-500 italic">
 										No leads found. Scrape some listings first or adjust your filters.
 									</td>
 								</tr>
@@ -346,11 +430,12 @@ export function LeadsDatabaseTab() {
 									return (
 										<tr
 											key={lead.id}
-											className={`hover:bg-slate-800/40 transition-colors ${
+											onClick={() => handleOpenDrawer(lead)}
+											className={`hover:bg-slate-800/40 transition-colors cursor-pointer ${
 												isSelected ? 'bg-amber-950/10' : ''
 											}`}
 										>
-											<td className="p-4 text-center">
+											<td className="p-4 text-center" onClick={e => e.stopPropagation()}>
 												<button
 													onClick={() => handleSelectOne(lead.id)}
 													className="text-slate-500 hover:text-white transition-colors"
@@ -380,7 +465,14 @@ export function LeadsDatabaseTab() {
 													<span className="text-slate-600 italic">None</span>
 												)}
 											</td>
-											<td className="p-4">
+											<td className="p-4" onClick={e => e.stopPropagation()}>
+												<span className={`px-2 py-0.5 border rounded-full text-[10px] font-semibold whitespace-nowrap ${
+													STATUS_COLORS[lead.status || 'new']
+												}`}>
+													{STATUS_LABELS[lead.status || 'new']}
+												</span>
+											</td>
+											<td className="p-4" onClick={e => e.stopPropagation()}>
 												{lead.website ? (
 													<a
 														href={lead.website.startsWith('http') ? lead.website : `http://${lead.website}`}
@@ -429,38 +521,206 @@ export function LeadsDatabaseTab() {
 				</div>
 
 				{/* Pagination footer */}
-				{totalPages > 1 && (
-					<div className="bg-slate-950/40 px-6 py-4 flex items-center justify-between border-t border-slate-800/80">
+				{total > 0 && (
+					<div className="bg-slate-950/40 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800/80">
 						<span className="text-xs text-slate-500">
-							Showing <strong className="text-slate-300">{(page - 1) * limit + 1}</strong> to{' '}
+							Showing <strong className="text-slate-300">{total === 0 ? 0 : (page - 1) * limit + 1}</strong> to{' '}
 							<strong className="text-slate-300">
 								{Math.min(page * limit, total)}
 							</strong>{' '}
 							of <strong className="text-slate-300">{total}</strong> leads
 						</span>
 
-						<div className="flex items-center gap-2">
-							<button
-								onClick={() => setPage(p => Math.max(p - 1, 1))}
-								disabled={page === 1}
-								className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 border border-slate-700 text-slate-200 rounded-lg transition-colors"
-							>
-								<ChevronLeft size={16} />
-							</button>
-							<span className="text-xs text-slate-400 font-semibold select-none px-2">
-								Page {page} of {totalPages}
-							</span>
-							<button
-								onClick={() => setPage(p => Math.min(p + 1, totalPages))}
-								disabled={page === totalPages}
-								className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 border border-slate-700 text-slate-200 rounded-lg transition-colors"
-							>
-								<ChevronRight size={16} />
-							</button>
+						<div className="flex items-center gap-4 shrink-0">
+							<div className="flex items-center gap-1.5 text-xs text-slate-500">
+								<span>Show:</span>
+								<select
+									value={limit}
+									onChange={e => {
+										setLimit(Number(e.target.value));
+										setPage(1);
+									}}
+									className="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl py-1 px-2.5 focus:outline-none focus:border-amber-500"
+								>
+									<option value={10}>10</option>
+									<option value={20}>20</option>
+									<option value={50}>50</option>
+									<option value={100}>100</option>
+								</select>
+							</div>
+
+							<div className="flex items-center gap-2">
+								<button
+									onClick={() => setPage(p => Math.max(p - 1, 1))}
+									disabled={page === 1}
+									className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 border border-slate-700 text-slate-200 rounded-lg transition-colors"
+								>
+									<ChevronLeft size={16} />
+								</button>
+								<span className="text-xs text-slate-400 font-semibold select-none px-2">
+									Page {page} of {totalPages}
+								</span>
+								<button
+									onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+									disabled={page === totalPages}
+									className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 border border-slate-700 text-slate-200 rounded-lg transition-colors"
+								>
+									<ChevronRight size={16} />
+								</button>
+							</div>
 						</div>
 					</div>
 				)}
 			</div>
+
+			{/* Lead Details & Editing Drawer */}
+			{activeLead && (
+				<div className="fixed inset-0 z-50 flex justify-end">
+					{/* Backdrop */}
+					<div 
+						className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+						onClick={handleCloseDrawer}
+					/>
+
+					{/* Sliding Panel */}
+					<div className="relative w-full max-w-md bg-slate-900 border-l border-slate-800 h-full flex flex-col shadow-2xl z-10 animate-slide-in">
+						{/* Header */}
+						<div className="p-5 border-b border-slate-800 flex items-center justify-between">
+							<div>
+								<h3 className="text-lg font-bold text-white">Lead Details</h3>
+								<p className="text-slate-400 text-xs mt-0.5 font-medium">Edit information and track status</p>
+							</div>
+							<button 
+								onClick={handleCloseDrawer}
+								className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						{/* Scrollable Form */}
+						<form onSubmit={handleSaveLead} className="flex-1 overflow-y-auto p-5 space-y-5">
+							{/* Business Name */}
+							<div>
+								<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Business Name</label>
+								<input
+									type="text"
+									required
+									value={editFields.name || ''}
+									onChange={e => setEditFields(prev => ({ ...prev, name: e.target.value }))}
+									className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+								/>
+							</div>
+
+							<div className="grid grid-cols-2 gap-4">
+								{/* Phone */}
+								<div>
+									<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Phone</label>
+									<input
+										type="text"
+										value={editFields.phone || ''}
+										onChange={e => setEditFields(prev => ({ ...prev, phone: e.target.value }))}
+										className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500"
+									/>
+								</div>
+								{/* Website */}
+								<div>
+									<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Website</label>
+									<input
+										type="text"
+										value={editFields.website || ''}
+										onChange={e => setEditFields(prev => ({ ...prev, website: e.target.value }))}
+										className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500"
+									/>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-2 gap-4">
+								{/* Email */}
+								<div>
+									<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Email</label>
+									<input
+										type="email"
+										value={editFields.email || ''}
+										onChange={e => setEditFields(prev => ({ ...prev, email: e.target.value }))}
+										className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500"
+									/>
+								</div>
+								{/* Category */}
+								<div>
+									<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Category</label>
+									<input
+										type="text"
+										value={editFields.category || ''}
+										onChange={e => setEditFields(prev => ({ ...prev, category: e.target.value }))}
+										className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500"
+									/>
+								</div>
+							</div>
+
+							{/* Address */}
+							<div>
+								<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Address</label>
+								<input
+									type="text"
+									value={editFields.address || ''}
+									onChange={e => setEditFields(prev => ({ ...prev, address: e.target.value }))}
+									className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500"
+								/>
+							</div>
+
+							{/* Status Tracker */}
+							<div>
+								<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Follow-up Tracking</label>
+								<select
+									value={editFields.status || 'new'}
+									onChange={e => setEditFields(prev => ({ ...prev, status: e.target.value }))}
+									className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+								>
+									<option value="new">New (Uncontacted)</option>
+									<option value="email_sent">Email Sent</option>
+									<option value="whatsapp_sent">WhatsApp Sent</option>
+									<option value="followup_1">Follow-up 1</option>
+									<option value="reminder_1">Reminder 1</option>
+									<option value="interested">Interested</option>
+									<option value="not_interested">Not Interested</option>
+								</select>
+							</div>
+
+							{/* Notes */}
+							<div>
+								<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Internal Notes & History</label>
+								<textarea
+									rows={4}
+									value={editFields.notes || ''}
+									placeholder="Add details about your interaction, next steps, or specific requests..."
+									onChange={e => setEditFields(prev => ({ ...prev, notes: e.target.value }))}
+									className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500 resize-none font-sans"
+								/>
+							</div>
+
+							{/* Footer Buttons */}
+							<div className="pt-4 flex items-center gap-3 border-t border-slate-800">
+								<button
+									type="submit"
+									disabled={saving}
+									className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-amber-900/30"
+								>
+									{saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+									<span>Save Changes</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleCloseDrawer}
+									className="px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-xl text-xs font-semibold border border-slate-750 transition-colors"
+								>
+									Cancel
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

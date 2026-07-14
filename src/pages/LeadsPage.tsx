@@ -20,10 +20,18 @@ const TAB_LABELS: Record<Tab, string> = {
 };
 
 export function LeadsPage() {
-	const [tab, setTab] = useState<Tab>('scraper');
+	const [tab, setTab] = useState<Tab>(() => {
+		const saved = localStorage.getItem('leads_active_tab');
+		return (saved === 'scraper' || saved === 'database') ? saved : 'scraper';
+	});
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
+
+	const handleTabChange = (newTab: Tab) => {
+		setTab(newTab);
+		localStorage.setItem('leads_active_tab', newTab);
+	};
 	// isPaid check can be integrated for premium locking if needed
 
 	const SidebarContent = () => (
@@ -53,7 +61,7 @@ export function LeadsPage() {
 				{NAV_ITEMS.map(item => (
 					<button
 						key={item.id}
-						onClick={() => { setTab(item.id); setDrawerOpen(false); }}
+						onClick={() => { handleTabChange(item.id); setDrawerOpen(false); }}
 						className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group ${
 							tab === item.id
 								? 'bg-amber-600 text-white shadow-lg shadow-amber-900/40'
