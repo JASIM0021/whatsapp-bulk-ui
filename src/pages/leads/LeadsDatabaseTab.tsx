@@ -390,7 +390,7 @@ export function LeadsDatabaseTab() {
 				<div className="overflow-x-auto">
 					<table className="w-full text-left border-collapse">
 						<thead>
-							<tr className="bg-slate-950/80 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
+							<tr className="bg-slate-950/80 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border-l-2 border-l-transparent">
 								<th className="p-4 w-12 text-center">
 									<button onClick={handleSelectAll} className="text-slate-500 hover:text-white transition-colors">
 										{selectedIds.size === leads.length && leads.length > 0 ? (
@@ -410,7 +410,7 @@ export function LeadsDatabaseTab() {
 								<th className="p-4">Address</th>
 							</tr>
 						</thead>
-						<tbody className="divide-y divide-slate-800/60 text-xs">
+						<tbody className="divide-y divide-slate-800/40 text-xs">
 							{loading ? (
 								<tr>
 									<td colSpan={9} className="p-12 text-center text-slate-500">
@@ -431,8 +431,8 @@ export function LeadsDatabaseTab() {
 										<tr
 											key={lead.id}
 											onClick={() => handleOpenDrawer(lead)}
-											className={`hover:bg-slate-800/40 transition-colors cursor-pointer ${
-												isSelected ? 'bg-amber-950/10' : ''
+											className={`hover:bg-slate-800/30 transition-all cursor-pointer border-l-2 ${
+												isSelected ? 'bg-amber-950/15 border-l-amber-500' : 'border-l-transparent hover:border-l-slate-700/60'
 											}`}
 										>
 											<td className="p-4 text-center" onClick={e => e.stopPropagation()}>
@@ -447,22 +447,24 @@ export function LeadsDatabaseTab() {
 													)}
 												</button>
 											</td>
-											<td className="p-4 font-bold text-white max-w-xs truncate">{lead.name}</td>
+											<td className="p-4 font-bold text-slate-100 hover:text-white transition-colors max-w-xs truncate">{lead.name}</td>
 											<td className="p-4">
 												{lead.phone ? (
-													<span className="flex items-center gap-1 text-slate-300">
+													<span className="flex items-center gap-1.5 text-slate-300 font-medium">
 														<Phone size={12} className="text-slate-500 shrink-0" />
 														<span>{lead.phone}</span>
 													</span>
 												) : (
-													<span className="text-slate-600 italic">None</span>
+													<span className="text-slate-700/60">-</span>
 												)}
 											</td>
 											<td className="p-4">
 												{lead.email ? (
-													<span className="text-emerald-400 font-medium">{lead.email}</span>
+													<span className="text-emerald-400 font-semibold bg-emerald-950/20 border border-emerald-900/30 px-2 py-0.5 rounded-md text-[11px] whitespace-nowrap">
+														{lead.email}
+													</span>
 												) : (
-													<span className="text-slate-600 italic">None</span>
+													<span className="text-slate-700/60">-</span>
 												)}
 											</td>
 											<td className="p-4" onClick={e => e.stopPropagation()}>
@@ -478,22 +480,22 @@ export function LeadsDatabaseTab() {
 														href={lead.website.startsWith('http') ? lead.website : `http://${lead.website}`}
 														target="_blank"
 														rel="noreferrer"
-														className="text-amber-500 hover:underline flex items-center gap-1 truncate max-w-[140px]"
+														className="text-amber-500 hover:text-amber-400 hover:underline flex items-center gap-1.5 font-medium truncate max-w-[150px]"
 													>
-														<Globe size={12} className="shrink-0" />
+														<Globe size={12} className="shrink-0 text-amber-500/70" />
 														<span>{lead.website.replace(/^https?:\/\/(www\.)?/, '')}</span>
 													</a>
 												) : (
-													<span className="text-slate-600 italic">None</span>
+													<span className="text-slate-700/60">-</span>
 												)}
 											</td>
 											<td className="p-4">
 												{lead.category ? (
-													<span className="px-2 py-0.5 bg-slate-800 border border-slate-700 text-slate-300 rounded text-[10px] font-semibold">
+													<span className="px-2 py-0.5 bg-slate-800/80 border border-slate-700/80 text-slate-300 rounded text-[10px] font-semibold">
 														{lead.category}
 													</span>
 												) : (
-													<span className="text-slate-600">-</span>
+													<span className="text-slate-700/60">-</span>
 												)}
 											</td>
 											<td className="p-4 text-center">
@@ -506,11 +508,11 @@ export function LeadsDatabaseTab() {
 														)}
 													</span>
 												) : (
-													<span className="text-slate-600 text-[10px]">-</span>
+													<span className="text-slate-700/60">-</span>
 												)}
 											</td>
 											<td className="p-4 text-slate-400 max-w-xs truncate" title={lead.address}>
-												{lead.address || <span className="text-slate-600">-</span>}
+												{lead.address || <span className="text-slate-700/60">-</span>}
 											</td>
 										</tr>
 									);
