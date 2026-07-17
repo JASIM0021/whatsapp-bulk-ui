@@ -40,7 +40,7 @@ interface LeadStats {
   totalLimit: number; // -1 = unlimited
 }
 
-const GITHUB_ZIP_URL = 'https://github.com/nexbotix/leads-extension/releases/latest/download/nexbotix-leads-extension.zip';
+const GITHUB_ZIP_URL = 'https://github.com/TodayInTech-in/nexbotx-leads-generator-P/releases/download/v2.0.0/nexbotx-leads-generator-v2.0.0.zip';
 
 export function LeadsScraperTab() {
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
@@ -264,7 +264,7 @@ export function LeadsScraperTab() {
       {/* GitHub link */}
       <div className="flex items-center justify-center">
         <a
-          href="https://github.com/nexbotix/leads-extension"
+          href="https://github.com/TodayInTech-in/nexbotx-leads-generator-P"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"

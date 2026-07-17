@@ -131,6 +131,7 @@ export const API_ENDPOINTS = {
     smtp: `${API_BASE_URL}/api/email/smtp`,
     smtpTest: `${API_BASE_URL}/api/email/smtp/test`,
     send: `${SSE_BASE_URL}/api/email/send`,      // SSE — direct to backend
+    inbox: `${API_BASE_URL}/api/email/inbox`,
     schedule: `${API_BASE_URL}/api/email/schedule`,
     cancelSchedule: (id: string) => `${API_BASE_URL}/api/email/schedule/${id}`,
     templates: `${API_BASE_URL}/api/email/templates`,
@@ -208,12 +209,13 @@ export const API_ENDPOINTS = {
     submitLead: `${API_BASE_URL}/api/website-chatbot/leads/submit`,
   },
   // ── Leads Manager ──────────────────────────────────────────────────────────
-  leads: {
-    list:   `${API_BASE_URL}/api/leads`,
-    delete: `${API_BASE_URL}/api/leads`,
-    export: `${API_BASE_URL}/api/leads/export`,
-    stats:  `${API_BASE_URL}/api/leads/stats`,
-  },
+	leads: {
+		list:   `${API_BASE_URL}/api/leads`,
+		delete: `${API_BASE_URL}/api/leads`,
+		export: `${API_BASE_URL}/api/leads/export`,
+		stats:  `${API_BASE_URL}/api/leads/stats`,
+		share:  `${API_BASE_URL}/api/leads/share`,
+	},
   health: `${API_BASE_URL}/api/health`,
   // ── Chatbot Demo (public marketing tool) ─────────────────────────────────
   chatbotDemo: {

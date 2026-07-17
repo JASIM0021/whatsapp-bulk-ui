@@ -18,6 +18,7 @@ const PRESETS: Record<string, { host: string; port: number; useTLS: boolean; lab
   outlook: { host: 'smtp.office365.com',   port: 587, useTLS: false, label: 'Outlook / Office 365' },
   yahoo:   { host: 'smtp.mail.yahoo.com',  port: 587, useTLS: false, label: 'Yahoo Mail' },
   zoho:    { host: 'smtp.zoho.com',        port: 465, useTLS: true,  label: 'Zoho Mail' },
+  hostinger: { host: 'hostinger-api',      port: 0,   useTLS: false, label: 'Hostinger API' },
   custom:  { host: '',                     port: 587, useTLS: false, label: 'Custom SMTP' },
 };
 
@@ -39,6 +40,13 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
       if (d.success && d.data) {
         setSaved(d.data);
         setForm(f => ({ ...f, host: d.data.host, port: d.data.port, username: d.data.username, senderName: d.data.senderName, senderEmail: d.data.senderEmail, useTLS: d.data.useTLS }));
+        if (d.data.host === 'hostinger-api') {
+          setPreset('hostinger');
+        } else {
+          const matching = Object.entries(PRESETS).find(([_, p]) => p.host === d.data.host && p.port === d.data.port);
+          if (matching) setPreset(matching[0]);
+          else setPreset('custom');
+        }
       }
     } catch { /* ignore */ }
   };
@@ -50,23 +58,59 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
   };
 
   const save = async () => {
-    if (!form.host || !form.username || !form.senderEmail) { setMsg({ text: 'Host, username and sender email are required', type: 'error' }); return; }
+    let checkForm = { ...form };
+    if (preset === 'hostinger') {
+      checkForm.host = 'hostinger-api';
+      checkForm.port = 0;
+      checkForm.useTLS = false;
+      if (!checkForm.username) {
+        setMsg({ text: 'Mailbox Address is required', type: 'error' });
+        return;
+      }
+      checkForm.senderEmail = checkForm.username; // Keep in sync for sending
+    } else {
+      if (!checkForm.host || !checkForm.username || !checkForm.senderEmail) {
+        setMsg({ text: 'Host, username and sender email are required', type: 'error' });
+        return;
+      }
+    }
+
     setSaving(true); setMsg(null);
     try {
-      const r = await apiFetch(API_ENDPOINTS.email.smtp, { method: 'POST', body: JSON.stringify(form) });
+      const r = await apiFetch(API_ENDPOINTS.email.smtp, { method: 'POST', body: JSON.stringify(checkForm) });
       const d = await r.json();
-      if (d.success) { setSaved(d.data); setMsg({ text: 'SMTP settings saved successfully!', type: 'success' }); }
+      if (d.success) { setSaved(d.data); setMsg({ text: 'Email settings saved successfully!', type: 'success' }); }
       else setMsg({ text: d.error || 'Failed to save', type: 'error' });
     } catch { setMsg({ text: 'Network error', type: 'error' }); }
     setSaving(false);
   };
 
   const test = async () => {
+    let checkForm = { ...form };
+    if (preset === 'hostinger') {
+      checkForm.host = 'hostinger-api';
+      checkForm.port = 0;
+      checkForm.useTLS = false;
+      if (!checkForm.username) {
+        setMsg({ text: 'Mailbox Address is required to test connection', type: 'error' });
+        return;
+      }
+      checkForm.senderEmail = checkForm.username; // Keep in sync
+    } else {
+      if (!checkForm.host || !checkForm.username) {
+        setMsg({ text: 'Host and username/email are required to test connection', type: 'error' });
+        return;
+      }
+    }
+
     setTesting(true); setMsg(null);
     try {
-      const r = await apiFetch(API_ENDPOINTS.email.smtpTest, { method: 'POST' });
+      const r = await apiFetch(API_ENDPOINTS.email.smtpTest, { 
+        method: 'POST', 
+        body: JSON.stringify(checkForm)
+      });
       const d = await r.json();
-      setMsg({ text: d.success ? '✅ Connection successful! SMTP is working.' : d.error, type: d.success ? 'success' : 'error' });
+      setMsg({ text: d.success ? (preset === 'hostinger' ? '✅ Connection successful! Hostinger API is working.' : '✅ Connection successful! SMTP is working.') : d.error, type: d.success ? 'success' : 'error' });
       if (d.success && saved) setSaved({ ...saved, isVerified: true });
     } catch { setMsg({ text: 'Network error', type: 'error' }); }
     setTesting(false);
@@ -108,34 +152,48 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
             ))}
           </div>
           {preset === 'gmail' && (
-            <div className="mt-3 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mt-3 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg animate-in fade-in slide-in-from-top-1 duration-150">
               <HelpCircle size={15} className="text-blue-600 mt-0.5 shrink-0" />
               <p className="text-xs text-blue-800">For Gmail, use your Gmail address as username and create an <strong>App Password</strong> at myaccount.google.com → Security → 2-Step Verification → App Passwords.</p>
+            </div>
+          )}
+          {preset === 'hostinger' && (
+            <div className="mt-3 flex items-start gap-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg animate-in fade-in slide-in-from-top-1 duration-150">
+              <HelpCircle size={15} className="text-indigo-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-indigo-800">For Hostinger, create an <strong>API token</strong> in the Hostinger Panel under <strong>Emails ➔ API access</strong>. The token must have access to the Mailbox Address configured below.</p>
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {preset !== 'hostinger' && (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">SMTP Host</label>
+                <input value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))}
+                  placeholder="smtp.gmail.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Port</label>
+                <input type="number" value={form.port} onChange={e => setForm(f => ({ ...f, port: +e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              </div>
+            </>
+          )}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">SMTP Host</label>
-            <input value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))}
-              placeholder="smtp.gmail.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Port</label>
-            <input type="number" value={form.port} onChange={e => setForm(f => ({ ...f, port: +e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Username / Email</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              {preset === 'hostinger' ? 'Mailbox Address (Username)' : 'Username / Email'}
+            </label>
             <input value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-              placeholder="you@gmail.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              placeholder={preset === 'hostinger' ? 'you@yourdomain.com' : 'you@gmail.com'} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Password / App Password</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              {preset === 'hostinger' ? 'Hostinger API Token' : 'Password / App Password'}
+            </label>
             <div className="relative">
               <input type={showPwd ? 'text' : 'password'} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                placeholder={saved ? '••••••••••••' : 'Enter password'}
+                placeholder={saved ? '••••••••••••' : preset === 'hostinger' ? 'Enter API token' : 'Enter password'}
                 className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
               <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
                 {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -147,20 +205,24 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
             <input value={form.senderName} onChange={e => setForm(f => ({ ...f, senderName: e.target.value }))}
               placeholder="My Business" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Sender Email (From)</label>
-            <input value={form.senderEmail} onChange={e => setForm(f => ({ ...f, senderEmail: e.target.value }))}
-              placeholder="noreply@mybusiness.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-          </div>
+          {preset !== 'hostinger' && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Sender Email (From)</label>
+              <input value={form.senderEmail} onChange={e => setForm(f => ({ ...f, senderEmail: e.target.value }))}
+                placeholder="noreply@mybusiness.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+            </div>
+          )}
         </div>
 
-        <label className="flex items-center gap-3 cursor-pointer select-none">
-          <div onClick={() => setForm(f => ({ ...f, useTLS: !f.useTLS }))}
-            className={`relative w-10 h-5 rounded-full transition-colors ${form.useTLS ? 'bg-blue-600' : 'bg-gray-300'}`}>
-            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.useTLS ? 'translate-x-5' : ''}`} />
-          </div>
-          <span className="text-sm text-gray-700">Use TLS (port 465) — leave off for STARTTLS (port 587)</span>
-        </label>
+        {preset !== 'hostinger' && (
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <div onClick={() => setForm(f => ({ ...f, useTLS: !f.useTLS }))}
+              className={`relative w-10 h-5 rounded-full transition-colors ${form.useTLS ? 'bg-blue-600' : 'bg-gray-300'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.useTLS ? 'translate-x-5' : ''}`} />
+            </div>
+            <span className="text-sm text-gray-700">Use TLS (port 465) — leave off for STARTTLS (port 587)</span>
+          </label>
+        )}
 
         {msg && (
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${msg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
@@ -175,13 +237,11 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
             {saving ? <Loader2 size={15} className="animate-spin" /> : null}
             {saving ? 'Saving…' : 'Save Settings'}
           </button>
-          {saved && (
-            <button onClick={test} disabled={testing}
-              className="flex items-center gap-2 px-5 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-700 rounded-lg text-sm font-semibold transition-colors">
-              {testing ? <Loader2 size={15} className="animate-spin" /> : saved.isVerified ? <Wifi size={15} className="text-green-600" /> : <WifiOff size={15} />}
-              {testing ? 'Testing…' : 'Test Connection'}
-            </button>
-          )}
+          <button onClick={test} disabled={testing}
+            className="flex items-center gap-2 px-5 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-700 rounded-lg text-sm font-semibold transition-colors">
+            {testing ? <Loader2 size={15} className="animate-spin" /> : saved?.isVerified ? <Wifi size={15} className="text-green-600" /> : <WifiOff size={15} />}
+            {testing ? 'Testing…' : 'Test Connection'}
+          </button>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Database, Search, Filter, Trash2, Download, MessageSquare, Mail, Loader2, ChevronLeft, ChevronRight, CheckSquare, Square, Star, Globe, Phone, RefreshCw, X, Save } from 'lucide-react';
+import { Database, Search, Filter, Trash2, Download, MessageSquare, Mail, Loader2, ChevronLeft, ChevronRight, CheckSquare, Square, Star, Globe, Phone, RefreshCw, X, Save, Copy, Share2 } from 'lucide-react';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
 
 interface Lead {
@@ -55,6 +55,14 @@ export function LeadsDatabaseTab() {
 
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [deleting, setDeleting] = useState(false);
+	const [copiedLeadId, setCopiedLeadId] = useState<string | null>(null);
+
+	// Sharing leads modal state
+	const [showShareModal, setShowShareModal] = useState(false);
+	const [recipientEmail, setRecipientEmail] = useState('');
+	const [sharing, setSharing] = useState(false);
+	const [shareSuccess, setShareSuccess] = useState<string | null>(null);
+	const [shareError, setShareError] = useState<string | null>(null);
 
 	// Lead Editing Drawer state
 	const [activeLead, setActiveLead] = useState<Lead | null>(null);
@@ -78,6 +86,94 @@ export function LeadsDatabaseTab() {
 	const handleCloseDrawer = () => {
 		setActiveLead(null);
 		setEditFields({});
+	};
+
+	const handleAIPrompt = (lead: Lead, platform: 'chatgpt' | 'claude' | 'perplexity' | 'copy') => {
+		let tone = "local professional tone";
+		if (lead.address) {
+			const addr = lead.address.toLowerCase();
+			if (addr.includes("spain") || addr.includes("españa") || addr.includes("madrid") || addr.includes("barcelona")) {
+				tone = "Spanish with native Spain tone and vocabulary";
+			} else if (addr.includes("germany") || addr.includes("deutschland") || addr.includes("berlin") || addr.includes("munich")) {
+				tone = "German with professional Germany tone";
+			} else if (addr.includes("france") || addr.includes("paris")) {
+				tone = "French with professional France tone";
+			} else if (addr.includes("italy") || addr.includes("italia") || addr.includes("rome") || addr.includes("milan")) {
+				tone = "Italian with professional Italy tone";
+			}
+		}
+
+		const prompt = `Write a cold email outreach campaign for this business:
+
+Business Name: ${lead.name || 'N/A'}
+Address: ${lead.address || 'N/A'}
+Phone: ${lead.phone || 'N/A'}
+Email: ${lead.email || 'N/A'}
+Website: ${lead.website || 'N/A'}
+Category: ${lead.category || 'Software Services'}
+
+Requirements:
+1. Write a highly compelling email subject line.
+2. Write a personalized email body offering possible software and automation services matching their business category.
+3. Write the email in the local language/tone suited for this location (${tone}). Keep it professional, concise, and focused on value.`;
+
+		navigator.clipboard.writeText(prompt).catch(() => {});
+
+		if (platform === 'copy') {
+			setCopiedLeadId(lead.id);
+			setTimeout(() => {
+				setCopiedLeadId(null);
+			}, 1500);
+		} else if (platform === 'chatgpt') {
+			window.open(`https://chatgpt.com/?q=${encodeURIComponent(prompt)}`, '_blank');
+		} else if (platform === 'perplexity') {
+			window.open(`https://www.perplexity.ai/?q=${encodeURIComponent(prompt)}`, '_blank');
+		} else if (platform === 'claude') {
+			window.open('https://claude.ai/new', '_blank');
+		}
+	};
+
+	const handleCloseShareModal = () => {
+		setShowShareModal(false);
+		setRecipientEmail('');
+		setShareError(null);
+		setShareSuccess(null);
+	};
+
+	const handleShareLeads = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!recipientEmail || selectedIds.size === 0) return;
+
+		setSharing(true);
+		setShareError(null);
+		setShareSuccess(null);
+
+		try {
+			const response = await apiFetch(API_ENDPOINTS.leads.share, {
+				method: 'POST',
+				body: JSON.stringify({
+					recipientEmail: recipientEmail.trim(),
+					leadIds: Array.from(selectedIds),
+				}),
+			});
+			const res = await response.json();
+			if (res.success) {
+				setShareSuccess(res.message || 'Leads successfully shared!');
+				setRecipientEmail('');
+				setTimeout(() => {
+					setShowShareModal(false);
+					setShareSuccess(null);
+					setSelectedIds(new Set()); // Deselect shared leads
+					fetchLeads(); // Refresh leads
+				}, 2000);
+			} else {
+				setShareError(res.error || 'Failed to share leads');
+			}
+		} catch (err: any) {
+			setShareError('Failed to connect to server');
+		} finally {
+			setSharing(false);
+		}
 	};
 
 	const handleSaveLead = async (e: React.FormEvent) => {
@@ -260,6 +356,16 @@ export function LeadsDatabaseTab() {
 				</div>
 
 				<div className="flex items-center gap-2 shrink-0">
+					<a
+						href="https://github.com/TodayInTech-in/nexbotx-leads-generator-P/releases/download/v2.0.0/nexbotx-leads-generator-v2.0.0.zip"
+						download="nexbotx-leads-generator-v2.0.0.zip"
+						target="_blank"
+						rel="noreferrer"
+						className="px-3 py-2 bg-gradient-to-r from-blue-600/90 to-indigo-600/90 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 border border-blue-500/20"
+					>
+						<Download size={14} className="animate-pulse" />
+						<span>Download Extension</span>
+					</a>
 					<button
 						onClick={fetchLeads}
 						disabled={loading}
@@ -374,6 +480,13 @@ export function LeadsDatabaseTab() {
 							<span>Email Campaign</span>
 						</button>
 						<button
+							onClick={() => setShowShareModal(true)}
+							className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold flex items-center gap-1 transition-all"
+						>
+							<Share2 size={13} />
+							<span>Share Leads</span>
+						</button>
+						<button
 							onClick={handleDeleteSelected}
 							disabled={deleting}
 							className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg font-bold flex items-center gap-1 transition-all"
@@ -408,19 +521,20 @@ export function LeadsDatabaseTab() {
 								<th className="p-4">Category</th>
 								<th className="p-4 text-center">Rating</th>
 								<th className="p-4">Address</th>
+								<th className="p-4 text-center">AI Outreach</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-slate-800/40 text-xs">
 							{loading ? (
 								<tr>
-									<td colSpan={9} className="p-12 text-center text-slate-500">
+									<td colSpan={10} className="p-12 text-center text-slate-500">
 										<Loader2 size={24} className="animate-spin mx-auto text-amber-500 mb-2" />
 										<span>Loading leads from database...</span>
 									</td>
 								</tr>
 							) : leads.length === 0 ? (
 								<tr>
-									<td colSpan={9} className="p-12 text-center text-slate-500 italic">
+									<td colSpan={10} className="p-12 text-center text-slate-500 italic">
 										No leads found. Scrape some listings first or adjust your filters.
 									</td>
 								</tr>
@@ -448,7 +562,7 @@ export function LeadsDatabaseTab() {
 												</button>
 											</td>
 											<td className="p-4 font-bold text-slate-100 hover:text-white transition-colors max-w-xs truncate">{lead.name}</td>
-											<td className="p-4">
+											<td className="p-4 whitespace-nowrap">
 												{lead.phone ? (
 													<span className="flex items-center gap-1.5 text-slate-300 font-medium">
 														<Phone size={12} className="text-slate-500 shrink-0" />
@@ -513,6 +627,43 @@ export function LeadsDatabaseTab() {
 											</td>
 											<td className="p-4 text-slate-400 max-w-xs truncate" title={lead.address}>
 												{lead.address || <span className="text-slate-700/60">-</span>}
+											</td>
+											<td className="p-4 text-center" onClick={e => e.stopPropagation()}>
+												<div className="flex items-center justify-center gap-1">
+													<button
+														onClick={() => handleAIPrompt(lead, 'chatgpt')}
+														title="Copy & Open in ChatGPT"
+														className="text-[9px] font-extrabold tracking-wider text-emerald-400 bg-emerald-950/20 border border-emerald-900/30 hover:bg-emerald-900/50 hover:text-emerald-300 px-1.5 py-0.5 rounded transition-all active:scale-95 whitespace-nowrap"
+													>
+														GPT
+													</button>
+													<button
+														onClick={() => handleAIPrompt(lead, 'claude')}
+														title="Copy prompt & open Claude"
+														className="text-[9px] font-extrabold tracking-wider text-amber-500 bg-amber-950/20 border border-amber-900/30 hover:bg-amber-900/50 hover:text-amber-400 px-1.5 py-0.5 rounded transition-all active:scale-95 whitespace-nowrap"
+													>
+														CLAUDE
+													</button>
+													<button
+														onClick={() => handleAIPrompt(lead, 'perplexity')}
+														title="Copy & Open in Perplexity"
+														className="text-[9px] font-extrabold tracking-wider text-cyan-400 bg-cyan-950/20 border border-cyan-900/30 hover:bg-cyan-900/50 hover:text-cyan-300 px-1.5 py-0.5 rounded transition-all active:scale-95 whitespace-nowrap"
+													>
+														PPLX
+													</button>
+													<button
+														onClick={() => handleAIPrompt(lead, 'copy')}
+														title="Copy outreach prompt to clipboard"
+														className={`text-[9px] font-extrabold tracking-wider px-1.5 py-0.5 rounded transition-all active:scale-95 whitespace-nowrap flex items-center gap-0.5 ${
+															copiedLeadId === lead.id
+																? 'text-green-400 bg-green-950/20 border border-green-900/30'
+																: 'text-slate-300 bg-slate-800/40 border border-slate-700/40 hover:bg-slate-700/40 hover:text-white'
+														}`}
+													>
+														<Copy size={9} />
+														{copiedLeadId === lead.id ? 'COPIED!' : 'COPY'}
+													</button>
+												</div>
 											</td>
 										</tr>
 									);
@@ -717,6 +868,76 @@ export function LeadsDatabaseTab() {
 									className="px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-xl text-xs font-semibold border border-slate-750 transition-colors"
 								>
 									Cancel
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
+
+			{/* Share Leads Modal */}
+			{showShareModal && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+					<div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+						<div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/40">
+							<h3 className="font-bold text-white text-sm flex items-center gap-2">
+								<Share2 className="text-indigo-500" size={16} />
+								<span>Share Leads</span>
+							</h3>
+							<button onClick={handleCloseShareModal} className="text-slate-400 hover:text-white transition-colors">
+								<X size={16} />
+							</button>
+						</div>
+						<form onSubmit={handleShareLeads} className="p-5 space-y-4">
+							<p className="text-xs text-slate-400 leading-relaxed">
+								You are sharing <strong className="text-slate-200">{selectedIds.size} selected leads</strong>. Enter the recipient email address below to copy these leads directly to their account database.
+							</p>
+
+							{shareError && (
+								<div className="p-2.5 bg-red-950/30 border border-red-900/40 rounded-xl text-xs text-red-400">
+									{shareError}
+								</div>
+							)}
+
+							{shareSuccess && (
+								<div className="p-2.5 bg-emerald-950/30 border border-emerald-900/40 rounded-xl text-xs text-emerald-400">
+									{shareSuccess}
+								</div>
+							)}
+
+							<div>
+								<label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Recipient Email Address</label>
+								<input
+									type="email"
+									required
+									value={recipientEmail}
+									onChange={e => setRecipientEmail(e.target.value)}
+									placeholder="user-b@example.com"
+									className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-700"
+								/>
+							</div>
+
+							<div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80">
+								<button
+									type="button"
+									onClick={handleCloseShareModal}
+									className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-xl text-xs font-semibold transition-colors"
+								>
+									Cancel
+								</button>
+								<button
+									type="submit"
+									disabled={sharing || !recipientEmail}
+									className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+								>
+									{sharing ? (
+										<>
+											<Loader2 size={12} className="animate-spin" />
+											<span>Sharing...</span>
+										</>
+									) : (
+										<span>Share Now</span>
+									)}
 								</button>
 							</div>
 						</form>

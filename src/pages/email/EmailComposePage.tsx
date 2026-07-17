@@ -42,7 +42,36 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
   const [csvError, setCsvError] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('code');
   const [globalVars, setGlobalVars] = useState<Record<string, string>>({});
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiGenerating, setAiGenerating] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleGenerateAI = async () => {
+    if (!aiPrompt.trim()) return;
+    setAiGenerating(true);
+    try {
+      const response = await apiFetch('/api/leads/generate-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt.trim() }),
+      });
+      const d = await response.json();
+      if (d.success && d.data) {
+        if (d.data.subject) setSubject(d.data.subject);
+        if (d.data.bodyHtml) {
+          setBodyHtml(d.data.bodyHtml);
+          setViewMode('preview');
+        }
+        setAiPrompt('');
+      } else {
+        alert(d.error || 'Failed to generate email');
+      }
+    } catch (e) {
+      alert('Failed to generate email: ' + e);
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   // Auto-detect all {{variable}} tokens from subject + body, excluding contact-level fields
   const CONTACT_VARS = new Set(['name', 'email']);
@@ -367,6 +396,44 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
 
       {/* ── HTML Editor + Preview ───────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* AI Assistant */}
+        <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50/40 via-indigo-50/20 to-violet-50/40 flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="text-violet-600 animate-pulse" size={14} />
+              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">AI Email Writer</span>
+            </div>
+            <p className="text-[10px] text-gray-400 font-medium hidden sm:block">Type a prompt to auto-generate subject & HTML email body</p>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Describe the email (e.g., Friendly pitch to restaurants offering our SEO services with a discount code)..."
+              value={aiPrompt}
+              onChange={e => setAiPrompt(e.target.value)}
+              className="flex-1 px-3.5 py-2.5 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none bg-white shadow-xs"
+              onKeyDown={e => { if (e.key === 'Enter') handleGenerateAI(); }}
+            />
+            <button
+              onClick={handleGenerateAI}
+              disabled={aiGenerating || !aiPrompt.trim()}
+              className="px-4 py-2.5 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
+              {aiGenerating ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  <span>Writing...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={13} />
+                  <span>Generate</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
           <div className="flex items-center gap-1.5 text-xs text-gray-500 min-w-0">

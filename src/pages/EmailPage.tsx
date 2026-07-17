@@ -10,10 +10,12 @@ import { EmailComposePage } from './email/EmailComposePage';
 import { EmailSchedulePage } from './email/EmailSchedulePage';
 import { EmailTemplatePage } from './email/EmailTemplatePage';
 import { EmailBotPage } from './email/EmailBotPage';
+import { EmailInboxPage } from './email/EmailInboxPage';
 
-type Tab = 'compose' | 'schedule' | 'templates' | 'bot' | 'smtp';
+type Tab = 'inbox' | 'compose' | 'schedule' | 'templates' | 'bot' | 'smtp';
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
+  { id: 'inbox',     label: 'Inbox',     icon: <Mail size={20} />,         desc: 'Check messages' },
   { id: 'compose',   label: 'Send',      icon: <Send size={20} />,         desc: 'Bulk campaigns' },
   { id: 'schedule',  label: 'Scheduled', icon: <CalendarClock size={20} />, desc: 'Queued jobs'     },
   { id: 'templates', label: 'Templates', icon: <FileText size={20} />,      desc: 'HTML library'   },
@@ -22,11 +24,11 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }
 ];
 
 const TAB_LABELS: Record<Tab, string> = {
-  compose: 'Send Email', schedule: 'Scheduled', templates: 'Templates', bot: 'Email Bot', smtp: 'SMTP Setup',
+  inbox: 'Inbox Messages', compose: 'Send Email', schedule: 'Scheduled', templates: 'Templates', bot: 'Email Bot', smtp: 'SMTP Setup',
 };
 
 export function EmailPage() {
-  const [tab, setTab] = useState<Tab>('compose');
+  const [tab, setTab] = useState<Tab>('inbox');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -192,6 +194,7 @@ export function EmailPage() {
 
         {/* Page content */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 pb-20 md:pb-6">
+          {tab === 'inbox'     && <EmailInboxPage isPaid={isPaid} />}
           {tab === 'compose'   && <EmailComposePage isPaid={isPaid} />}
           {tab === 'schedule'  && <EmailSchedulePage isPaid={isPaid} />}
           {tab === 'templates' && <EmailTemplatePage isPaid={isPaid} />}
