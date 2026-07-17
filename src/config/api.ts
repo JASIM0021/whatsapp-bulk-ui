@@ -125,6 +125,7 @@ export const API_ENDPOINTS = {
   security: {
     settings: `${API_BASE_URL}/api/settings/security`,
     heartbeat: `${API_BASE_URL}/api/activity/heartbeat`,
+    userUsageStats: `${API_BASE_URL}/api/user/usage-stats`,
   },
   // ── Email (Omnichannel) ───────────────────────────────────────────────
   email: {
@@ -132,6 +133,8 @@ export const API_ENDPOINTS = {
     smtpTest: `${API_BASE_URL}/api/email/smtp/test`,
     send: `${SSE_BASE_URL}/api/email/send`,      // SSE — direct to backend
     inbox: `${API_BASE_URL}/api/email/inbox`,
+    inboxMetadata: `${API_BASE_URL}/api/email/inbox/metadata`,
+    updateInboxMetadata: (uid: string) => `${API_BASE_URL}/api/email/inbox/metadata/${uid}`,
     schedule: `${API_BASE_URL}/api/email/schedule`,
     cancelSchedule: (id: string) => `${API_BASE_URL}/api/email/schedule/${id}`,
     templates: `${API_BASE_URL}/api/email/templates`,
@@ -167,6 +170,7 @@ export const API_ENDPOINTS = {
     bot:            `${API_BASE_URL}/api/linkedin/bot`,
     botRun:         `${API_BASE_URL}/api/linkedin/bot/run`,
     botSuggest:     `${API_BASE_URL}/api/linkedin/bot/suggest`,
+    approveAction:  `${API_BASE_URL}/api/linkedin/approve-action`,
   },
   // ── SEO Extension ─────────────────────────────────────────────────────────
   seo: {

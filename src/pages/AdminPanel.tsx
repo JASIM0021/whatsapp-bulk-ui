@@ -129,6 +129,15 @@ interface ActivityData {
     expiryDate?: string;
     enabledServices?: string[];
   };
+  usageStats?: {
+    whatsapp: { activeSessions: number; campaignsSent: number };
+    email: { isSmtpConnected: boolean; scheduledReminders: number };
+    websiteChatbot: { activeWidgets: number; leadsCaptured: number };
+    facebook: { connectedPages: number };
+    linkedin: { botEnabled: boolean; totalPosts: number };
+    seo: { trackedSites: number };
+    leads: { scrapedCount: number };
+  };
 }
 
 /* ─── Stat Card ─── */
@@ -2092,6 +2101,50 @@ function UserActivityModal({ open, user, onClose }: {
                         {svc}
                       </span>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {activity.usageStats && (
+                <div className="bg-slate-50 border border-gray-250 rounded-2xl p-4 space-y-3">
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider text-left">Service Configuration & Live Analytics</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-white p-2.5 rounded-xl border border-gray-150 flex flex-col justify-between text-left">
+                      <span className="text-gray-400 font-medium">WhatsApp Marketing</span>
+                      <span className="font-bold text-gray-800 mt-1">
+                        {activity.usageStats.whatsapp.activeSessions > 0 ? '🟢 Connected' : '🔴 Offline'} • {activity.usageStats.whatsapp.campaignsSent} Campaigns
+                      </span>
+                    </div>
+                    <div className="bg-white p-2.5 rounded-xl border border-gray-150 flex flex-col justify-between text-left">
+                      <span className="text-gray-400 font-medium">Email Campaigns</span>
+                      <span className="font-bold text-gray-800 mt-1">
+                        {activity.usageStats.email.isSmtpConnected ? '✅ SMTP Configured' : '❌ Unconfigured'} • {activity.usageStats.email.scheduledReminders} Reminders
+                      </span>
+                    </div>
+                    <div className="bg-white p-2.5 rounded-xl border border-gray-150 flex flex-col justify-between text-left">
+                      <span className="text-gray-400 font-medium">Website Chatbot</span>
+                      <span className="font-bold text-gray-800 mt-1">
+                        🤖 {activity.usageStats.websiteChatbot.activeWidgets} Configured • {activity.usageStats.websiteChatbot.leadsCaptured} Leads
+                      </span>
+                    </div>
+                    <div className="bg-white p-2.5 rounded-xl border border-gray-150 flex flex-col justify-between text-left">
+                      <span className="text-gray-400 font-medium">LinkedIn Automation</span>
+                      <span className="font-bold text-gray-800 mt-1">
+                        {activity.usageStats.linkedin.botEnabled ? '⏰ Bot Active' : '⏸️ Paused'} • {activity.usageStats.linkedin.totalPosts} Posts
+                      </span>
+                    </div>
+                    <div className="bg-white p-2.5 rounded-xl border border-gray-150 flex flex-col justify-between text-left">
+                      <span className="text-gray-400 font-medium">SEO Tracking</span>
+                      <span className="font-bold text-gray-800 mt-1">
+                        🔍 {activity.usageStats.seo.trackedSites} Tracked Sites
+                      </span>
+                    </div>
+                    <div className="bg-white p-2.5 rounded-xl border border-gray-150 flex flex-col justify-between text-left">
+                      <span className="text-gray-400 font-medium">Scraped Leads</span>
+                      <span className="font-bold text-gray-800 mt-1">
+                        👥 {activity.usageStats.leads.scrapedCount} Maps Leads
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}

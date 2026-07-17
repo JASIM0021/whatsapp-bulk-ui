@@ -18,11 +18,16 @@ interface BotConfig {
   // AI Detection Settings
   enableAIDetection?: boolean;
   maxMessagesPerHour?: number;
-
   handoffKeywords?: string[];
   // Human Agent Settings
   humanAgentPhone?: string;
   enableAutoHandoff?: boolean;
+  // Advanced Dispatch Settings
+  onlyReplyOffline?: boolean;
+  offlineIdleMinutes?: number;
+  restrictedHoursEnabled?: boolean;
+  restrictedHoursStart?: string;
+  restrictedHoursEnd?: string;
 }
 
 const EMPTY: BotConfig = {
@@ -37,10 +42,14 @@ const EMPTY: BotConfig = {
   customSystemPrompt: '',
   enableAIDetection: true,  // Enable AI detection by default
   maxMessagesPerHour: 30,
-
   handoffKeywords: ['human', 'agent', 'talk to person', 'real human'],
   humanAgentPhone: '',
   enableAutoHandoff: false,
+  onlyReplyOffline: false,
+  offlineIdleMinutes: 3,
+  restrictedHoursEnabled: false,
+  restrictedHoursStart: '00:00',
+  restrictedHoursEnd: '06:00',
 };
 
 export function BotSetupPage() {
@@ -55,6 +64,7 @@ export function BotSetupPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [aiDetectionExpanded, setAiDetectionExpanded] = useState(false);
   const [handoffExpanded, setHandoffExpanded] = useState(false);
+  const [advancedSettingsExpanded, setAdvancedSettingsExpanded] = useState(false);
   const [maxMessagesDraft, setMaxMessagesDraft] = useState('30');
 
 
@@ -84,6 +94,11 @@ export function BotSetupPage() {
             handoffKeywords: d.handoffKeywords?.length ? d.handoffKeywords : ['human', 'agent', 'talk to person', 'real human'],
             humanAgentPhone: d.humanAgentPhone ?? '',
             enableAutoHandoff: d.enableAutoHandoff ?? false,
+            onlyReplyOffline: d.onlyReplyOffline ?? false,
+            offlineIdleMinutes: d.offlineIdleMinutes ?? 3,
+            restrictedHoursEnabled: d.restrictedHoursEnabled ?? false,
+            restrictedHoursStart: d.restrictedHoursStart || '00:00',
+            restrictedHoursEnd: d.restrictedHoursEnd || '06:00',
           });
           // Sync draft states with loaded config
           setMaxMessagesDraft(String(d.maxMessagesPerHour ?? 30));
@@ -601,30 +616,6 @@ export function BotSetupPage() {
             )}
           </div>
 
-          {/* VoIP Call Bot Section */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
-            <div className="flex items-center gap-3 mb-2.5">
-              <div className="w-9 h-9 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
-                <Bot size={18} />
-              </div>
-              <div>
-                <h2 className="font-semibold text-gray-900 leading-tight">AI Voice Calling Bot</h2>
-                <p className="text-[11px] text-gray-500">Auto-answers and handles incoming WhatsApp voice calls with AI</p>
-              </div>
-            </div>
-            <div className="p-4 bg-green-50/50 border border-green-100/80 rounded-xl space-y-2 text-xs text-green-800">
-              <p className="font-semibold flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Active &amp; Ready
-              </p>
-              <p>
-                When your WhatsApp account is connected, incoming voice calls will be answered automatically. The AI bot will transcribe the caller's query (Whisper), think using your bot prompt instructions, and reply using natural speech (OpenAI TTS).
-              </p>
-              <p className="font-medium text-green-700 mt-1">
-                💡 How to test: Connect your WhatsApp number in the dashboard and make a WhatsApp voice call to your connected number from another phone.
-              </p>
-            </div>
-          </div>
-
           {/* Human Agent Handoff Settings */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
             <button
@@ -706,6 +697,108 @@ export function BotSetupPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* Advanced Dispatch Rules Settings */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+            <button
+              onClick={() => setAdvancedSettingsExpanded(!advancedSettingsExpanded)}
+              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Code2 size={16} className="text-indigo-500" /> Advanced Dispatch Rules
+              </h2>
+              {advancedSettingsExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+            </button>
+            {advancedSettingsExpanded && (
+              <div className="px-5 pb-5 pt-0 border-t border-gray-100 space-y-5">
+                <p className="text-xs text-gray-500 mt-4">
+                  Configure special conditions for when the AI bot should reply, including co-pilot mode and scheduled active hours.
+                </p>
+
+                {/* Co-pilot Mode Toggle */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Human Co-Pilot Mode</label>
+                      <p className="text-xs text-gray-500 mt-0.5">Only reply when I am offline/inactive in the chat</p>
+                    </div>
+                    <button
+                      onClick={() => setConfig(prev => ({ ...prev, onlyReplyOffline: !prev.onlyReplyOffline }))}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${config.onlyReplyOffline ? 'bg-indigo-600' : 'bg-gray-300'}`}
+                    >
+                      <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${config.onlyReplyOffline ? 'translate-x-5' : ''}`} />
+                    </button>
+                  </div>
+
+                  {config.onlyReplyOffline && (
+                    <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Idle Duration Before Bot Response (minutes)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="60"
+                        value={config.offlineIdleMinutes ?? 3}
+                        onChange={e => {
+                          const val = parseInt(e.target.value);
+                          setConfig(prev => ({ ...prev, offlineIdleMinutes: isNaN(val) ? 3 : val }));
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      />
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        The bot will only respond to incoming messages if you haven't sent any messages in this chat for the specified number of minutes.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Restricted Hours Toggle */}
+                <div className="space-y-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Active Schedule Only</label>
+                      <p className="text-xs text-gray-500 mt-0.5">Restrict bot replies to specific hours of the day</p>
+                    </div>
+                    <button
+                      onClick={() => setConfig(prev => ({ ...prev, restrictedHoursEnabled: !prev.restrictedHoursEnabled }))}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${config.restrictedHoursEnabled ? 'bg-indigo-600' : 'bg-gray-300'}`}
+                    >
+                      <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${config.restrictedHoursEnabled ? 'translate-x-5' : ''}`} />
+                    </button>
+                  </div>
+
+                  {config.restrictedHoursEnabled && (
+                    <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Active Hours Start</label>
+                          <input
+                            type="time"
+                            value={config.restrictedHoursStart || '00:00'}
+                            onChange={e => setConfig(prev => ({ ...prev, restrictedHoursStart: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Active Hours End</label>
+                          <input
+                            type="time"
+                            value={config.restrictedHoursEnd || '06:00'}
+                            onChange={e => setConfig(prev => ({ ...prev, restrictedHoursEnd: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        The bot will only operate and auto-reply during the selected time interval (e.g. 00:00 to 06:00). You can span this across midnight (e.g. 22:00 to 06:00).
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

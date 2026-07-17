@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles, Search, Code2 } from 'lucide-react';
+import { apiFetch, API_ENDPOINTS } from '@/config/api';
 
 function FacebookIcon({ size = 32 }: { size?: number }) {
   return (
@@ -21,6 +23,21 @@ function LinkedInIcon({ size = 32 }: { size?: number }) {
 export function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch(API_ENDPOINTS.security.userUsageStats);
+        const data = await res.json();
+        if (data.success) {
+          setStats(data.data);
+        }
+      } catch (err) {
+        console.error("Failed to load user usage stats", err);
+      }
+    })();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -189,6 +206,46 @@ export function DashboardPage() {
 
                   <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-gray-700 transition-colors">{service.title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed flex-1">{service.description}</p>
+                  
+                  {!isLocked && stats && (
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-start">
+                      {service.id === 'whatsapp' && (
+                        <span className="text-[11px] font-bold text-green-700 bg-green-50 border border-green-100 px-2 py-0.5 rounded-md">
+                          {stats.whatsapp.activeSessions > 0 ? '🟢 CONNECTED' : '🔴 OFFLINE'} • {stats.whatsapp.campaignsSent} CAMPAIGNS
+                        </span>
+                      )}
+                      {service.id === 'email' && (
+                        <span className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
+                          {stats.email.isSmtpConnected ? '📧 SMTP CONNECTED' : '❌ UNCONFIGURED'} • {stats.email.scheduledReminders} REMINDERS
+                        </span>
+                      )}
+                      {service.id === 'website-chatbot' && (
+                        <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-md">
+                          🤖 {stats.websiteChatbot.activeWidgets} WIDGETS • {stats.websiteChatbot.leadsCaptured} LEADS
+                        </span>
+                      )}
+                      {service.id === 'facebook' && (
+                        <span className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
+                          👥 {stats.facebook.connectedPages} PAGES
+                        </span>
+                      )}
+                      {service.id === 'linkedin' && (
+                        <span className="text-[11px] font-bold text-sky-700 bg-sky-50 border border-sky-100 px-2 py-0.5 rounded-md">
+                          {stats.linkedin.botEnabled ? '⏰ BOT ACTIVE' : '⏸️ BOT PAUSED'} • {stats.linkedin.totalPosts} POSTS
+                        </span>
+                      )}
+                      {service.id === 'seo' && (
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">
+                          🔍 {stats.seo.trackedSites} SITES TRACKED
+                        </span>
+                      )}
+                      {service.id === 'leads' && (
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
+                          👥 {stats.leads.scrapedCount} MAPS LEADS
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className={`px-8 py-4 ${service.bg} border-t ${service.border} flex items-center justify-between`}>

@@ -52,6 +52,7 @@ const DataDeletionPage = lazy(() => import('./pages/DataDeletionPage').then(m =>
 const FacebookPage = lazy(() => import('./pages/facebook/FacebookPage').then(m => ({ default: m.FacebookPage })))
 const FacebookCallbackPage = lazy(() => import('./pages/facebook/FacebookCallbackPage').then(m => ({ default: m.FacebookCallbackPage })))
 const LinkedInPage = lazy(() => import('./pages/linkedin/LinkedInPage').then(m => ({ default: m.LinkedInPage })))
+const LinkedInApprovePage = lazy(() => import('./pages/linkedin/LinkedInApprovePage').then(m => ({ default: m.LinkedInApprovePage })))
 const SEOPage = lazy(() => import('./pages/seo/SEOPage').then(m => ({ default: m.SEOPage })))
 const SEOBlogCallbackPage = lazy(() => import('./pages/seo/SEOBlogCallbackPage').then(m => ({ default: m.SEOBlogCallbackPage })))
 const CampaignPage = lazy(() => import('@/pages/CampaignPage').then(m => ({ default: m.CampaignPage })))
@@ -154,6 +155,7 @@ function AppRoutes() {
       {/* Public chatbot demo tool (no auth required) */}
       <Route path="/check-chatbot" element={<CheckChatbotPage />} />
       <Route path="/demo/:id" element={<ChatbotDemoPage />} />
+      <Route path="/linkedin/approve" element={<LinkedInApprovePage />} />
 
       {/* Login / Signup */}
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Mail, Search, RefreshCw, ChevronLeft, ChevronRight, Inbox, Calendar, User, ArrowLeft, Loader2, Info, Bell, Plus, Trash2, X } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/Toast';
 
 interface EmailMessage {
   uid: number;
@@ -38,6 +39,7 @@ interface EmailMetadata {
 
 export function EmailInboxPage({ isPaid }: { isPaid: boolean }) {
   const { user } = useAuth();
+  const { showToast, ToastComponent } = useToast();
   const [messages, setMessages] = useState<EmailMessage[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -103,7 +105,7 @@ export function EmailInboxPage({ isPaid }: { isPaid: boolean }) {
   };
   const fetchMetadata = async () => {
     try {
-      const r = await apiFetch('/api/email/inbox/metadata');
+      const r = await apiFetch(API_ENDPOINTS.email.inboxMetadata);
       const d = await r.json();
       if (d.success) {
         setMetadataList(d.data || []);
@@ -122,7 +124,7 @@ export function EmailInboxPage({ isPaid }: { isPaid: boolean }) {
         messageSubject: msg?.subject || '',
         messageSender: msg?.from || '',
       };
-      const r = await apiFetch(`/api/email/inbox/metadata/${uid}`, {
+      const r = await apiFetch(API_ENDPOINTS.email.updateInboxMetadata(uid.toString()), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -136,11 +138,12 @@ export function EmailInboxPage({ isPaid }: { isPaid: boolean }) {
           }
           return [...prev, d.data];
         });
+        showToast('Priority and reminders updated successfully.', 'success');
       } else {
-        alert(d.error || 'Failed to update priority/reminders');
+        showToast(d.error || 'Failed to update priority/reminders', 'error');
       }
     } catch {
-      alert('Network error updating email metadata');
+      showToast('Network error updating email metadata', 'error');
     }
   };
   // Filter messages based on search query
@@ -563,10 +566,10 @@ export function EmailInboxPage({ isPaid }: { isPaid: boolean }) {
                   )}
                 </div>
 
-                <button
+                 <button
                   onClick={() => {
                     if (!remTargetEmail.trim() || !remTime) {
-                      alert('Please specify recipient email and scheduled time.');
+                      showToast('Please specify recipient email and scheduled time.', 'warning');
                       return;
                     }
                     const newReminder: EmailReminder = {
@@ -592,6 +595,7 @@ export function EmailInboxPage({ isPaid }: { isPaid: boolean }) {
           </div>
         </div>
       )}
+      {ToastComponent}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Loader2, Bot, Play, Save, Plus, X, Clock, Image, Zap, AlertCircle,
-  CheckCircle2, Globe, Calendar, Megaphone, Sparkles,
+  CheckCircle2, Globe, Calendar, Megaphone, Sparkles, Mail,
 } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { LinkedInSessionHook } from '@/hooks/useLinkedInSession';
@@ -33,6 +33,7 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
     postTime: '09:00',
     postGapMinutes: 120,
     generateImage: true,
+    requiresApproval: false,
     adText: '',
     systemPrompt: '',
     engagementType: 'learning',
@@ -258,21 +259,31 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
         <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle2 size={16} className="text-green-600" />
-            <span className="font-semibold text-green-800 text-sm">Post published successfully!</span>
+            <span className="font-semibold text-green-800 text-sm">
+              {lastRun.requiresApproval 
+                ? "Post queued & approval email sent!"
+                : "Post published successfully!"}
+            </span>
             {lastRun.hasImage && (
               <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">With image</span>
             )}
           </div>
           <p className="text-xs text-green-700 line-clamp-3 mb-2">{lastRun.postText}</p>
-          {lastRun.postUrl && (
-            <a
-              href={lastRun.postUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-[#0A66C2] hover:underline font-medium"
-            >
-              View on LinkedIn →
-            </a>
+          {lastRun.requiresApproval ? (
+            <p className="text-xs text-green-600 font-medium">
+              Check your connected SMTP/Hostinger email inbox to approve or delete this post. (Link valid for 10 minutes)
+            </p>
+          ) : (
+            lastRun.postUrl && (
+              <a
+                href={lastRun.postUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#0A66C2] hover:underline font-medium"
+              >
+                View on LinkedIn →
+              </a>
+            )
           )}
         </div>
       )}
@@ -365,7 +376,7 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
             <Image size={16} className="text-gray-500" />
             <div>
               <p className="text-sm font-semibold text-gray-800">Generate AI image</p>
-              <p className="text-xs text-gray-400">DALL-E 3 → Pexels stock photo (uses whichever key is configured)</p>
+              <p className="text-xs text-gray-400">DALL-E 3 or Google Imagen 3 (uses whichever key is configured)</p>
             </div>
           </div>
           <button
@@ -373,6 +384,23 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
             className={`relative w-10 h-6 rounded-full transition-colors ${config.generateImage ? 'bg-[#0A66C2]' : 'bg-gray-300'}`}
           >
             <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${config.generateImage ? 'left-5' : 'left-1'}`} />
+          </button>
+        </div>
+
+        {/* Requires manual approval toggle */}
+        <div className="flex items-center justify-between py-3 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <Mail size={16} className="text-gray-500" />
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Requires manual approval</p>
+              <p className="text-xs text-gray-400">Receive an email with Approve/Delete buttons for every post</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setConfig(c => ({ ...c, requiresApproval: !c.requiresApproval }))}
+            className={`relative w-10 h-6 rounded-full transition-colors ${config.requiresApproval ? 'bg-[#0A66C2]' : 'bg-gray-300'}`}
+          >
+            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${config.requiresApproval ? 'left-5' : 'left-1'}`} />
           </button>
         </div>
 
@@ -461,8 +489,8 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
           <label className="block text-xs font-semibold text-gray-500 mb-2 flex items-center gap-1.5">
             <Clock size={12} /> Posts per day
           </label>
-          <div className="flex gap-2">
-            {[1, 2, 3].map(n => (
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
               <button
                 key={n}
                 onClick={() => setConfig(c => ({ ...c, postsPerDay: n }))}

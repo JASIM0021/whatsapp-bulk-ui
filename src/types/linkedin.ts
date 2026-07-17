@@ -18,6 +18,7 @@ export interface LinkedInBotConfig {
   postTime: string;        // "HH:MM" UTC
   postGapMinutes: number;  // gap between posts when postsPerDay > 1
   generateImage: boolean;
+  requiresApproval?: boolean;
   adText?: string;
   systemPrompt?: string;
   engagementType?: 'technical' | 'marketing' | 'learning' | 'storytelling';
@@ -31,6 +32,7 @@ export interface LinkedInBotRunResult {
   postText?: string;
   hasImage: boolean;
   createdAt?: string;
+  requiresApproval?: boolean;
 }
 
 export interface LinkedInPost {
