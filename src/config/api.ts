@@ -141,6 +141,10 @@ export const API_ENDPOINTS = {
     deleteTemplate: (id: string) => `${API_BASE_URL}/api/email/templates/${id}`,
     bot: `${API_BASE_URL}/api/email/bot`,
     copyBot: `${API_BASE_URL}/api/email/bot/copy-from-whatsapp`,
+    sent: `${API_BASE_URL}/api/email/sent`,
+    sentHostinger: `${API_BASE_URL}/api/email/sent/hostinger`,
+    sentHostingerMessage: (uid: number) => `${API_BASE_URL}/api/email/sent/hostinger/message/${uid}`,
+    uploadDeck: `${API_BASE_URL}/api/email/deck`,
   },
   // ── Facebook (Omnichannel) ────────────────────────────────────────────
   facebook: {

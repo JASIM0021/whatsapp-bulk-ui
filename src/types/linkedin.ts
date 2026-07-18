@@ -12,7 +12,6 @@ export interface LinkedInSessionStatus {
 export interface LinkedInBotConfig {
   isEnabled: boolean;
   keywords: string[];
-  geos: string[];
   postsPerDay: number;
   schedule: 'daily' | 'off';
   postTime: string;        // "HH:MM" UTC

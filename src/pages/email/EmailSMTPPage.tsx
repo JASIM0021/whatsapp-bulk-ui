@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings2, Wifi, WifiOff, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
+import { Settings2, Wifi, WifiOff, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, HelpCircle, FileText, Upload, X } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 
 interface SMTPConfig {
@@ -11,6 +11,11 @@ interface SMTPConfig {
   senderEmail: string;
   useTLS: boolean;
   isVerified: boolean;
+  signature: string;
+  deckURL: string;
+  deckName: string;
+  autoAttachSignature: boolean;
+  autoAttachDeck: boolean;
 }
 
 const PRESETS: Record<string, { host: string; port: number; useTLS: boolean; label: string }> = {
@@ -23,12 +28,16 @@ const PRESETS: Record<string, { host: string; port: number; useTLS: boolean; lab
 };
 
 export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
-  const [form, setForm] = useState({ host: '', port: 587, username: '', password: '', senderName: '', senderEmail: '', useTLS: false });
+  const [form, setForm] = useState({
+    host: '', port: 587, username: '', password: '', senderName: '', senderEmail: '', useTLS: false,
+    signature: '', deckURL: '', deckName: '', autoAttachSignature: false, autoAttachDeck: false,
+  });
   const [showPwd, setShowPwd] = useState(false);
   const [preset, setPreset] = useState('gmail');
   const [saved, setSaved] = useState<SMTPConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [uploadingDeck, setUploadingDeck] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => { if (isPaid) load(); }, [isPaid]);
@@ -39,7 +48,11 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
       const d = await r.json();
       if (d.success && d.data) {
         setSaved(d.data);
-        setForm(f => ({ ...f, host: d.data.host, port: d.data.port, username: d.data.username, senderName: d.data.senderName, senderEmail: d.data.senderEmail, useTLS: d.data.useTLS }));
+        setForm(f => ({
+          ...f, host: d.data.host, port: d.data.port, username: d.data.username, senderName: d.data.senderName, senderEmail: d.data.senderEmail, useTLS: d.data.useTLS,
+          signature: d.data.signature || '', deckURL: d.data.deckURL || '', deckName: d.data.deckName || '',
+          autoAttachSignature: !!d.data.autoAttachSignature, autoAttachDeck: !!d.data.autoAttachDeck,
+        }));
         if (d.data.host === 'hostinger-api') {
           setPreset('hostinger');
         } else {
@@ -55,6 +68,23 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
     setPreset(key);
     const p = PRESETS[key];
     setForm(f => ({ ...f, host: p.host, port: p.port, useTLS: p.useTLS }));
+  };
+
+  const uploadDeck = async (file: File) => {
+    setUploadingDeck(true); setMsg(null);
+    try {
+      const body = new FormData();
+      body.append('deck', file);
+      const r = await apiFetch(API_ENDPOINTS.email.uploadDeck, { method: 'POST', body });
+      const d = await r.json();
+      if (d.success) {
+        setForm(f => ({ ...f, deckURL: d.filePath, deckName: d.fileName }));
+        setMsg({ text: 'Deck uploaded — remember to click Save Settings to apply it.', type: 'success' });
+      } else {
+        setMsg({ text: d.error || 'Failed to upload deck', type: 'error' });
+      }
+    } catch { setMsg({ text: 'Network error uploading deck', type: 'error' }); }
+    setUploadingDeck(false);
   };
 
   const save = async () => {
@@ -223,6 +253,54 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
             <span className="text-sm text-gray-700">Use TLS (port 465) — leave off for STARTTLS (port 587)</span>
           </label>
         )}
+
+        <div className="border-t border-gray-100 pt-5 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900">Signature &amp; Company Deck</h3>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Email Signature</label>
+            <textarea value={form.signature} onChange={e => setForm(f => ({ ...f, signature: e.target.value }))}
+              placeholder={'Best regards,\nJane Doe\nSales, My Business'} rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Company Deck / Brochure</label>
+            {form.deckName ? (
+              <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <FileText size={15} className="text-gray-400 shrink-0" />
+                <span className="flex-1 truncate text-gray-700">{form.deckName}</span>
+                <button type="button" onClick={() => setForm(f => ({ ...f, deckURL: '', deckName: '' }))}
+                  className="text-gray-400 hover:text-red-500 shrink-0">
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 cursor-pointer hover:border-gray-400 hover:text-gray-600 transition-colors">
+                {uploadingDeck ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+                {uploadingDeck ? 'Uploading…' : 'Upload PDF / DOC / PPT'}
+                <input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" className="hidden" disabled={uploadingDeck}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) uploadDeck(f); e.target.value = ''; }} />
+              </label>
+            )}
+          </div>
+
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <div onClick={() => setForm(f => ({ ...f, autoAttachSignature: !f.autoAttachSignature }))}
+              className={`relative w-10 h-5 rounded-full transition-colors ${form.autoAttachSignature ? 'bg-blue-600' : 'bg-gray-300'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.autoAttachSignature ? 'translate-x-5' : ''}`} />
+            </div>
+            <span className="text-sm text-gray-700">Auto-attach signature to every email</span>
+          </label>
+
+          <label className={`flex items-center gap-3 select-none ${form.deckName ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
+            <div onClick={() => form.deckName && setForm(f => ({ ...f, autoAttachDeck: !f.autoAttachDeck }))}
+              className={`relative w-10 h-5 rounded-full transition-colors ${form.autoAttachDeck ? 'bg-blue-600' : 'bg-gray-300'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.autoAttachDeck ? 'translate-x-5' : ''}`} />
+            </div>
+            <span className="text-sm text-gray-700">Auto-attach company deck to every email{!form.deckName && ' (upload a deck first)'}</span>
+          </label>
+        </div>
 
         {msg && (
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${msg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Mail, Send, CalendarClock, FileText, Bot, Settings,
+  Mail, Send, CalendarClock, FileText, Bot, Settings, History,
   ArrowLeft, Crown, LogOut, User, Zap, MessageSquare, Menu, X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,20 +11,22 @@ import { EmailSchedulePage } from './email/EmailSchedulePage';
 import { EmailTemplatePage } from './email/EmailTemplatePage';
 import { EmailBotPage } from './email/EmailBotPage';
 import { EmailInboxPage } from './email/EmailInboxPage';
+import { EmailSentPage } from './email/EmailSentPage';
 
-type Tab = 'inbox' | 'compose' | 'schedule' | 'templates' | 'bot' | 'smtp';
+type Tab = 'inbox' | 'compose' | 'schedule' | 'sent' | 'templates' | 'bot' | 'smtp';
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
   { id: 'inbox',     label: 'Inbox',     icon: <Mail size={20} />,         desc: 'Check messages' },
   { id: 'compose',   label: 'Send',      icon: <Send size={20} />,         desc: 'Bulk campaigns' },
   { id: 'schedule',  label: 'Scheduled', icon: <CalendarClock size={20} />, desc: 'Queued jobs'     },
+  { id: 'sent',      label: 'Sent',      icon: <History size={20} />,       desc: 'Sent history'   },
   { id: 'templates', label: 'Templates', icon: <FileText size={20} />,      desc: 'HTML library'   },
   { id: 'bot',       label: 'Bot',       icon: <Bot size={20} />,           desc: 'Auto-reply AI'  },
   { id: 'smtp',      label: 'SMTP',      icon: <Settings size={20} />,      desc: 'Connection'     },
 ];
 
 const TAB_LABELS: Record<Tab, string> = {
-  inbox: 'Inbox Messages', compose: 'Send Email', schedule: 'Scheduled', templates: 'Templates', bot: 'Email Bot', smtp: 'SMTP Setup',
+  inbox: 'Inbox Messages', compose: 'Send Email', schedule: 'Scheduled', sent: 'Sent Emails', templates: 'Templates', bot: 'Email Bot', smtp: 'SMTP Setup',
 };
 
 export function EmailPage() {
@@ -197,6 +199,7 @@ export function EmailPage() {
           {tab === 'inbox'     && <EmailInboxPage isPaid={isPaid} />}
           {tab === 'compose'   && <EmailComposePage isPaid={isPaid} />}
           {tab === 'schedule'  && <EmailSchedulePage isPaid={isPaid} />}
+          {tab === 'sent'      && <EmailSentPage isPaid={isPaid} />}
           {tab === 'templates' && <EmailTemplatePage isPaid={isPaid} />}
           {tab === 'bot'       && <EmailBotPage isPaid={isPaid} />}
           {tab === 'smtp'      && <EmailSMTPPage isPaid={isPaid} />}

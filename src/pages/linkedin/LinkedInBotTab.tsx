@@ -1,22 +1,11 @@
 import { useState, useEffect } from 'react';
 import {
   Loader2, Bot, Play, Save, Plus, X, Clock, Image, Zap, AlertCircle,
-  CheckCircle2, Globe, Calendar, Megaphone, Sparkles, Mail,
+  CheckCircle2, Calendar, Megaphone, Sparkles, Mail,
 } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { LinkedInSessionHook } from '@/hooks/useLinkedInSession';
 import { LinkedInBotConfig, LinkedInBotRunResult } from '@/types/linkedin';
-
-const GEO_OPTIONS = [
-  { code: 'US', label: 'United States' },
-  { code: 'GB', label: 'United Kingdom' },
-  { code: 'IN', label: 'India' },
-  { code: 'CA', label: 'Canada' },
-  { code: 'AU', label: 'Australia' },
-  { code: 'DE', label: 'Germany' },
-  { code: 'SG', label: 'Singapore' },
-  { code: 'AE', label: 'UAE' },
-];
 
 interface Props {
   isPaid: boolean;
@@ -27,7 +16,6 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
   const [config, setConfig] = useState<LinkedInBotConfig>({
     isEnabled: false,
     keywords: [],
-    geos: ['US'],
     postsPerDay: 1,
     schedule: 'off',
     postTime: '09:00',
@@ -69,7 +57,6 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
         setConfig(c => ({
           ...c,
           keywords: suggested.keywords || [],
-          geos: suggested.geos || ['US'],
           postsPerDay: suggested.postsPerDay || 1,
           postTime: suggested.postTime || '09:00',
           postGapMinutes: suggested.postGapMinutes || 120,
@@ -192,11 +179,11 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
           </div>
           <div>
             <h2 className="font-bold text-base leading-none">LinkedIn Automation Bot</h2>
-            <p className="text-blue-200 text-xs mt-0.5">AI-generated posts from keywords + Google Trends</p>
+            <p className="text-blue-200 text-xs mt-0.5">AI-generated posts from your keywords</p>
           </div>
         </div>
         <p className="text-sm text-blue-100 mt-3">
-          The bot automatically creates professional LinkedIn posts based on your keywords and current trending topics, with AI-generated images. Up to 3 posts per day.
+          The bot automatically creates professional LinkedIn posts based on your keywords, with AI-generated images. Up to 3 posts per day.
         </p>
       </div>
 
@@ -348,30 +335,8 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
           Targeting & Content
         </h3>
 
-        {/* Geo */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-2 flex items-center gap-1.5">
-            <Globe size={12} /> Trending region (for Google Trends)
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {GEO_OPTIONS.map(g => (
-              <button
-                key={g.code}
-                onClick={() => setConfig(c => ({ ...c, geos: [g.code] }))}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
-                  config.geos[0] === g.code
-                    ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
-                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-[#0A66C2] hover:text-[#0A66C2]'
-                }`}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Generate image toggle */}
-        <div className="flex items-center justify-between py-3 border-t border-gray-100">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image size={16} className="text-gray-500" />
             <div>
@@ -626,18 +591,14 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
           </div>
           <div className="flex items-start gap-2">
             <span className="w-4 h-4 rounded-full bg-[#0A66C2] text-white text-[9px] flex items-center justify-center font-bold flex-shrink-0 mt-0.5">2</span>
-            <span>Fetches trending topics from Google Trends for context</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="w-4 h-4 rounded-full bg-[#0A66C2] text-white text-[9px] flex items-center justify-center font-bold flex-shrink-0 mt-0.5">3</span>
             <span>Generates a professional LinkedIn post using AI (GPT-4o-mini or Gemini)</span>
           </div>
           <div className="flex items-start gap-2">
-            <span className="w-4 h-4 rounded-full bg-[#0A66C2] text-white text-[9px] flex items-center justify-center font-bold flex-shrink-0 mt-0.5">4</span>
+            <span className="w-4 h-4 rounded-full bg-[#0A66C2] text-white text-[9px] flex items-center justify-center font-bold flex-shrink-0 mt-0.5">3</span>
             <span>Optionally generates an image (DALL-E 3 → Pexels fallback) and attaches it to the post</span>
           </div>
           <div className="flex items-start gap-2">
-            <span className="w-4 h-4 rounded-full bg-[#0A66C2] text-white text-[9px] flex items-center justify-center font-bold flex-shrink-0 mt-0.5">5</span>
+            <span className="w-4 h-4 rounded-full bg-[#0A66C2] text-white text-[9px] flex items-center justify-center font-bold flex-shrink-0 mt-0.5">4</span>
             <span>Publishes to LinkedIn (max 3 posts/day enforced automatically)</span>
           </div>
         </div>
