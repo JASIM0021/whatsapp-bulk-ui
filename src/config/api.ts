@@ -219,6 +219,9 @@ export const API_ENDPOINTS = {
 		export: `${API_BASE_URL}/api/leads/export`,
 		stats:  `${API_BASE_URL}/api/leads/stats`,
 		share:  `${API_BASE_URL}/api/leads/share`,
+		autopilot: `${API_BASE_URL}/api/leads/autopilot`,
+		saveAutopilot: `${API_BASE_URL}/api/leads/autopilot/save`,
+		sendDraft: `${API_BASE_URL}/api/leads/send-draft`,
 	},
   health: `${API_BASE_URL}/api/health`,
   // ── Chatbot Demo (public marketing tool) ─────────────────────────────────

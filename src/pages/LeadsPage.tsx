@@ -1,22 +1,25 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-	Download, Database, ArrowLeft, Crown, LogOut, MessageSquare, Menu, X, Mail, Search
+	Download, Database, ArrowLeft, Crown, LogOut, MessageSquare, Menu, X, Mail, Search, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LeadsScraperTab } from './leads/LeadsScraperTab';
 import { LeadsDatabaseTab } from './leads/LeadsDatabaseTab';
+import { LeadsAutopilotTab } from './leads/LeadsAutopilotTab';
 
-type Tab = 'scraper' | 'database';
+type Tab = 'scraper' | 'database' | 'autopilot';
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
 	{ id: 'scraper',  label: 'Extension Setup', icon: <Download size={20} />,   desc: 'Install & connect' },
 	{ id: 'database', label: 'Leads Database',  icon: <Database size={20} />,   desc: 'Browse & contact leads' },
+	{ id: 'autopilot', label: 'AI Auto Pilot',   icon: <Sparkles size={20} />,   desc: 'Automate outreach & follow-up' },
 ];
 
 const TAB_LABELS: Record<Tab, string> = {
 	scraper: 'Extension Setup',
 	database: 'Leads Database',
+	autopilot: 'AI Auto Pilot',
 };
 
 export function LeadsPage() {
@@ -176,6 +179,7 @@ export function LeadsPage() {
 					<div className="max-w-6xl mx-auto space-y-6">
 						{tab === 'scraper' && <LeadsScraperTab />}
 						{tab === 'database' && <LeadsDatabaseTab />}
+						{tab === 'autopilot' && <LeadsAutopilotTab />}
 					</div>
 				</main>
 			</div>

@@ -15,6 +15,8 @@ interface Lead {
 	reviews?: number;
 	status?: string;
 	notes?: string;
+	draftSubject?: string;
+	draftBody?: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -25,6 +27,12 @@ const STATUS_COLORS: Record<string, string> = {
 	reminder_1: 'bg-amber-950/40 border-amber-900/60 text-amber-400',
 	interested: 'bg-emerald-950/40 border-emerald-900/60 text-emerald-400',
 	not_interested: 'bg-rose-950/40 border-rose-900/60 text-rose-400',
+	email_drafted: 'bg-violet-950/40 border-violet-900/60 text-violet-400',
+	follwup1_drafted: 'bg-fuchsia-950/40 border-fuchsia-900/60 text-fuchsia-400',
+	follwup2_drafted: 'bg-fuchsia-950/40 border-fuchsia-900/60 text-fuchsia-400',
+	follwup3_drafted: 'bg-fuchsia-950/40 border-fuchsia-900/60 text-fuchsia-400',
+	follwup4_drafted: 'bg-fuchsia-950/40 border-fuchsia-900/60 text-fuchsia-400',
+	follwup5_drafted: 'bg-fuchsia-950/40 border-fuchsia-900/60 text-fuchsia-400',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -35,6 +43,12 @@ const STATUS_LABELS: Record<string, string> = {
 	reminder_1: 'Reminder 1',
 	interested: 'Interested',
 	not_interested: 'Not Interested',
+	email_drafted: 'Outreach Draft',
+	follwup1_drafted: 'Follow-up 1 Draft',
+	follwup2_drafted: 'Follow-up 2 Draft',
+	follwup3_drafted: 'Follow-up 3 Draft',
+	follwup4_drafted: 'Follow-up 4 Draft',
+	follwup5_drafted: 'Follow-up 5 Draft',
 };
 
 export function LeadsDatabaseTab() {
@@ -63,6 +77,12 @@ export function LeadsDatabaseTab() {
 	const [sharing, setSharing] = useState(false);
 	const [shareSuccess, setShareSuccess] = useState<string | null>(null);
 	const [shareError, setShareError] = useState<string | null>(null);
+
+	// Review draft modal state
+	const [reviewDraftLead, setReviewDraftLead] = useState<Lead | null>(null);
+	const [draftSubject, setDraftSubject] = useState('');
+	const [draftBody, setDraftBody] = useState('');
+	const [isSendingDraft, setIsSendingDraft] = useState(false);
 
 	// Lead Editing Drawer state
 	const [activeLead, setActiveLead] = useState<Lead | null>(null);
@@ -130,6 +150,51 @@ Requirements:
 			window.open(`https://www.perplexity.ai/?q=${encodeURIComponent(prompt)}`, '_blank');
 		} else if (platform === 'claude') {
 			window.open('https://claude.ai/new', '_blank');
+		}
+	};
+
+	const handleOpenDraft = (lead: Lead) => {
+		setReviewDraftLead(lead);
+		setDraftSubject(lead.draftSubject || '');
+		setDraftBody((lead.draftBody || '').replace(/<br\s*\/?>/gi, '\n'));
+	};
+
+	const handleSendDraft = async () => {
+		if (!reviewDraftLead) return;
+		setIsSendingDraft(true);
+		try {
+			const bodyWithBr = draftBody.replace(/\n/g, '<br>');
+			const res = await apiFetch(API_ENDPOINTS.leads.sendDraft, {
+				method: 'POST',
+				body: JSON.stringify({
+					leadId: reviewDraftLead.id,
+					subject: draftSubject,
+					body: bodyWithBr,
+				}),
+			});
+			const json = await res.json();
+			if (json.success) {
+				setLeads(prev =>
+					prev.map(l =>
+						l.id === reviewDraftLead.id
+							? {
+									...l,
+									status: l.status?.replace('_drafted', '') || 'email_sent',
+									draftSubject: undefined,
+									draftBody: undefined,
+							  }
+							: l
+					)
+				);
+				setReviewDraftLead(null);
+				alert('AI Outreach email sent successfully!');
+			} else {
+				alert(json.error || 'Failed to send email');
+			}
+		} catch (err) {
+			alert('Network error sending draft');
+		} finally {
+			setIsSendingDraft(false);
 		}
 	};
 
@@ -630,6 +695,16 @@ Requirements:
 											</td>
 											<td className="p-4 text-center" onClick={e => e.stopPropagation()}>
 												<div className="flex items-center justify-center gap-1">
+													{lead.status && lead.status.endsWith('_drafted') && (
+														<button
+															onClick={() => handleOpenDraft(lead)}
+															title="Review & Send AI Draft"
+															className="text-[9px] font-extrabold tracking-wider text-white bg-indigo-600 border border-indigo-500 hover:bg-indigo-700 px-1.5 py-0.5 rounded transition-all active:scale-95 whitespace-nowrap flex items-center gap-0.5"
+														>
+															<Mail size={9} />
+															REVIEW
+														</button>
+													)}
 													<button
 														onClick={() => handleAIPrompt(lead, 'chatgpt')}
 														title="Copy & Open in ChatGPT"
@@ -941,6 +1016,84 @@ Requirements:
 								</button>
 							</div>
 						</form>
+					</div>
+				</div>
+			)}
+
+			{/* Review Draft Modal */}
+			{reviewDraftLead && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+					<div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+						<div className="flex items-center justify-between border-b border-slate-800 pb-3">
+							<h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+								<Mail size={16} className="text-indigo-400" />
+								Review AI Email Pitch to {reviewDraftLead.name}
+							</h3>
+							<button
+								onClick={() => setReviewDraftLead(null)}
+								className="text-slate-400 hover:text-white transition-colors"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						<div className="space-y-4">
+							<div>
+								<label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Recipient</label>
+								<div className="text-xs text-slate-300 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex flex-col md:flex-row md:justify-between gap-1.5">
+									<span><strong>Name:</strong> {reviewDraftLead.name}</span>
+									<span><strong>Email:</strong> {reviewDraftLead.email}</span>
+									<span><strong>Status:</strong> {STATUS_LABELS[reviewDraftLead.status || 'new']}</span>
+								</div>
+							</div>
+
+							<div>
+								<label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email Subject</label>
+								<input
+									type="text"
+									value={draftSubject}
+									onChange={e => setDraftSubject(e.target.value)}
+									className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-700"
+								/>
+							</div>
+
+							<div>
+								<label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email Body (HTML/Markdown)</label>
+								<textarea
+									rows={8}
+									value={draftBody}
+									onChange={e => setDraftBody(e.target.value)}
+									className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-700 leading-relaxed font-mono"
+								/>
+							</div>
+						</div>
+
+						<div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+							<button
+								type="button"
+								onClick={() => setReviewDraftLead(null)}
+								className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-xl text-xs font-semibold transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={handleSendDraft}
+								disabled={isSendingDraft || !draftSubject || !draftBody}
+								className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-lg"
+							>
+								{isSendingDraft ? (
+									<>
+										<Loader2 size={12} className="animate-spin" />
+										<span>Sending Email...</span>
+									</>
+								) : (
+									<>
+										<span>Approve &amp; Send</span>
+									</>
+								)}
+							</button>
+						</div>
 					</div>
 				</div>
 			)}
