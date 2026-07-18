@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, RefreshCw, Loader2, Mailbox, X } from 'lucide-react';
+import { Send, RefreshCw, Loader2, Mailbox, Mail, ArrowLeft, User, Calendar } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 
 interface SentEmailLog {
@@ -26,8 +26,11 @@ interface MessageText {
 }
 
 interface Viewer {
+  key: string;
   subject: string;
-  meta: string;
+  metaLabel: string;
+  metaValue: string;
+  date: string;
 }
 
 const PAGE_SIZE = 20;
@@ -100,16 +103,29 @@ export function EmailSentPage({ isPaid }: { isPaid: boolean }) {
   };
 
   const fmt = (d: string) => new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+  const fmtShort = (d: string) => new Date(d).toLocaleDateString([], { month: 'short', day: 'numeric' });
 
   const openLog = (log: SentEmailLog) => {
-    setViewer({ subject: log.subject || '(no subject)', meta: `To: ${log.to} · ${fmt(log.sentAt)}` });
+    setViewer({
+      key: `log-${log.id}`,
+      subject: log.subject || '(no subject)',
+      metaLabel: 'To',
+      metaValue: log.to,
+      date: fmt(log.sentAt),
+    });
     setViewerBody({ plain: '', html: log.body || '' });
     setViewerLoading(false);
     setViewerError(null);
   };
 
   const openHostingerMessage = async (m: HostingerSentMessage) => {
-    setViewer({ subject: m.subject || '(no subject)', meta: `From: ${m.from} · ${fmt(m.date)}` });
+    setViewer({
+      key: `host-${m.uid}`,
+      subject: m.subject || '(no subject)',
+      metaLabel: 'From',
+      metaValue: m.from,
+      date: fmt(m.date),
+    });
     setViewerBody(null);
     setViewerError(null);
     setViewerLoading(true);
@@ -129,128 +145,187 @@ export function EmailSentPage({ isPaid }: { isPaid: boolean }) {
   if (!isPaid) return <div className="text-center py-16"><Send size={40} className="mx-auto mb-4 text-gray-300" /><p className="text-gray-400">Available on paid plans</p></div>;
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Sent Emails</h2>
-        <button onClick={() => load(1)} disabled={loading} className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 font-medium transition-colors">
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />Refresh
+    <div className="h-[calc(100vh-140px)] flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      {/* Top action bar */}
+      <div className="flex items-center justify-between border-b border-gray-150 p-4 gap-3 bg-slate-50/50">
+        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+          <Send size={16} className="text-blue-500" />
+          Sent Emails ({total})
+        </h3>
+        <button
+          onClick={() => { load(1); if (showHostinger) loadHostinger(1); }}
+          disabled={loading}
+          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-white border border-transparent hover:border-gray-200 rounded-lg transition-all"
+          title="Refresh Sent Emails"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
 
-      {loading && !logs.length ? (
-        <div className="text-center py-12"><Loader2 size={24} className="animate-spin mx-auto text-blue-500" /></div>
-      ) : logs.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 text-center py-16">
-          <Send size={36} className="mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-500 font-medium">No emails sent yet</p>
-          <p className="text-gray-400 text-sm mt-1">Sends from the Send tab will show up here</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {logs.map(log => (
-            <button key={log.id} onClick={() => openLog(log)}
-              className="w-full text-left bg-white rounded-xl border border-gray-200 p-4 flex items-start justify-between gap-3 hover:border-blue-300 hover:shadow-sm transition-all">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full border ${PROVIDER_STYLES[log.provider] || PROVIDER_STYLES.smtp}`}>
+      {/* Main split-pane content */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
+
+        {/* Left Side: Message List */}
+        <div className={`w-full ${viewer ? 'hidden md:block md:w-[350px] lg:w-[400px]' : ''} border-r border-gray-150 overflow-y-auto flex-shrink-0`}>
+          {loading && !logs.length ? (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-2">
+              <Loader2 size={24} className="animate-spin text-blue-500" />
+              <span className="text-xs">Fetching sent emails...</span>
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-2 text-center px-4">
+              <Send size={32} className="text-gray-300" />
+              <span className="text-xs font-semibold text-gray-600">No emails sent yet</span>
+              <span className="text-[11px] text-gray-400">Sends from the Send tab will show up here.</span>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {logs.map(log => (
+                <div
+                  key={log.id}
+                  onClick={() => openLog(log)}
+                  className={`p-4 cursor-pointer transition-colors text-left ${
+                    viewer?.key === `log-${log.id}`
+                      ? 'bg-blue-50/70 border-l-4 border-blue-500'
+                      : 'hover:bg-slate-50 border-l-4 border-transparent'
+                  }`}
+                >
+                  <div className="flex justify-between items-start gap-2 mb-1.5">
+                    <span className="text-xs truncate text-gray-600 font-medium">To: {log.to}</span>
+                    <span className="text-[10px] text-gray-400 shrink-0">{fmtShort(log.sentAt)}</span>
+                  </div>
+                  <h4 className="text-xs truncate mb-1.5 font-semibold text-gray-900">
+                    {log.subject || '(no subject)'}
+                  </h4>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded border ${PROVIDER_STYLES[log.provider] || PROVIDER_STYLES.smtp}`}>
                     {log.provider === 'hostinger' ? 'Hostinger' : 'SMTP'}
                   </span>
-                  <span className="text-xs text-gray-400">{fmt(log.sentAt)}</span>
                 </div>
-                <p className="text-sm font-semibold text-gray-900 truncate">{log.subject || '(no subject)'}</p>
-                <p className="text-xs text-gray-500 truncate mt-0.5">To: {log.to}</p>
-              </div>
-            </button>
-          ))}
-          {logs.length < total && (
-            <button onClick={() => load(page + 1)} disabled={loading}
-              className="w-full py-2.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-              {loading ? 'Loading…' : `Load more (${logs.length} of ${total})`}
-            </button>
-          )}
-        </div>
-      )}
-
-      {isHostinger && (
-        <div className="bg-white rounded-xl border border-gray-200">
-          <button onClick={toggleHostinger} className="w-full flex items-center justify-between gap-3 p-4">
-            <div className="flex items-center gap-2">
-              <Mailbox size={16} className="text-indigo-600" />
-              <span className="text-sm font-bold text-gray-900">From Hostinger Mailbox</span>
-              <span className="text-xs text-gray-400">(live INBOX.Sent — cross-check true delivery)</span>
-            </div>
-            <span className="text-xs text-blue-600 font-medium">{showHostinger ? 'Hide' : 'Show'}</span>
-          </button>
-
-          {showHostinger && (
-            <div className="border-t border-gray-100 p-4 space-y-2">
-              {hostingerLoading && !hostingerMessages.length ? (
-                <div className="text-center py-8"><Loader2 size={20} className="animate-spin mx-auto text-blue-500" /></div>
-              ) : hostingerMessages.length === 0 ? (
-                <p className="text-center text-sm text-gray-400 py-6">No messages found in INBOX.Sent</p>
-              ) : (
-                <>
-                  {hostingerMessages.map(m => (
-                    <button key={m.uid} onClick={() => openHostingerMessage(m)}
-                      className="w-full text-left border border-gray-100 rounded-lg p-3 hover:border-blue-300 hover:shadow-sm transition-all">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{m.subject || '(no subject)'}</p>
-                        <span className="text-xs text-gray-400 shrink-0">{fmt(m.date)}</span>
-                      </div>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">From: {m.from}</p>
-                    </button>
-                  ))}
-                  {hostingerMessages.length < hostingerTotal && (
-                    <button onClick={() => loadHostinger(hostingerPage + 1)} disabled={hostingerLoading}
-                      className="w-full py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                      {hostingerLoading ? 'Loading…' : `Load more (${hostingerMessages.length} of ${hostingerTotal})`}
-                    </button>
-                  )}
-                </>
+              ))}
+              {logs.length < total && (
+                <button onClick={() => load(page + 1)} disabled={loading}
+                  className="w-full py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors">
+                  {loading ? 'Loading…' : `Load more (${logs.length} of ${total})`}
+                </button>
               )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Message content viewer */}
-      {viewer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={closeViewer} />
-          <div className="relative z-10 w-full max-w-2xl max-h-[85vh] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
-            <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-100 shrink-0">
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-gray-900 truncate">{viewer.subject}</p>
-                <p className="text-xs text-gray-500 mt-0.5 truncate">{viewer.meta}</p>
-              </div>
-              <button onClick={closeViewer} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 shrink-0">
-                <X size={16} />
+          {isHostinger && (
+            <div className="border-t border-gray-150">
+              <button onClick={toggleHostinger} className="w-full flex items-center justify-between gap-2 p-4 bg-slate-50/50">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Mailbox size={14} className="text-indigo-600 shrink-0" />
+                  <span className="text-xs font-bold text-gray-900 truncate">From Hostinger Mailbox</span>
+                </div>
+                <span className="text-xs text-blue-600 font-medium shrink-0">{showHostinger ? 'Hide' : 'Show'}</span>
               </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5 flex flex-col min-h-[200px]">
-              {viewerLoading ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-2">
-                  <Loader2 size={24} className="animate-spin text-blue-500" />
-                  <span className="text-xs">Loading email content…</span>
-                </div>
-              ) : viewerError ? (
-                <div className="flex-1 flex items-center justify-center text-sm text-red-500 text-center">{viewerError}</div>
-              ) : viewerBody?.html ? (
-                <iframe
-                  title="Email Body"
-                  srcDoc={viewerBody.html}
-                  className="w-full flex-1 border border-gray-200 rounded-lg bg-white"
-                  sandbox="allow-popups allow-popups-to-escape-sandbox"
-                />
-              ) : (
-                <div className="w-full flex-1 border border-gray-200 rounded-lg bg-white p-4 text-sm text-gray-700 whitespace-pre-wrap font-mono overflow-y-auto">
-                  {viewerBody?.plain || '(Empty message)'}
+
+              {showHostinger && (
+                <div className="divide-y divide-gray-100 border-t border-gray-100">
+                  {hostingerLoading && !hostingerMessages.length ? (
+                    <div className="text-center py-8"><Loader2 size={20} className="animate-spin mx-auto text-blue-500" /></div>
+                  ) : hostingerMessages.length === 0 ? (
+                    <p className="text-center text-xs text-gray-400 py-6">No messages found in INBOX.Sent</p>
+                  ) : (
+                    <>
+                      {hostingerMessages.map(m => (
+                        <div
+                          key={m.uid}
+                          onClick={() => openHostingerMessage(m)}
+                          className={`p-4 cursor-pointer transition-colors text-left ${
+                            viewer?.key === `host-${m.uid}`
+                              ? 'bg-blue-50/70 border-l-4 border-blue-500'
+                              : 'hover:bg-slate-50 border-l-4 border-transparent'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start gap-2 mb-1.5">
+                            <span className="text-xs truncate text-gray-600 font-medium">From: {m.from}</span>
+                            <span className="text-[10px] text-gray-400 shrink-0">{fmtShort(m.date)}</span>
+                          </div>
+                          <h4 className="text-xs truncate font-semibold text-gray-900">
+                            {m.subject || '(no subject)'}
+                          </h4>
+                        </div>
+                      ))}
+                      {hostingerMessages.length < hostingerTotal && (
+                        <button onClick={() => loadHostinger(hostingerPage + 1)} disabled={hostingerLoading}
+                          className="w-full py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors">
+                          {hostingerLoading ? 'Loading…' : `Load more (${hostingerMessages.length} of ${hostingerTotal})`}
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
-      )}
+
+        {/* Right Side: Message Preview Pane */}
+        <div className={`flex-1 flex flex-col overflow-hidden min-w-0 bg-slate-50/30 ${!viewer ? 'hidden md:flex' : ''}`}>
+          {viewer ? (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Back button for mobile */}
+              <div className="md:hidden border-b border-gray-150 p-3 bg-white flex items-center">
+                <button
+                  onClick={closeViewer}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  <ArrowLeft size={14} />
+                  <span>Back to List</span>
+                </button>
+              </div>
+
+              {/* Email details header */}
+              <div className="bg-white border-b border-gray-150 p-5 shrink-0 text-left">
+                <h2 className="text-sm font-bold text-gray-900 mb-3">{viewer.subject}</h2>
+                <div className="flex flex-col gap-1.5 text-xs text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <User size={13} className="text-gray-400" />
+                    <span className="font-semibold text-gray-700">{viewer.metaLabel}:</span>
+                    <span className="truncate">{viewer.metaValue}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar size={13} className="text-gray-400" />
+                    <span className="font-semibold text-gray-700">Date:</span>
+                    <span>{viewer.date}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Email body renderer */}
+              <div className="flex-1 overflow-y-auto p-6 flex flex-col">
+                {viewerLoading ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-2">
+                    <Loader2 size={24} className="animate-spin text-blue-500" />
+                    <span className="text-xs">Loading email content...</span>
+                  </div>
+                ) : viewerError ? (
+                  <div className="flex-1 flex items-center justify-center text-sm text-red-500 text-center">{viewerError}</div>
+                ) : viewerBody?.html ? (
+                  <iframe
+                    title="Email Body"
+                    srcDoc={viewerBody.html}
+                    className="w-full flex-1 border border-gray-200 rounded-lg bg-white shadow-inner animate-in fade-in zoom-in-95 duration-200"
+                    sandbox="allow-popups allow-popups-to-escape-sandbox"
+                  />
+                ) : (
+                  <div className="w-full flex-1 border border-gray-200 rounded-lg bg-white p-5 text-sm text-gray-700 whitespace-pre-wrap font-mono shadow-inner overflow-y-auto text-left animate-in fade-in zoom-in-95 duration-200">
+                    {viewerBody?.plain || '(Empty message)'}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-2">
+              <Mail size={40} className="text-gray-300 animate-pulse" />
+              <span className="text-xs font-medium">Select an email to preview its content</span>
+            </div>
+          )}
+        </div>
+
+      </div>
     </div>
   );
 }
