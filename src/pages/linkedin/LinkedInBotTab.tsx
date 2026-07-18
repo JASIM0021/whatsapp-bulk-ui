@@ -256,6 +256,13 @@ export function LinkedInBotTab({ isPaid, session }: Props) {
             )}
           </div>
           <p className="text-xs text-green-700 line-clamp-3 mb-2">{lastRun.postText}</p>
+          {lastRun.imageUrl && (
+            <img
+              src={lastRun.imageUrl}
+              alt="Generated post visual"
+              className="w-full max-w-xs rounded-xl border border-green-200 mb-2"
+            />
+          )}
           {lastRun.requiresApproval ? (
             <p className="text-xs text-green-600 font-medium">
               Check your connected SMTP/Hostinger email inbox to approve or delete this post. (Link valid for 10 minutes)

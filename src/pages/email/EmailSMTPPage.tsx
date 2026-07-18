@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings2, Wifi, WifiOff, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, HelpCircle, FileText, Upload, X } from 'lucide-react';
+import { Settings2, Wifi, WifiOff, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, HelpCircle, FileText, Upload, X, Code2, KeyRound } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 
 interface SMTPConfig {
@@ -33,6 +33,7 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
     signature: '', deckURL: '', deckName: '', autoAttachSignature: false, autoAttachDeck: false,
   });
   const [showPwd, setShowPwd] = useState(false);
+  const [sigView, setSigView] = useState<'code' | 'preview'>('code');
   const [preset, setPreset] = useState('gmail');
   const [saved, setSaved] = useState<SMTPConfig | null>(null);
   const [saving, setSaving] = useState(false);
@@ -109,7 +110,11 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
     try {
       const r = await apiFetch(API_ENDPOINTS.email.smtp, { method: 'POST', body: JSON.stringify(checkForm) });
       const d = await r.json();
-      if (d.success) { setSaved(d.data); setMsg({ text: 'Email settings saved successfully!', type: 'success' }); }
+      if (d.success) {
+        setSaved(d.data);
+        setForm(f => ({ ...f, password: '' })); // stored encrypted server-side; keep the field blank so it isn't re-sent
+        setMsg({ text: 'Email settings saved successfully!', type: 'success' });
+      }
       else setMsg({ text: d.error || 'Failed to save', type: 'error' });
     } catch { setMsg({ text: 'Network error', type: 'error' }); }
     setSaving(false);
@@ -215,6 +220,7 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
               {preset === 'hostinger' ? 'Mailbox Address (Username)' : 'Username / Email'}
             </label>
             <input value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+              autoComplete="off" name="botx_smtp_username"
               placeholder={preset === 'hostinger' ? 'you@yourdomain.com' : 'you@gmail.com'} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
           </div>
           <div>
@@ -223,12 +229,19 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
             </label>
             <div className="relative">
               <input type={showPwd ? 'text' : 'password'} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                placeholder={saved ? '••••••••••••' : preset === 'hostinger' ? 'Enter API token' : 'Enter password'}
+                autoComplete="new-password" name="botx_smtp_secret"
+                placeholder={saved ? 'Saved — leave blank to keep current' : preset === 'hostinger' ? 'Enter API token' : 'Enter password'}
                 className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
               <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
                 {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            {saved && (
+              <p className="flex items-center gap-1 mt-1 text-[11px] text-gray-400">
+                <KeyRound size={11} className="text-green-500 shrink-0" />
+                A {preset === 'hostinger' ? 'token' : 'password'} is already saved (encrypted). Only fill this to replace it.
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Sender Name</label>
@@ -258,10 +271,35 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
           <h3 className="text-sm font-bold text-gray-900">Signature &amp; Company Deck</h3>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Email Signature</label>
-            <textarea value={form.signature} onChange={e => setForm(f => ({ ...f, signature: e.target.value }))}
-              placeholder={'Best regards,\nJane Doe\nSales, My Business'} rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none" />
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-gray-600">Email Signature</label>
+              <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+                <button type="button" onClick={() => setSigView('code')}
+                  className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors ${sigView === 'code' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <Code2 size={12} />Code
+                </button>
+                <button type="button" onClick={() => setSigView('preview')}
+                  className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors ${sigView === 'preview' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <Eye size={12} />Preview
+                </button>
+              </div>
+            </div>
+            {sigView === 'code' ? (
+              <textarea value={form.signature} onChange={e => setForm(f => ({ ...f, signature: e.target.value }))}
+                placeholder={'Best regards,\nJane Doe\nSales, My Business'} rows={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-y" />
+            ) : form.signature.trim() ? (
+              <iframe
+                title="Signature Preview"
+                srcDoc={`<base target="_blank"><div style="font-family:Arial,sans-serif;font-size:14px;color:#333;">${form.signature}</div>`}
+                sandbox="allow-popups allow-popups-to-escape-sandbox"
+                className="w-full h-48 border border-gray-300 rounded-lg bg-white"
+              />
+            ) : (
+              <div className="w-full h-48 border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-xs text-gray-400">
+                Nothing to preview — add your signature in the Code tab
+              </div>
+            )}
           </div>
 
           <div>

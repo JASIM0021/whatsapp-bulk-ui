@@ -30,6 +30,7 @@ export interface LinkedInBotRunResult {
   postUrl?: string;
   postText?: string;
   hasImage: boolean;
+  imageUrl?: string;
   createdAt?: string;
   requiresApproval?: boolean;
 }
