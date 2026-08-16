@@ -2937,18 +2937,21 @@ function AITab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  const [testingStatus, setTestingStatus] = useState<Record<string, 'idle' | 'testing' | 'success' | 'error'>>({});
+  const [testFeedback, setTestFeedback] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
       try {
         const res = await apiFetch(API_ENDPOINTS.admin.aiConfig);
         const data = await res.json();
-        if (data.success) {
+        if (data.success && data.data) {
           setProvider(data.data.provider || 'openai');
           setOpenaiKeys(data.data.openai_keys || []);
           setGeminiKeys(data.data.gemini_keys || []);
         } else {
-          setMessage({ type: 'error', text: data.message || 'Failed to load configuration' });
+          setMessage({ type: 'error', text: data.error || data.message || 'Failed to load configuration' });
         }
       } catch (err: any) {
         setMessage({ type: 'error', text: err.message || 'An error occurred while fetching AI settings' });
@@ -2957,6 +2960,40 @@ function AITab() {
       }
     })();
   }, []);
+
+  const handleTestKey = async (type: 'openai' | 'gemini', index: number, keyValue: string) => {
+    const statusKey = `${type}-${index}`;
+    if (!keyValue.trim()) {
+      setTestingStatus(prev => ({ ...prev, [statusKey]: 'error' }));
+      setTestFeedback(prev => ({ ...prev, [statusKey]: 'Key cannot be empty' }));
+      return;
+    }
+
+    setTestingStatus(prev => ({ ...prev, [statusKey]: 'testing' }));
+    setTestFeedback(prev => ({ ...prev, [statusKey]: '' }));
+
+    try {
+      const res = await apiFetch('/api/admin/ai/config/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: type,
+          key: keyValue.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTestingStatus(prev => ({ ...prev, [statusKey]: 'success' }));
+        setTestFeedback(prev => ({ ...prev, [statusKey]: 'Valid Key!' }));
+      } else {
+        setTestingStatus(prev => ({ ...prev, [statusKey]: 'error' }));
+        setTestFeedback(prev => ({ ...prev, [statusKey]: data.error || data.message || 'Invalid Key' }));
+      }
+    } catch (err: any) {
+      setTestingStatus(prev => ({ ...prev, [statusKey]: 'error' }));
+      setTestFeedback(prev => ({ ...prev, [statusKey]: err.message || 'Test failed' }));
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2980,10 +3017,15 @@ function AITab() {
       const data = await res.json();
       if (data.success) {
         setMessage({ type: 'success', text: 'AI configuration updated successfully!' });
-        setOpenaiKeys(data.data.openai_keys || []);
-        setGeminiKeys(data.data.gemini_keys || []);
+        if (data.data) {
+          setOpenaiKeys(data.data.openai_keys || []);
+          setGeminiKeys(data.data.gemini_keys || []);
+        } else {
+          setOpenaiKeys(cleanOpenai);
+          setGeminiKeys(cleanGemini);
+        }
       } else {
-        setMessage({ type: 'error', text: data.message || 'Failed to update configuration' });
+        setMessage({ type: 'error', text: data.error || data.message || 'Failed to update configuration' });
       }
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'An error occurred while saving AI settings' });
@@ -3118,21 +3160,51 @@ function AITab() {
               <p className="text-xs text-gray-400 italic">No OpenAI keys configured. System will fall back to environment variables.</p>
             ) : (
               openaiKeys.map((key, index) => (
-                <div key={index} className="flex gap-2 items-center">
-                  <input
-                    type="password"
-                    value={key}
-                    onChange={(e) => handleKeyChange('openai', index, e.target.value)}
-                    placeholder={`sk-... (OpenAI Key #${index + 1})`}
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveKey('openai', index)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                <div key={index} className="space-y-1">
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="password"
+                      value={key}
+                      onChange={(e) => handleKeyChange('openai', index, e.target.value)}
+                      placeholder={`sk-... (OpenAI Key #${index + 1})`}
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleTestKey('openai', index, key)}
+                      disabled={testingStatus[`openai-${index}`] === 'testing'}
+                      className="px-3 py-2 text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {testingStatus[`openai-${index}`] === 'testing' && <Loader2 className="w-3 h-3 animate-spin" />}
+                      Test Key
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveKey('openai', index)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  {testingStatus[`openai-${index}`] && testingStatus[`openai-${index}`] !== 'idle' && (
+                    <div className="text-xs pl-1">
+                      {testingStatus[`openai-${index}`] === 'testing' && (
+                        <span className="text-gray-500 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin inline" /> Testing API key...
+                        </span>
+                      )}
+                      {testingStatus[`openai-${index}`] === 'success' && (
+                        <span className="text-green-600 flex items-center gap-1 font-medium">
+                          <Check className="w-3.5 h-3.5 inline" /> Valid Key!
+                        </span>
+                      )}
+                      {testingStatus[`openai-${index}`] === 'error' && (
+                        <span className="text-red-600 flex items-center gap-1 font-medium">
+                          <AlertTriangle className="w-3.5 h-3.5 inline text-red-500" /> {testFeedback[`openai-${index}`] || 'Invalid Key'}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -3158,23 +3230,53 @@ function AITab() {
           <div className="space-y-2">
             {geminiKeys.length === 0 ? (
               <p className="text-xs text-gray-400 italic">No Gemini keys configured. System will fall back to environment variables.</p>
-            ) : (
+) : (
               geminiKeys.map((key, index) => (
-                <div key={index} className="flex gap-2 items-center">
-                  <input
-                    type="password"
-                    value={key}
-                    onChange={(e) => handleKeyChange('gemini', index, e.target.value)}
-                    placeholder={`AIzaSy... (Gemini Key #${index + 1})`}
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveKey('gemini', index)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                <div key={index} className="space-y-1">
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="password"
+                      value={key}
+                      onChange={(e) => handleKeyChange('gemini', index, e.target.value)}
+                      placeholder={`AIzaSy... (Gemini Key #${index + 1})`}
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleTestKey('gemini', index, key)}
+                      disabled={testingStatus[`gemini-${index}`] === 'testing'}
+                      className="px-3 py-2 text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {testingStatus[`gemini-${index}`] === 'testing' && <Loader2 className="w-3 h-3 animate-spin" />}
+                      Test Key
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveKey('gemini', index)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  {testingStatus[`gemini-${index}`] && testingStatus[`gemini-${index}`] !== 'idle' && (
+                    <div className="text-xs pl-1">
+                      {testingStatus[`gemini-${index}`] === 'testing' && (
+                        <span className="text-gray-500 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin inline" /> Testing API key...
+                        </span>
+                      )}
+                      {testingStatus[`gemini-${index}`] === 'success' && (
+                        <span className="text-green-600 flex items-center gap-1 font-medium">
+                          <Check className="w-3.5 h-3.5 inline" /> Valid Key!
+                        </span>
+                      )}
+                      {testingStatus[`gemini-${index}`] === 'error' && (
+                        <span className="text-red-600 flex items-center gap-1 font-medium">
+                          <AlertTriangle className="w-3.5 h-3.5 inline text-red-500" /> {testFeedback[`gemini-${index}`] || 'Invalid Key'}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))
             )}
