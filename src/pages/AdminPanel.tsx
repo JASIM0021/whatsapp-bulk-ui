@@ -40,8 +40,9 @@ import {
   TrendingUp,
   DollarSign,
   LinkIcon,
-  Zap,
   Receipt,
+  Cpu,
+  Zap,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -73,7 +74,7 @@ interface AdminUser {
   };
 }
 
-type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers' | 'transactions';
+type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers' | 'transactions' | 'ai';
 
 interface Invoice {
   id: string;
@@ -2928,6 +2929,273 @@ function ServiceAvailabilityTab() {
   );
 }
 
+/* ─── AI Settings Tab ─── */
+function AITab() {
+  const [provider, setProvider] = useState<'openai' | 'gemini'>('openai');
+  const [openaiKeys, setOpenaiKeys] = useState<string[]>([]);
+  const [geminiKeys, setGeminiKeys] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch(API_ENDPOINTS.admin.aiConfig);
+        const data = await res.json();
+        if (data.success) {
+          setProvider(data.data.provider || 'openai');
+          setOpenaiKeys(data.data.openai_keys || []);
+          setGeminiKeys(data.data.gemini_keys || []);
+        } else {
+          setMessage({ type: 'error', text: data.message || 'Failed to load configuration' });
+        }
+      } catch (err: any) {
+        setMessage({ type: 'error', text: err.message || 'An error occurred while fetching AI settings' });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage(null);
+
+    // Clean keys: filter out empty strings
+    const cleanOpenai = openaiKeys.map(k => k.trim()).filter(Boolean);
+    const cleanGemini = geminiKeys.map(k => k.trim()).filter(Boolean);
+
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.aiConfig, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider,
+          openai_keys: cleanOpenai,
+          gemini_keys: cleanGemini,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage({ type: 'success', text: 'AI configuration updated successfully!' });
+        setOpenaiKeys(data.data.openai_keys || []);
+        setGeminiKeys(data.data.gemini_keys || []);
+      } else {
+        setMessage({ type: 'error', text: data.message || 'Failed to update configuration' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'An error occurred while saving AI settings' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddKey = (type: 'openai' | 'gemini') => {
+    if (type === 'openai') {
+      setOpenaiKeys([...openaiKeys, '']);
+    } else {
+      setGeminiKeys([...geminiKeys, '']);
+    }
+  };
+
+  const handleRemoveKey = (type: 'openai' | 'gemini', index: number) => {
+    if (type === 'openai') {
+      setOpenaiKeys(openaiKeys.filter((_, i) => i !== index));
+    } else {
+      setGeminiKeys(geminiKeys.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleKeyChange = (type: 'openai' | 'gemini', index: number, value: string) => {
+    if (type === 'openai') {
+      const updated = [...openaiKeys];
+      updated[index] = value;
+      setOpenaiKeys(updated);
+    } else {
+      const updated = [...geminiKeys];
+      updated[index] = value;
+      setGeminiKeys(updated);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 flex justify-center items-center">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <span className="ml-3 text-gray-500 font-medium">Loading AI configurations...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h2 className="text-lg font-bold text-gray-900">AI Service Adapter & Key Rotation Settings</h2>
+        <p className="text-xs text-gray-500">Configure provider fallback, rotation, and custom API keys</p>
+      </div>
+
+      <form onSubmit={handleSave} className="p-6 space-y-6">
+        {message && (
+          <div
+            className={`p-4 rounded-lg text-sm font-medium ${
+              message.type === 'success'
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+
+        {/* Adapter Selection */}
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700">Active AI Adapter</label>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setProvider('openai')}
+              className={`p-4 rounded-xl border-2 text-left transition-all ${
+                provider === 'openai'
+                  ? 'border-purple-600 bg-purple-50/50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-gray-900">OpenAI Adapter</span>
+                <input
+                  type="radio"
+                  checked={provider === 'openai'}
+                  onChange={() => setProvider('openai')}
+                  className="text-purple-600 focus:ring-purple-500"
+                />
+              </div>
+              <span className="text-xs text-gray-500 block">Uses GPT models (gpt-4o-mini). Rotates key list sequentially if quota is reached.</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setProvider('gemini')}
+              className={`p-4 rounded-xl border-2 text-left transition-all ${
+                provider === 'gemini'
+                  ? 'border-purple-600 bg-purple-50/50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-gray-900">Gemini Adapter</span>
+                <input
+                  type="radio"
+                  checked={provider === 'gemini'}
+                  onChange={() => setProvider('gemini')}
+                  className="text-purple-600 focus:ring-purple-500"
+                />
+              </div>
+              <span className="text-xs text-gray-500 block">Uses Google Gemini models (gemini-2.0-flash). Rotates key list sequentially if quota is reached.</span>
+            </button>
+          </div>
+        </div>
+
+        {/* OpenAI Keys List */}
+        <div className="space-y-3 pt-2 border-t border-gray-100">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800">OpenAI API Keys (Rotation Pool)</h3>
+              <p className="text-xs text-gray-500">Provide multiple keys. The system rotates to the next key if one is depleted.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleAddKey('openai')}
+              className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100/70 px-2.5 py-1.5 rounded-lg transition-colors"
+            >
+              + Add OpenAI Key
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {openaiKeys.length === 0 ? (
+              <p className="text-xs text-gray-400 italic">No OpenAI keys configured. System will fall back to environment variables.</p>
+            ) : (
+              openaiKeys.map((key, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <input
+                    type="password"
+                    value={key}
+                    onChange={(e) => handleKeyChange('openai', index, e.target.value)}
+                    placeholder={`sk-... (OpenAI Key #${index + 1})`}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveKey('openai', index)}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Gemini Keys List */}
+        <div className="space-y-3 pt-4 border-t border-gray-100">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800">Gemini API Keys (Rotation Pool)</h3>
+              <p className="text-xs text-gray-500">Provide multiple keys. The system rotates to the next key if one is depleted.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleAddKey('gemini')}
+              className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100/70 px-2.5 py-1.5 rounded-lg transition-colors"
+            >
+              + Add Gemini Key
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {geminiKeys.length === 0 ? (
+              <p className="text-xs text-gray-400 italic">No Gemini keys configured. System will fall back to environment variables.</p>
+            ) : (
+              geminiKeys.map((key, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <input
+                    type="password"
+                    value={key}
+                    onChange={(e) => handleKeyChange('gemini', index, e.target.value)}
+                    placeholder={`AIzaSy... (Gemini Key #${index + 1})`}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveKey('gemini', index)}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-gray-100 flex justify-end">
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-sm hover:shadow disabled:opacity-50"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Save Configuration
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 /* ─── Transactions / Purchase Logs Tab ─── */
 interface TransactionItem {
   id: string;
@@ -3142,6 +3410,7 @@ export function AdminPanel() {
     { id: 'deletions', label: 'Deletion Requests', icon: Trash2 },
     { id: 'services', label: 'Services', icon: AlertTriangle },
     { id: 'influencers', label: 'Influencers', icon: TrendingUp },
+    { id: 'ai', label: 'AI Settings', icon: Cpu },
   ];
 
   return (
@@ -3201,6 +3470,7 @@ export function AdminPanel() {
         {tab === 'deletions' && <DeletionRequestsTab />}
         {tab === 'services' && <ServiceAvailabilityTab />}
         {tab === 'influencers' && <InfluencersTab />}
+        {tab === 'ai' && <AITab />}
       </div>
     </div>
   );

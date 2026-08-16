@@ -87,6 +87,7 @@ export const API_ENDPOINTS = {
     promo: (id: string) => `${API_BASE_URL}/api/admin/promos/${id}`,
     serviceAvailability: `${API_BASE_URL}/api/admin/services/availability`,
     transactions: `${API_BASE_URL}/api/admin/transactions`,
+    aiConfig: `${API_BASE_URL}/api/admin/ai/config`,
   },
   services: {
     availability: `${API_BASE_URL}/api/services/availability`,
