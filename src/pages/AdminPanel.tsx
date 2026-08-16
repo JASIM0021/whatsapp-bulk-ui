@@ -3134,7 +3134,7 @@ function AITab() {
                   className="text-purple-600 focus:ring-purple-500"
                 />
               </div>
-              <span className="text-xs text-gray-500 block">Uses Google Gemini models (gemini-2.0-flash). Rotates key list sequentially if quota is reached.</span>
+              <span className="text-xs text-gray-500 block">Uses Google Gemini models (gemini-3.5-flash). Rotates key list sequentially if quota is reached.</span>
             </button>
           </div>
         </div>
