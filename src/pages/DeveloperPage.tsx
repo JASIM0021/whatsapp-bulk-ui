@@ -5,10 +5,10 @@ import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import {
   Key, MessageSquare, Mail, Cpu, Code2, Copy, Check,
   LayoutDashboard, ChevronLeft, Plus, Trash2, LogOut,
-  User, Shield, Globe, X, Terminal, Zap,
+  User, Shield, Globe, X, Terminal, Zap, Calendar as CalendarIcon, Sparkles, Video
 } from 'lucide-react';
 
-type Tab = 'overview' | 'keys' | 'whatsapp' | 'email' | 'mcp';
+type Tab = 'overview' | 'keys' | 'whatsapp' | 'email' | 'calendar' | 'mcp';
 
 interface APIKeyInfo {
   id: string;
@@ -45,6 +45,7 @@ export function DeveloperPage() {
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
   const [codeTab, setCodeTab] = useState<'curl' | 'js' | 'python'>('curl');
   const [emailCodeTab, setEmailCodeTab] = useState<'curl' | 'js' | 'python'>('curl');
+  const [calendarCodeTab, setCalendarCodeTab] = useState<'npm' | 'html' | 'rest' | 'webhooks'>('npm');
   const [mcpClient, setMcpClient] = useState<'opencode' | 'claudecode' | 'claude' | 'cursor' | 'generic'>('opencode');
 
   useEffect(() => {
@@ -68,72 +69,73 @@ export function DeveloperPage() {
       .finally(() => setAgentsLoading(false));
   }
 
-  async function revokeAgent(clientId: string) {
-    if (!confirm('Are you sure you want to disconnect this AI agent? It will lose access to your WhatsApp actions immediately.')) return;
-    setRevokingAgent(clientId);
-    try {
-      const res = await apiFetch(`/api/oauth/connected-agents/revoke?client_id=${encodeURIComponent(clientId)}`, {
-        method: 'DELETE',
-      });
-      const d = await res.json();
-      if (d.success) {
-        setConnectedAgents(prev => prev.filter(a => a.client_id !== clientId));
-      }
-    } finally {
-      setRevokingAgent(null);
-    }
-  }
-
-  async function createKey() {
+  function createKey(e?: React.FormEvent) {
+    if (e) e.preventDefault();
     if (!newKeyName.trim()) return;
     setCreatingKey(true);
-    try {
-      const res = await apiFetch(API_ENDPOINTS.apiKeys.create, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newKeyName.trim() }),
-      });
-      const d = await res.json();
-      if (d.success) {
-        setNewKeyFull(d.data.key);
-        setNewKeyName('');
-        loadKeys();
-      }
-    } finally {
-      setCreatingKey(false);
-    }
+    apiFetch(API_ENDPOINTS.apiKeys.create, {
+      method: 'POST',
+      body: JSON.stringify({ name: newKeyName.trim() }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          setNewKeyFull(d.data.key);
+          setNewKeyName('');
+          loadKeys();
+        }
+      })
+      .finally(() => setCreatingKey(false));
   }
 
-  async function revokeKey(id: string) {
+  function revokeKey(id: string) {
     setRevoking(id);
-    await apiFetch(API_ENDPOINTS.apiKeys.revoke(id), { method: 'DELETE' });
-    setApiKeys(prev => prev.filter(k => k.id !== id));
-    setRevoking(null);
-    setConfirmRevoke(null);
+    apiFetch(API_ENDPOINTS.apiKeys.revoke(id), { method: 'DELETE' })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          setConfirmRevoke(null);
+          loadKeys();
+        }
+      })
+      .finally(() => setRevoking(null));
+  }
+
+  function revokeAgent(clientId: string) {
+    if (!confirm('Are you sure you want to disconnect this AI agent? It will lose access to your WhatsApp actions immediately.')) return;
+    setRevokingAgent(clientId);
+    apiFetch(`/api/oauth/connected-agents/revoke?client_id=${encodeURIComponent(clientId)}`, { method: 'DELETE' })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          setConnectedAgents(prev => prev.filter(a => a.client_id !== clientId));
+        }
+      })
+      .finally(() => setRevokingAgent(null));
   }
 
   function copySnippet(id: string, text: string) {
-    navigator.clipboard.writeText(text);
-    setCopiedSnippet(id);
-    setTimeout(() => setCopiedSnippet(null), 2000);
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedSnippet(id);
+      setTimeout(() => setCopiedSnippet(null), 2000);
+    });
   }
 
   function CodeBlock({ id, code, language = 'bash' }: { id: string; code: string; language?: string }) {
+    const isCopied = copiedSnippet === id;
     return (
-      <div className="relative bg-gray-900 rounded-xl overflow-hidden border border-gray-700">
-        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700 bg-gray-800">
-          <span className="text-xs text-gray-400 font-mono">{language}</span>
+      <div className="relative rounded-xl overflow-hidden bg-gray-900 border border-gray-700 text-xs font-mono">
+        <div className="flex items-center justify-between px-4 py-2 bg-gray-800/70 border-b border-gray-700 text-gray-400">
+          <span className="uppercase text-[10px] tracking-wider font-semibold text-gray-400">{language}</span>
           <button
             onClick={() => copySnippet(id, code)}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
           >
-            {copiedSnippet === id ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
-            {copiedSnippet === id ? 'Copied!' : 'Copy'}
+            {isCopied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+            <span>{isCopied ? 'Copied!' : 'Copy'}</span>
           </button>
         </div>
-        <pre className="p-4 overflow-x-auto text-sm font-mono text-gray-300 leading-relaxed whitespace-pre">
-          <code>{code}</code>
-        </pre>
+        <pre className="p-4 text-green-400 overflow-x-auto leading-relaxed whitespace-pre">{code}</pre>
       </div>
     );
   }
@@ -168,6 +170,7 @@ export function DeveloperPage() {
     { id: 'keys', label: 'API Keys', icon: <Key size={16} /> },
     { id: 'whatsapp', label: 'WhatsApp API', icon: <MessageSquare size={16} /> },
     { id: 'email', label: 'Email API', icon: <Mail size={16} /> },
+    { id: 'calendar', label: 'Calendar SDK & API', icon: <CalendarIcon size={16} /> },
     { id: 'mcp', label: 'MCP Integration', icon: <Cpu size={16} /> },
   ];
 
@@ -331,10 +334,11 @@ curl -X POST https://nexbotix.online/api/mcp \\
           <p className="text-gray-500">Integrate NexBotix into your apps with our REST API, or connect AI agents via our WhatsApp MCP server.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
             { tab: 'whatsapp' as Tab, icon: <MessageSquare size={20} className="text-green-600" />, bg: 'bg-green-50 border-green-200 hover:border-green-400', title: 'WhatsApp API', desc: 'Send messages, bulk broadcast, and schedule via REST' },
             { tab: 'email' as Tab, icon: <Mail size={20} className="text-blue-600" />, bg: 'bg-blue-50 border-blue-200 hover:border-blue-400', title: 'Email API', desc: 'Trigger transactional or bulk email programmatically' },
+            { tab: 'calendar' as Tab, icon: <CalendarIcon size={20} className="text-teal-600" />, bg: 'bg-teal-50 border-teal-200 hover:border-teal-400', title: 'Calendar & Meetings', desc: 'nexbot-calendar NPM package, embed scripts, & REST API' },
             { tab: 'mcp' as Tab, icon: <Cpu size={20} className="text-violet-600" />, bg: 'bg-violet-50 border-violet-200 hover:border-violet-400', title: 'MCP Server', desc: 'Connect Claude Desktop, Cursor, or any AI agent' },
           ].map(card => (
             <button key={card.tab} onClick={() => setActiveTab(card.tab)}
@@ -906,11 +910,259 @@ Auth Header: X-API-Key: bsk_your_key`,
     );
   }
 
+  function renderCalendar() {
+    const npmInstall = `npm install nexbot-calendar
+# or
+pnpm add nexbot-calendar
+# or
+yarn add nexbot-calendar`;
+
+    const reactHookCode = `import React from 'react';
+import { useNexbotCalendar } from 'nexbot-calendar';
+
+export function BookingButton() {
+  const { openBookingModal } = useNexbotCalendar('https://nexbotix.online');
+
+  return (
+    <button
+      onClick={() =>
+        openBookingModal({
+          user: 'your-username',
+          event: '30min',
+          onBookingComplete: (booking) => {
+            console.log('Meeting confirmed:', booking);
+          },
+        })
+      }
+      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition"
+    >
+      Schedule 30-Min Call
+    </button>
+  );
+}`;
+
+    const reactInlineCode = `import React from 'react';
+import { NexbotCalendarInline } from 'nexbot-calendar';
+
+export function InlineBookingSection() {
+  return (
+    <div className="w-full max-w-4xl mx-auto my-8">
+      <NexbotCalendarInline
+        user="your-username"
+        event="30min"
+        height="740px"
+        borderRadius="16px"
+        onBookingComplete={(booking) => {
+          console.log('User booked meeting:', booking.id);
+        }}
+      />
+    </div>
+  );
+}`;
+
+    const htmlScriptCode = `<!-- Step 1: Include Nexbot Calendar Embed Script -->
+<script src="https://nexbotix.online/api/calendar/embed.js"></script>
+
+<!-- Step 2: Floating Button Widget -->
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    NexbotCalendar.initButton({
+      user: 'your-username',
+      event: '30min',
+      text: 'Schedule Meeting',
+      color: '#10B981'
+    });
+  });
+</script>
+
+<!-- OR Step 2 Alternate: Inline Container -->
+<div 
+  data-nexbot-user="your-username" 
+  data-nexbot-event="30min" 
+  data-nexbot-mode="inline" 
+  style="width: 100%; height: 720px;">
+</div>`;
+
+    const restGetSlotsCurl = `curl -X GET "https://nexbotix.online/api/calendar/public/your-username/30min/slots?date=2026-08-20&timezone=America/New_York"`;
+
+    const restBookCurl = `curl -X POST https://nexbotix.online/api/calendar/public/your-username/30min/book \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "inviteeName": "Sarah Connor",
+    "inviteeEmail": "sarah@example.com",
+    "inviteePhone": "+15551234567",
+    "inviteeNotes": "Product demo and technical discussion",
+    "startTime": "2026-08-20T14:00:00Z",
+    "timezone": "America/New_York",
+    "customAnswers": {
+      "company": "Cyberdyne Systems",
+      "team_size": "25-50"
+    }
+  }'`;
+
+    const webhookPayloadExample = `{
+  "event": "booking.created",
+  "timestamp": "2026-08-20T14:00:00Z",
+  "data": {
+    "id": "66c1e9a3b9...",
+    "eventTitle": "30 Minute Strategy Consultation",
+    "eventSlug": "30min",
+    "hostName": "Alex Rivera",
+    "hostEmail": "alex@company.com",
+    "inviteeName": "Sarah Connor",
+    "inviteeEmail": "sarah@example.com",
+    "inviteePhone": "+15551234567",
+    "startTime": "2026-08-20T14:00:00Z",
+    "endTime": "2026-08-20T14:30:00Z",
+    "timezone": "America/New_York",
+    "meetLink": "https://meet.google.com/abc-defg-hij",
+    "status": "confirmed",
+    "customAnswers": {
+      "company": "Cyberdyne Systems"
+    }
+  }
+}`;
+
+    return (
+      <div>
+        <div className="mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-100 border border-teal-200 mb-3">
+            <CalendarIcon size={14} className="text-teal-700" />
+            <span className="text-xs font-semibold text-teal-800">nexbot-calendar NPM + REST API</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Nexbot Calendar & Scheduling</h1>
+          <p className="text-gray-500">
+            Calendly-grade scheduling engine. Embed full booking flows into any website using our official npm package, lightweight script tag, or REST API.
+          </p>
+        </div>
+
+        {/* Feature Badges */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-3.5 flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-teal-50 text-teal-600"><Video size={18} /></div>
+            <div>
+              <p className="text-xs font-bold text-gray-900">Google Meet 2-Way Sync</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">Auto video room links & Free/Busy conflict detection</p>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-3.5 flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600"><Code2 size={18} /></div>
+            <div>
+              <p className="text-xs font-bold text-gray-900">Official NPM Package</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">Type-safe React hooks, inline containers, & popup buttons</p>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-3.5 flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600"><Sparkles size={18} /></div>
+            <div>
+              <p className="text-xs font-bold text-gray-900">Webhooks & Reminders</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">Real-time webhook notifications & rich HTML emails</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Sub-tabs */}
+        <div className="flex border-b border-gray-200 mb-6 overflow-x-auto gap-2">
+          {[
+            { id: 'npm' as const, label: 'NPM Package (React / Next.js)' },
+            { id: 'html' as const, label: 'HTML / Vanilla JS' },
+            { id: 'rest' as const, label: 'REST API' },
+            { id: 'webhooks' as const, label: 'Webhooks' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setCalendarCodeTab(tab.id)}
+              className={`pb-3 px-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
+                calendarCodeTab === tab.id
+                  ? 'border-teal-600 text-teal-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* TAB 1: NPM Package */}
+        {calendarCodeTab === 'npm' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-2">1. Installation</h3>
+              <CodeBlock id="cal-npm-install" language="bash" code={npmInstall} />
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-2">2. React Hook Usage (`useNexbotCalendar`)</h3>
+              <p className="text-xs text-gray-500 mb-2">Open responsive popup booking modals programmatically from any button:</p>
+              <CodeBlock id="cal-react-hook" language="tsx" code={reactHookCode} />
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-2">3. Drop-in Inline Calendar Component (`NexbotCalendarInline`)</h3>
+              <p className="text-xs text-gray-500 mb-2">Embed the entire interactive schedule right inside your page layout:</p>
+              <CodeBlock id="cal-react-inline" language="tsx" code={reactInlineCode} />
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: HTML / Vanilla JS */}
+        {calendarCodeTab === 'html' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-2">Zero-Dependency Embed Script</h3>
+              <p className="text-xs text-gray-500 mb-2">Works seamlessly on WordPress, Shopify, Webflow, Squarespace, or static HTML:</p>
+              <CodeBlock id="cal-html-script" language="html" code={htmlScriptCode} />
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: REST API */}
+        {calendarCodeTab === 'rest' && (
+          <div className="space-y-6">
+            <div>
+              <EndpointHeader method="GET" path="/api/calendar/public/:username/:slug/slots" description="Query open slots for a date" />
+              <p className="text-xs text-gray-500 mb-2">Calculates available time slots taking host working hours and Google Calendar conflicts into account:</p>
+              <CodeBlock id="cal-rest-slots" language="bash" code={restGetSlotsCurl} />
+            </div>
+
+            <div>
+              <EndpointHeader method="POST" path="/api/calendar/public/:username/:slug/book" description="Confirm meeting booking" />
+              <p className="text-xs text-gray-500 mb-2">Creates booking, locks slot against collisions, generates Google Meet link, and dispatches email confirmation invites:</p>
+              <CodeBlock id="cal-rest-book" language="bash" code={restBookCurl} />
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: Webhooks */}
+        {calendarCodeTab === 'webhooks' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-1">Supported Webhook Events</h3>
+              <ul className="text-xs text-gray-600 list-disc list-inside space-y-1 mb-4">
+                <li><code className="font-mono bg-gray-100 text-teal-700 px-1 rounded">booking.created</code> — Dispatched immediately after a client books a slot.</li>
+                <li><code className="font-mono bg-gray-100 text-red-700 px-1 rounded">booking.cancelled</code> — Dispatched when host or invitee cancels.</li>
+                <li><code className="font-mono bg-gray-100 text-amber-700 px-1 rounded">booking.rescheduled</code> — Dispatched when the meeting time is modified.</li>
+              </ul>
+
+              <h3 className="text-sm font-semibold text-gray-800 mb-2">Webhook JSON Payload Structure</h3>
+              <CodeBlock id="cal-webhook-json" language="json" code={webhookPayloadExample} />
+            </div>
+
+            <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 text-xs text-teal-900">
+              <strong>Security:</strong> All webhook requests include a header <code className="font-mono bg-teal-100 px-1 rounded">X-Nexbot-Signature</code> containing the HMAC-SHA256 hash of the request body signed with your webhook secret.
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const contentMap: Record<Tab, () => React.ReactNode> = {
     overview: renderOverview,
     keys: renderKeys,
     whatsapp: renderWhatsApp,
     email: renderEmail,
+    calendar: renderCalendar,
     mcp: renderMCP,
   };
 
