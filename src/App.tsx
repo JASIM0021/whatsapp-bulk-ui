@@ -11,7 +11,7 @@ import { parseFile } from '@/lib/fileParser';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
 import { Contact } from '@/types/contact';
-import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock, ChevronRight, MoreHorizontal, Mail, Globe, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Smartphone, Upload as UploadIcon, Trash2, LogOut, User, HelpCircle, Crown, Shield, BookUser, Users, CalendarClock, X, Bot, Lock, ChevronRight, MoreHorizontal, Mail, Globe, ArrowLeft, Calendar as CalendarIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TourGuide } from '@/components/TourGuide';
 import { ManualContactEntry } from '@/components/ManualContactEntry';
@@ -464,6 +464,16 @@ function App() {
                 </button>
               )}
 
+              {/* Calendar & Meetings */}
+              <button
+                onClick={() => navigate('/calendar')}
+                title="Nexbot Calendar & Meeting Booking"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-600 hover:text-teal-700 hover:bg-teal-50 transition-colors text-xs font-medium"
+              >
+                <CalendarIcon size={14} className="text-teal-600" />
+                <span>Calendar</span>
+              </button>
+
               {/* Icon-only utilities */}
               {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('chatbot') && (
                 <button onClick={() => navigate('/website-chatbot')} title="Website Chatbot"
@@ -865,6 +875,16 @@ function App() {
                         <div className="flex items-center gap-3">
                           <Globe size={18} className="text-green-500" />
                           <p className="text-sm font-medium text-gray-800">Website Chatbot</p>
+                        </div>
+                        <ChevronRight size={16} className="text-gray-400" />
+                      </button>
+                      <button
+                        onClick={() => navigate('/calendar')}
+                        className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <CalendarIcon size={18} className="text-teal-600" />
+                          <p className="text-sm font-medium text-gray-800">Meeting Calendar</p>
                         </div>
                         <ChevronRight size={16} className="text-gray-400" />
                       </button>
