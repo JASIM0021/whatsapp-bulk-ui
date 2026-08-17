@@ -264,6 +264,30 @@ export const API_ENDPOINTS = {
   oauth: {
     approve: `${API_BASE_URL}/api/oauth/approve`,
   },
+  // ── Nexbot Calendar & Booking ─────────────────────────────────────────────
+  calendar: {
+    oauthUrl: `${API_BASE_URL}/api/calendar/oauth-url`,
+    exchangeCode: `${API_BASE_URL}/api/calendar/exchange-code`,
+    status: `${API_BASE_URL}/api/calendar/status`,
+    disconnect: `${API_BASE_URL}/api/calendar/disconnect`,
+    eventTypes: `${API_BASE_URL}/api/calendar/event-types`,
+    eventType: (id: string) => `${API_BASE_URL}/api/calendar/event-types/${id}`,
+    availability: `${API_BASE_URL}/api/calendar/availability`,
+    branding: `${API_BASE_URL}/api/calendar/branding`,
+    bookings: `${API_BASE_URL}/api/calendar/bookings`,
+    cancelBooking: (id: string) => `${API_BASE_URL}/api/calendar/bookings/${id}/cancel`,
+    webhooks: `${API_BASE_URL}/api/calendar/webhooks`,
+    webhook: (id: string) => `${API_BASE_URL}/api/calendar/webhooks/${id}`,
+    // Public
+    publicEvent: (user: string, slug: string) => `${API_BASE_URL}/api/calendar/public/${user}/${slug}`,
+    publicSlots: (user: string, slug: string, date: string, tz?: string) =>
+      `${API_BASE_URL}/api/calendar/public/${user}/${slug}/slots?date=${date}${tz ? `&tz=${encodeURIComponent(tz)}` : ''}`,
+    publicBook: (user: string, slug: string) => `${API_BASE_URL}/api/calendar/public/${user}/${slug}/book`,
+    publicBookingDetails: (id: string) => `${API_BASE_URL}/api/calendar/public/booking/${id}`,
+    publicCancelBooking: (id: string) => `${API_BASE_URL}/api/calendar/public/booking/${id}/cancel`,
+    publicRescheduleBooking: (id: string) => `${API_BASE_URL}/api/calendar/public/booking/${id}/reschedule`,
+    embedScript: `${API_BASE_URL}/api/calendar/embed.js`,
+  },
 };
 
 /**

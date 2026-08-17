@@ -129,6 +129,18 @@ export function DashboardPage() {
       path: '/leads',
       dbId: 'leads',
     },
+    {
+      id: 'calendar',
+      title: 'Nexbot Calendar & Booking',
+      description: 'Calendly-grade scheduling with Google Meet 2-way sync, custom branding, and embed scripts.',
+      icon: <Sparkles size={32} className="text-teal-600" />,
+      bg: 'bg-teal-50',
+      border: 'border-teal-100',
+      hoverBorder: 'hover:border-teal-300',
+      iconBg: 'bg-teal-100',
+      path: '/calendar',
+      dbId: 'calendar',
+    },
   ];
 
   return (

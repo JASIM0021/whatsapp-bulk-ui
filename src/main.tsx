@@ -61,6 +61,9 @@ const DeveloperPage = lazy(() => import('./pages/DeveloperPage').then(m => ({ de
 const BlogPage = lazy(() => import('./pages/BlogPage'))
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage'))
 const MCPOAuthApprovePage = lazy(() => import('./pages/MCPOAuthApprovePage').then(m => ({ default: m.MCPOAuthApprovePage })))
+const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage').then(m => ({ default: m.CalendarPage })))
+const PublicBookingPage = lazy(() => import('./pages/calendar/PublicBookingPage').then(m => ({ default: m.PublicBookingPage })))
+const PublicEmbedPage = lazy(() => import('./pages/calendar/PublicEmbedPage').then(m => ({ default: m.PublicEmbedPage })))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -277,6 +280,15 @@ function AppRoutes() {
       <Route path="/developer" element={
         <ProtectedRoute><DeveloperPage /></ProtectedRoute>
       } />
+
+      {/* Nexbot Calendar & Booking platform */}
+      <Route path="/calendar" element={
+        <ProtectedRoute>
+          <CalendarPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/book/:username/:slug" element={<PublicBookingPage />} />
+      <Route path="/embed/:username/:slug" element={<PublicEmbedPage />} />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
