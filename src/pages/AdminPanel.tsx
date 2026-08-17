@@ -534,6 +534,8 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
               { id: 'linkedin_bot', label: 'LinkedIn AI Bot' },
               { id: 'seo',          label: 'SEO Manager' },
               { id: 'seo_bot',      label: 'SEO AI Bot' },
+              { id: 'leads',        label: 'Leads Manager' },
+              { id: 'calendar',     label: 'Nexbot Calendar' },
             ].map(({ id, label }) => {
               const active = grantedServices.has(id);
               return (
@@ -1264,6 +1266,8 @@ const ALL_SERVICES = [
   'linkedin_bot', // LinkedIn automation bot + AI images
   'seo',          // SEO dashboard / pages / vitals (basic)
   'seo_bot',      // SEO auto-fix bot + blog bot (premium)
+  'leads',        // Leads scraping & outreach
+  'calendar',     // Nexbot Calendar & scheduling
 ] as const;
 
 interface PlanFormState {
@@ -2819,6 +2823,8 @@ const SVC_LABELS: Record<string, { label: string; desc: string }> = {
   linkedin_bot: { label: 'LinkedIn AI Bot',  desc: 'Automated AI posting' },
   seo:          { label: 'SEO Manager',      desc: 'Audit & health tracking' },
   seo_bot:      { label: 'SEO AI Bot',       desc: 'AI blog & recommendations' },
+  leads:        { label: 'Leads Manager',    desc: 'Scrape & enrich maps leads' },
+  calendar:     { label: 'Nexbot Calendar',  desc: 'Calendly-grade scheduling & Meet sync' },
 };
 
 interface ServiceStatus {
