@@ -1,0 +1,62 @@
+{
+  "name": "@nexbotix/calendar",
+  "version": "1.0.0",
+  "description": "Official JavaScript & React SDK for Nexbot Calendar meeting scheduling",
+  "author": "Nexbotix",
+  "license": "MIT",
+  "keywords": [
+    "calendar",
+    "calendly",
+    "scheduling",
+    "meetings",
+    "booking",
+    "google-meet",
+    "react",
+    "nextjs",
+    "nexbot"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.mjs",
+      "require": "./dist/react.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts src/react.tsx --format cjs,esm --dts",
+    "dev": "tsup src/index.ts src/react.tsx --format cjs,esm --dts --watch",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.0"
+  }
+}
