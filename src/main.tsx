@@ -65,6 +65,11 @@ const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage').then(m =
 const PublicBookingPage = lazy(() => import('./pages/calendar/PublicBookingPage').then(m => ({ default: m.PublicBookingPage })))
 const PublicEmbedPage = lazy(() => import('./pages/calendar/PublicEmbedPage').then(m => ({ default: m.PublicEmbedPage })))
 
+function GmailCallbackRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/calendar${location.search}`} replace />;
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -198,6 +203,11 @@ function AppRoutes() {
           <AppProvider>
             <EmailPage />
           </AppProvider>
+        </ProtectedRoute>
+      } />
+      <Route path="/email/gmail/callback" element={
+        <ProtectedRoute>
+          <GmailCallbackRedirect />
         </ProtectedRoute>
       } />
       <Route path="/leads" element={

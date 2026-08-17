@@ -86,7 +86,35 @@ export function CalendarPage() {
   // Initial fetch
   useEffect(() => {
     fetchAllData();
+
+    // Check if returning from Google OAuth callback
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      handleOAuthCodeExchange(code);
+    }
   }, []);
+
+  const handleOAuthCodeExchange = async (code: string) => {
+    try {
+      showToast('Connecting Google Calendar...', 'success');
+      setActiveTab('google');
+      const res = await apiFetch(API_ENDPOINTS.calendar.exchangeCode, {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Google Calendar connected successfully!');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        fetchAllData();
+      } else {
+        showToast(data.error || 'Failed to connect Google Calendar', 'error');
+      }
+    } catch {
+      showToast('Error connecting Google Calendar', 'error');
+    }
+  };
 
   const fetchAllData = async () => {
     setLoading(true);
