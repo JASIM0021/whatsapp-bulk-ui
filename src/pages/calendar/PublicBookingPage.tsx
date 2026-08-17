@@ -256,18 +256,99 @@ export function PublicBookingPage() {
 
   const { host, event } = info;
   const brandColor = host.brandColor || '#10B981';
+  const isDark = host.themeMode === 'dark' || host.themeMode === 'midnight';
+  const isMidnight = host.themeMode === 'midnight';
+  const isMinimal = host.themeMode === 'minimal';
+
+  // Dynamic Geometry & Shape Tokens
+  const radiusMap: Record<string, string> = {
+    none: '0px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+    full: '40px',
+  };
+  const cardBorderRadius = radiusMap[host.cardRadius || 'xl'] || '24px';
+
+  const slotShapeClass =
+    host.slotShape === 'pill'
+      ? 'rounded-full'
+      : host.slotShape === 'square'
+      ? 'rounded-none'
+      : 'rounded-xl';
+
+  const shadowStyle =
+    host.cardShadow === 'glow'
+      ? `0 0 35px -5px ${brandColor}40`
+      : host.cardShadow === 'deep'
+      ? '0 25px 50px -12px rgba(0, 0, 0, 0.35)'
+      : host.cardShadow === 'none'
+      ? 'none'
+      : '0 10px 30px -5px rgba(0, 0, 0, 0.1)';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 py-6 sm:py-12 px-3 sm:px-6 flex items-center justify-center font-sans text-gray-800">
-      <div className="max-w-4xl w-full bg-white rounded-3xl shadow-2xl border border-gray-200/80 overflow-hidden flex flex-col md:flex-row">
+    <div
+      className={`min-h-screen py-6 sm:py-12 px-3 sm:px-6 flex items-center justify-center transition-colors duration-300 ${
+        isMidnight
+          ? 'bg-[#030712] text-gray-100'
+          : isDark
+          ? 'bg-[#0B0F17] text-gray-100'
+          : isMinimal
+          ? 'bg-zinc-50 text-zinc-900'
+          : 'bg-gradient-to-b from-gray-100 to-gray-200 text-gray-800'
+      }`}
+      style={{
+        fontFamily: host.fontFamily || 'Inter',
+        backgroundColor: host.backgroundColor || undefined,
+      }}
+    >
+      {/* Custom CSS Injection */}
+      {host.customCss && <style dangerouslySetInnerHTML={{ __html: host.customCss }} />}
+
+      <div
+        className={`max-w-4xl w-full border overflow-hidden flex flex-col md:flex-row transition-all duration-300 ${
+          isMidnight
+            ? 'bg-gray-950/90 border-gray-800/80'
+            : isDark
+            ? 'bg-gray-900 border-gray-800'
+            : isMinimal
+            ? 'bg-white border-zinc-200'
+            : 'bg-white border-gray-200/80'
+        }`}
+        style={{
+          borderRadius: cardBorderRadius,
+          boxShadow: shadowStyle,
+          backgroundColor: host.cardBackgroundColor || undefined,
+        }}
+      >
         {/* Left Column: Host Branding & Event Details */}
-        <div className="w-full md:w-[320px] lg:w-[360px] p-6 sm:p-8 bg-gray-50/80 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col justify-between">
+        <div
+          className={`w-full md:w-[320px] lg:w-[360px] p-6 sm:p-8 border-b md:border-b-0 md:border-r flex flex-col justify-between ${
+            isMidnight
+              ? 'bg-gray-950/50 border-gray-800'
+              : isDark
+              ? 'bg-gray-900/50 border-gray-800'
+              : isMinimal
+              ? 'bg-zinc-50/80 border-zinc-200'
+              : 'bg-gray-50/80 border-gray-200'
+          }`}
+        >
           <div>
+            {/* Optional Cover Banner */}
+            {host.coverImageUrl && (
+              <div className="-mx-6 -mt-6 sm:-mx-8 sm:-mt-8 mb-6 h-28 overflow-hidden">
+                <img src={host.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+              </div>
+            )}
+
             {step === 'form' && (
               <button
                 type="button"
                 onClick={() => setStep('pick-time')}
-                className="mb-4 text-xs font-semibold text-gray-600 hover:text-gray-900 flex items-center gap-1.5 transition"
+                className={`mb-4 text-xs font-semibold flex items-center gap-1.5 transition ${
+                  isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                }`}
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Calendar</span>
@@ -280,20 +361,22 @@ export function PublicBookingPage() {
                 <img src={host.avatarUrl} alt={host.displayName} className="w-12 h-12 rounded-full object-cover shadow" />
               ) : (
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm"
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0"
                   style={{ backgroundColor: brandColor }}
                 >
                   {host.displayName.charAt(0)}
                 </div>
               )}
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Host</p>
-                <h3 className="font-bold text-gray-900 text-base">{host.displayName}</h3>
+                <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
+                  {host.companyName || 'Host'}
+                </p>
+                <h3 className={`font-bold text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>{host.displayName}</h3>
               </div>
             </div>
 
             {/* Event Title */}
-            <h1 className="text-2xl font-black text-gray-900 mb-3 tracking-tight leading-tight">
+            <h1 className={`text-2xl font-black mb-3 tracking-tight leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
               {event.title}
             </h1>
 
@@ -362,28 +445,34 @@ export function PublicBookingPage() {
           {/* ── STEP 1: DATE & TIME SELECTOR ─────────────────────────────────── */}
           {step === 'pick-time' && (
             <div>
-              <h2 className="text-base font-bold text-gray-900 mb-4">Select a Date & Time</h2>
+              <h2 className={`text-base font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {host.welcomeHeadline || 'Select a Date & Time'}
+              </h2>
 
               <div className="flex flex-col lg:flex-row gap-8">
                 {/* Month Calendar */}
                 <div className="flex-1">
                   {/* Month Header */}
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold text-gray-800">
+                    <h3 className={`text-sm font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                       {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                     </h3>
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={prevMonth}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition"
+                        className={`p-1.5 rounded-lg transition ${
+                          isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                        }`}
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
                       <button
                         type="button"
                         onClick={nextMonth}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition"
+                        className={`p-1.5 rounded-lg transition ${
+                          isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                        }`}
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -423,13 +512,19 @@ export function PublicBookingPage() {
                               ? { backgroundColor: brandColor, color: '#ffffff' }
                               : undefined
                           }
-                          className={`h-10 rounded-xl text-xs font-bold transition flex items-center justify-center relative ${
+                          className={`h-10 text-xs font-bold transition flex items-center justify-center relative ${slotShapeClass} ${
                             isSelected
                               ? 'shadow-md shadow-emerald-500/20'
                               : isAvailable
-                              ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-extrabold ring-1 ring-emerald-300/60'
+                              ? isDark
+                                ? 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50 font-extrabold ring-1 ring-emerald-500/40'
+                                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-extrabold ring-1 ring-emerald-300/60'
                               : isDisabled
-                              ? 'text-gray-300 cursor-not-allowed'
+                              ? isDark
+                                ? 'text-gray-600 cursor-not-allowed'
+                                : 'text-gray-300 cursor-not-allowed'
+                              : isDark
+                              ? 'text-gray-400 hover:bg-gray-800'
                               : 'text-gray-700 hover:bg-gray-100'
                           }`}
                         >
@@ -450,7 +545,7 @@ export function PublicBookingPage() {
                 <div className="w-full lg:w-[220px]">
                   {selectedDate ? (
                     <div>
-                      <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">
+                      <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                         {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
                           weekday: 'short',
                           month: 'short',
@@ -460,11 +555,14 @@ export function PublicBookingPage() {
 
                       {slotsLoading ? (
                         <div className="py-8 flex flex-col items-center justify-center gap-2">
-                          <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                          <div
+                            className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"
+                            style={{ borderColor: brandColor, borderTopColor: 'transparent' }}
+                          />
                           <span className="text-xs text-gray-400">Finding open slots...</span>
                         </div>
                       ) : slots.length === 0 ? (
-                        <p className="text-xs text-gray-500 italic py-6">No slots available on this date.</p>
+                        <p className="text-xs text-gray-400 italic py-6">No slots available on this date.</p>
                       ) : (
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                           {slots.map((slot) => (
@@ -475,7 +573,14 @@ export function PublicBookingPage() {
                                 setSelectedSlot(slot);
                                 setStep('form');
                               }}
-                              className="w-full py-2.5 px-3 rounded-xl border border-emerald-500/30 hover:border-emerald-600 bg-white hover:bg-emerald-50 text-emerald-800 font-bold text-xs shadow-sm hover:shadow transition flex items-center justify-center gap-1 group"
+                              style={{
+                                borderColor: `${brandColor}40`,
+                              }}
+                              className={`w-full py-2.5 px-3 border font-bold text-xs shadow-sm transition flex items-center justify-center gap-1 group ${slotShapeClass} ${
+                                isDark
+                                  ? 'bg-gray-950 hover:bg-gray-800 text-gray-100 hover:border-emerald-500'
+                                  : 'bg-white hover:bg-emerald-50 text-gray-800 hover:text-emerald-900'
+                              }`}
                             >
                               <span>{slot.formatted}</span>
                             </button>
@@ -484,8 +589,12 @@ export function PublicBookingPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="h-full flex items-center justify-center text-center p-4 border border-dashed border-gray-200 rounded-2xl">
-                      <p className="text-xs text-gray-400">Select a date on the calendar to see open timeslots.</p>
+                    <div
+                      className={`h-full flex items-center justify-center text-center p-4 border border-dashed rounded-2xl ${
+                        isDark ? 'border-gray-800 text-gray-500' : 'border-gray-200 text-gray-400'
+                      }`}
+                    >
+                      <p className="text-xs">Select a date on the calendar to see open timeslots.</p>
                     </div>
                   )}
                 </div>
@@ -497,10 +606,10 @@ export function PublicBookingPage() {
           {step === 'form' && selectedSlot && (
             <div>
               <div className="mb-6">
-                <h2 className="text-base font-bold text-gray-900">Enter Details</h2>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <h2 className={`text-base font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Enter Details</h2>
+                <p className="text-xs text-gray-400 mt-0.5">
                   Scheduled for{' '}
-                  <strong className="text-emerald-700 font-bold">
+                  <strong className="font-bold" style={{ color: brandColor }}>
                     {new Date(selectedSlot.startTime).toLocaleString('en-US', {
                       weekday: 'short',
                       month: 'short',
@@ -515,7 +624,7 @@ export function PublicBookingPage() {
 
               <form onSubmit={handleBookingSubmit} className="space-y-4 max-w-lg">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Your Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -524,12 +633,16 @@ export function PublicBookingPage() {
                     value={inviteeName}
                     onChange={(e) => setInviteeName(e.target.value)}
                     required
-                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className={`w-full rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 border transition ${
+                      isDark
+                        ? 'bg-gray-950 border-gray-700 text-white focus:border-emerald-500'
+                        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-emerald-500'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Email Address <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -538,12 +651,16 @@ export function PublicBookingPage() {
                     value={inviteeEmail}
                     onChange={(e) => setInviteeEmail(e.target.value)}
                     required
-                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className={`w-full rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 border transition ${
+                      isDark
+                        ? 'bg-gray-950 border-gray-700 text-white focus:border-emerald-500'
+                        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-emerald-500'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Phone Number (Optional)
                   </label>
                   <input
@@ -551,12 +668,16 @@ export function PublicBookingPage() {
                     placeholder="+1 (555) 000-0000"
                     value={inviteePhone}
                     onChange={(e) => setInviteePhone(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className={`w-full rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 border transition ${
+                      isDark
+                        ? 'bg-gray-950 border-gray-700 text-white focus:border-emerald-500'
+                        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-emerald-500'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Additional Notes / Agenda
                   </label>
                   <textarea
@@ -564,14 +685,18 @@ export function PublicBookingPage() {
                     placeholder="Please share anything that will help prepare for our meeting..."
                     value={inviteeNotes}
                     onChange={(e) => setInviteeNotes(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className={`w-full rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 border transition ${
+                      isDark
+                        ? 'bg-gray-950 border-gray-700 text-white focus:border-emerald-500'
+                        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-emerald-500'
+                    }`}
                   />
                 </div>
 
                 {/* Custom Dynamic Questions */}
                 {event.customQuestions?.map((q) => (
                   <div key={q.id}>
-                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                    <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                       {q.label} {q.required && <span className="text-red-500">*</span>}
                     </label>
                     <input
@@ -580,7 +705,11 @@ export function PublicBookingPage() {
                       required={q.required}
                       value={customAnswers[q.id] || ''}
                       onChange={(e) => setCustomAnswers({ ...customAnswers, [q.id]: e.target.value })}
-                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className={`w-full rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 border transition ${
+                        isDark
+                          ? 'bg-gray-950 border-gray-700 text-white focus:border-emerald-500'
+                          : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-emerald-500'
+                      }`}
                     />
                   </div>
                 ))}
@@ -590,7 +719,7 @@ export function PublicBookingPage() {
                     type="submit"
                     disabled={submitting}
                     style={{ backgroundColor: brandColor }}
-                    className="w-full py-3 rounded-xl text-white font-bold text-sm shadow-lg hover:opacity-95 transition transform active:scale-98 disabled:opacity-50"
+                    className={`w-full py-3 text-white font-bold text-sm shadow-lg hover:opacity-95 transition transform active:scale-98 disabled:opacity-50 ${slotShapeClass}`}
                   >
                     {submitting ? 'Scheduling Meeting...' : 'Schedule Event'}
                   </button>
@@ -602,20 +731,33 @@ export function PublicBookingPage() {
           {/* ── STEP 3: CONFIRMATION SCREEN ─────────────────────────────────── */}
           {step === 'confirmed' && confirmedBooking && (
             <div className="text-center py-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <div
+                className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center shadow-lg"
+                style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
+              >
                 <CheckCircle2 className="w-10 h-10" />
               </div>
 
-              <h2 className="text-2xl font-black text-gray-900 mb-2">You are scheduled!</h2>
-              <p className="text-sm text-gray-600 max-w-md mx-auto mb-6">
-                A calendar invitation has been sent to your email address (<strong>{confirmedBooking.inviteeEmail}</strong>).
+              <h2 className={`text-2xl font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                You are scheduled!
+              </h2>
+              <p className={`text-sm max-w-md mx-auto mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                {host.confirmationMessage || (
+                  <>
+                    A calendar invitation has been sent to your email address (<strong>{confirmedBooking.inviteeEmail}</strong>).
+                  </>
+                )}
               </p>
 
-              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-left max-w-md mx-auto mb-6 space-y-3">
-                <h3 className="font-bold text-gray-900 text-base">{confirmedBooking.eventTitle}</h3>
+              <div
+                className={`border rounded-2xl p-6 text-left max-w-md mx-auto mb-6 space-y-3 ${
+                  isDark ? 'bg-gray-950 border-gray-800' : 'bg-gray-50 border-gray-200'
+                }`}
+              >
+                <h3 className={`font-bold text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>{confirmedBooking.eventTitle}</h3>
                 
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <CalendarIcon className="w-4 h-4 text-emerald-600" />
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <CalendarIcon className="w-4 h-4 text-emerald-500" />
                   <span className="font-semibold">
                     {new Date(confirmedBooking.startTime).toLocaleString('en-US', {
                       weekday: 'long',
@@ -630,13 +772,13 @@ export function PublicBookingPage() {
                 </div>
 
                 {confirmedBooking.meetLink && (
-                  <div className="pt-3 border-t border-gray-200">
-                    <p className="text-xs font-semibold text-gray-500 mb-1">Web conferencing details:</p>
+                  <div className={`pt-3 border-t ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <p className="text-xs font-semibold text-gray-400 mb-1">Web conferencing details:</p>
                     <a
                       href={confirmedBooking.meetLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 underline"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 underline"
                     >
                       <Video className="w-4 h-4" />
                       <span>{confirmedBooking.meetLink}</span>
@@ -651,7 +793,11 @@ export function PublicBookingPage() {
                   href={generateGoogleCalendarUrl(confirmedBooking)}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition"
+                  className={`w-full sm:w-auto px-4 py-2.5 rounded-xl border font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition ${
+                    isDark
+                      ? 'bg-gray-950 border-gray-800 hover:bg-gray-900 text-gray-200'
+                      : 'bg-white border-gray-300 hover:bg-gray-50 text-gray-800'
+                  }`}
                 >
                   <CalendarPlus className="w-4 h-4 text-red-500" />
                   <span>Google Calendar</span>
@@ -660,7 +806,11 @@ export function PublicBookingPage() {
                 <button
                   type="button"
                   onClick={() => downloadICS(confirmedBooking)}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition"
+                  className={`w-full sm:w-auto px-4 py-2.5 rounded-xl border font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition ${
+                    isDark
+                      ? 'bg-gray-950 border-gray-800 hover:bg-gray-900 text-gray-200'
+                      : 'bg-white border-gray-300 hover:bg-gray-50 text-gray-800'
+                  }`}
                 >
                   <CalendarPlus className="w-4 h-4 text-blue-500" />
                   <span>Download .ICS (Outlook/Apple)</span>

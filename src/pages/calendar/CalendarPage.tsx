@@ -15,7 +15,9 @@ import {
   XCircle,
   CalendarCheck,
   Layers,
-  Palette
+  Palette,
+  Save,
+  Eye
 } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import {
@@ -1024,162 +1026,530 @@ export function CalendarPage() {
               </div>
             )}
 
-            {/* ── TAB 5: BRANDING & CUSTOMIZATION ────────────────────────────── */}
+            {/* ── TAB 5: BRANDING & FULL DESIGN STUDIO ────────────────────────── */}
             {activeTab === 'branding' && branding && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left: Form */}
-                <div className="lg:col-span-7">
-                  <div className="mb-6">
-                    <h2 className="text-lg font-semibold text-white">Booking Page Branding</h2>
-                    <p className="text-sm text-gray-400">Customize how your public schedule and embed widgets look to visitors.</p>
+                {/* Left: Form Controls */}
+                <div className="lg:col-span-7 space-y-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <Palette className="w-5 h-5 text-emerald-400" />
+                      <span>Calendar Design Studio</span>
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Customize every visual aspect of your booking page and embedded widget — themes, colors, typography, card shapes, and custom CSS.
+                    </p>
                   </div>
 
-                  <form onSubmit={saveBranding} className="space-y-4 bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Username / URL Slug</label>
-                        <div className="flex items-center bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-400">
-                          <span>/book/</span>
+                  {/* Quick Theme Presets */}
+                  <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-5">
+                    <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-3">
+                      Theme Presets
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                      {[
+                        { name: 'Emerald Clean', brand: '#10B981', sec: '#059669', theme: 'light', font: 'Inter', radius: 'xl', shadow: 'medium' },
+                        { name: 'Linear Dark', brand: '#6366F1', sec: '#4F46E5', theme: 'dark', font: 'Plus Jakarta Sans', radius: 'xl', shadow: 'deep' },
+                        { name: 'Midnight Glow', brand: '#06B6D4', sec: '#0891B2', theme: 'midnight', font: 'Geist', radius: 'lg', shadow: 'glow' },
+                        { name: 'Sunset Warmth', brand: '#F43F5E', sec: '#E11D48', theme: 'light', font: 'Outfit', radius: 'xl', shadow: 'elevated' },
+                        { name: 'Ocean Blue', brand: '#2563EB', sec: '#1D4ED8', theme: 'light', font: 'Inter', radius: 'lg', shadow: 'subtle' },
+                        { name: 'Minimal Mono', brand: '#18181B', sec: '#27272A', theme: 'minimal', font: 'Plus Jakarta Sans', radius: 'sm', shadow: 'none' },
+                      ].map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() => {
+                            setBranding({
+                              ...branding,
+                              brandColor: preset.brand,
+                              secondaryColor: preset.sec,
+                              themeMode: preset.theme as any,
+                              fontFamily: preset.font as any,
+                              cardRadius: preset.radius as any,
+                              cardShadow: preset.shadow as any,
+                            });
+                          }}
+                          className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-800 hover:border-gray-700 bg-gray-950/60 transition text-left text-xs font-medium text-gray-300 hover:text-white"
+                        >
+                          <span
+                            className="w-4 h-4 rounded-full shrink-0 shadow-sm"
+                            style={{ backgroundColor: preset.brand }}
+                          />
+                          <span className="truncate">{preset.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <form onSubmit={saveBranding} className="space-y-6">
+                    {/* Section 1: Identity & URLs */}
+                    <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 space-y-4">
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">1. Identity & Handle</h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Username / URL Handle</label>
+                          <div className="flex items-center bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-400">
+                            <span>/book/</span>
+                            <input
+                              type="text"
+                              value={branding.username}
+                              onChange={(e) => setBranding({ ...branding, username: e.target.value })}
+                              className="bg-transparent text-white font-medium focus:outline-none w-full ml-1"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Display Name</label>
                           <input
                             type="text"
-                            value={branding.username}
-                            onChange={(e) => setBranding({ ...branding, username: e.target.value })}
-                            className="bg-transparent text-white font-medium focus:outline-none w-full ml-1"
+                            value={branding.displayName}
+                            onChange={(e) => setBranding({ ...branding, displayName: e.target.value })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
                             required
                           />
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Display Name</label>
-                        <input
-                          type="text"
-                          value={branding.displayName}
-                          onChange={(e) => setBranding({ ...branding, displayName: e.target.value })}
-                          className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Avatar / Profile Picture URL</label>
-                      <input
-                        type="url"
-                        placeholder="https://example.com/avatar.jpg"
-                        value={branding.avatarUrl}
-                        onChange={(e) => setBranding({ ...branding, avatarUrl: e.target.value })}
-                        className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Bio / Introduction</label>
-                      <textarea
-                        rows={2}
-                        value={branding.bio}
-                        onChange={(e) => setBranding({ ...branding, bio: e.target.value })}
-                        className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Brand Accent Color</label>
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="color"
-                            value={branding.brandColor || '#10B981'}
-                            onChange={(e) => setBranding({ ...branding, brandColor: e.target.value })}
-                            className="w-10 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
-                          />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Company / Organization</label>
                           <input
                             type="text"
-                            value={branding.brandColor}
-                            onChange={(e) => setBranding({ ...branding, brandColor: e.target.value })}
-                            className="flex-1 bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white font-mono uppercase"
+                            placeholder="Acme Inc."
+                            value={branding.companyName || ''}
+                            onChange={(e) => setBranding({ ...branding, companyName: e.target.value })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Avatar / Photo URL</label>
+                          <input
+                            type="url"
+                            placeholder="https://example.com/avatar.jpg"
+                            value={branding.avatarUrl || ''}
+                            onChange={(e) => setBranding({ ...branding, avatarUrl: e.target.value })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Theme Mode</label>
-                        <select
-                          value={branding.themeMode}
-                          onChange={(e) => setBranding({ ...branding, themeMode: e.target.value as any })}
+                        <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Bio / Subtitle</label>
+                        <textarea
+                          rows={2}
+                          placeholder="Select an open slot to schedule a one-on-one session."
+                          value={branding.bio || ''}
+                          onChange={(e) => setBranding({ ...branding, bio: e.target.value })}
                           className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                        >
-                          <option value="light">Light Theme</option>
-                          <option value="dark">Dark Theme</option>
-                          <option value="auto">Auto (Match Visitor OS)</option>
-                        </select>
+                        />
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Custom Welcome Headline</label>
-                      <input
-                        type="text"
-                        value={branding.welcomeHeadline}
-                        onChange={(e) => setBranding({ ...branding, welcomeHeadline: e.target.value })}
-                        className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    {/* Section 2: Colors & Theme Mode */}
+                    <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 space-y-4">
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">2. Colors & Theme Mode</h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Theme Mode</label>
+                          <select
+                            value={branding.themeMode || 'light'}
+                            onChange={(e) => setBranding({ ...branding, themeMode: e.target.value as any })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="light">Clean Light</option>
+                            <option value="dark">Pro Dark (Slate)</option>
+                            <option value="midnight">Deep Midnight (AMOLED)</option>
+                            <option value="minimal">Minimalist Monochrome</option>
+                            <option value="auto">Auto (Match OS)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Primary Accent</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={branding.brandColor || '#10B981'}
+                              onChange={(e) => setBranding({ ...branding, brandColor: e.target.value })}
+                              className="w-9 h-9 rounded-xl bg-transparent border-0 cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={branding.brandColor || '#10B981'}
+                              onChange={(e) => setBranding({ ...branding, brandColor: e.target.value })}
+                              className="flex-1 bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white font-mono uppercase"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Secondary Accent</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={branding.secondaryColor || '#059669'}
+                              onChange={(e) => setBranding({ ...branding, secondaryColor: e.target.value })}
+                              className="w-9 h-9 rounded-xl bg-transparent border-0 cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={branding.secondaryColor || '#059669'}
+                              onChange={(e) => setBranding({ ...branding, secondaryColor: e.target.value })}
+                              className="flex-1 bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white font-mono uppercase"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Page Background Color (Optional)</label>
+                          <input
+                            type="text"
+                            placeholder="Default (Auto) or #F8FAFC"
+                            value={branding.backgroundColor || ''}
+                            onChange={(e) => setBranding({ ...branding, backgroundColor: e.target.value })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Card Surface Color (Optional)</label>
+                          <input
+                            type="text"
+                            placeholder="Default (Auto) or #FFFFFF"
+                            value={branding.cardBackgroundColor || ''}
+                            onChange={(e) => setBranding({ ...branding, cardBackgroundColor: e.target.value })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 3: Typography & Geometry */}
+                    <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 space-y-4">
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">3. Typography & Shapes</h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Font Family</label>
+                          <select
+                            value={branding.fontFamily || 'Inter'}
+                            onChange={(e) => setBranding({ ...branding, fontFamily: e.target.value as any })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="Inter">Inter (Clean modern)</option>
+                            <option value="Plus Jakarta Sans">Plus Jakarta Sans (Tech/SaaS)</option>
+                            <option value="Outfit">Outfit (Geometric)</option>
+                            <option value="Poppins">Poppins (Friendly)</option>
+                            <option value="Geist">Geist (Modern Monospace)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Card Corner Radius</label>
+                          <select
+                            value={branding.cardRadius || 'xl'}
+                            onChange={(e) => setBranding({ ...branding, cardRadius: e.target.value as any })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="none">Square (0px)</option>
+                            <option value="sm">Subtle (8px)</option>
+                            <option value="md">Medium (16px)</option>
+                            <option value="lg">Rounded (24px)</option>
+                            <option value="xl">Extra Smooth (32px)</option>
+                            <option value="full">Pill / Ultra Rounded</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Time Slot Button Shape</label>
+                          <select
+                            value={branding.slotShape || 'rounded'}
+                            onChange={(e) => setBranding({ ...branding, slotShape: e.target.value as any })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="rounded">Rounded (10px)</option>
+                            <option value="pill">Pill (9999px)</option>
+                            <option value="square">Square (4px)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Card Shadow & Elevation</label>
+                          <select
+                            value={branding.cardShadow || 'medium'}
+                            onChange={(e) => setBranding({ ...branding, cardShadow: e.target.value as any })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="none">Flat (No Shadow)</option>
+                            <option value="subtle">Subtle Minimal</option>
+                            <option value="medium">Elevated Medium</option>
+                            <option value="deep">Deep Ambient Shadow</option>
+                            <option value="glow">Accent Color Glow</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Layout Mode</label>
+                          <select
+                            value={branding.layoutMode || 'side_by_side'}
+                            onChange={(e) => setBranding({ ...branding, layoutMode: e.target.value as any })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="side_by_side">Side-by-Side (Split Desktop)</option>
+                            <option value="compact">Compact Single-Card</option>
+                            <option value="banner">Header Banner View</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 4: Header Banners & White-labeling */}
+                    <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 space-y-4">
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">4. Banner & White-Labeling</h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Cover Banner Image URL</label>
+                          <input
+                            type="url"
+                            placeholder="https://example.com/banner.jpg"
+                            value={branding.coverImageUrl || ''}
+                            onChange={(e) => setBranding({ ...branding, coverImageUrl: e.target.value })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Custom Welcome Headline</label>
+                          <input
+                            type="text"
+                            placeholder="Select a Date & Time"
+                            value={branding.welcomeHeadline || ''}
+                            onChange={(e) => setBranding({ ...branding, welcomeHeadline: e.target.value })}
+                            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Custom Confirmation Message</label>
+                        <input
+                          type="text"
+                          placeholder="Your meeting has been scheduled! Check your email for details."
+                          value={branding.confirmationMessage || ''}
+                          onChange={(e) => setBranding({ ...branding, confirmationMessage: e.target.value })}
+                          className="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-800">
+                        <div>
+                          <p className="text-sm font-semibold text-white">Hide "Powered by Nexbotix"</p>
+                          <p className="text-xs text-gray-400">Remove Nexbotix branding from your booking page and embeds.</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={branding.hideNexbotBranding || false}
+                          onChange={(e) => setBranding({ ...branding, hideNexbotBranding: e.target.checked })}
+                          className="w-5 h-5 rounded border-gray-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-gray-900"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Section 5: Advanced Custom CSS */}
+                    <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 space-y-4">
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">5. Advanced Custom CSS</h3>
+                      <p className="text-xs text-gray-400">Inject custom CSS stylesheets to style embeds or override specific components.</p>
+                      <textarea
+                        rows={3}
+                        placeholder={`.nexbot-calendar-container { font-weight: 500; }`}
+                        value={branding.customCss || ''}
+                        onChange={(e) => setBranding({ ...branding, customCss: e.target.value })}
+                        className="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500"
                       />
                     </div>
 
-                    <div className="pt-4 border-t border-gray-800">
+                    <div className="pt-2">
                       <button
                         type="submit"
                         disabled={saveLoading}
-                        className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm transition shadow-lg"
+                        className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition shadow-xl hover:shadow-emerald-500/20 flex items-center justify-center gap-2"
                       >
-                        {saveLoading ? 'Saving...' : 'Save Branding Changes'}
+                        <Save className="w-4 h-4" />
+                        <span>{saveLoading ? 'Saving Changes...' : 'Save & Publish Design'}</span>
                       </button>
                     </div>
                   </form>
                 </div>
 
-                {/* Right: Live Preview Card */}
+                {/* Right: Live Interactive Visual Preview */}
                 <div className="lg:col-span-5">
-                  <div className="sticky top-28">
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                      Live Preview
-                    </label>
-                    <div className="bg-white text-gray-900 rounded-2xl p-6 shadow-2xl border border-gray-200">
-                      <div className="flex items-center gap-3 mb-4">
-                        {branding.avatarUrl ? (
-                          <img src={branding.avatarUrl} alt="Avatar" className="w-12 h-12 rounded-full object-cover shadow" />
-                        ) : (
-                          <div
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                            style={{ backgroundColor: branding.brandColor || '#10B981' }}
-                          >
-                            {branding.displayName.charAt(0) || 'U'}
-                          </div>
-                        )}
-                        <div>
-                          <h4 className="font-bold text-gray-900 text-base">{branding.displayName || 'Your Name'}</h4>
-                          <p className="text-xs text-gray-500">{branding.companyName || 'Nexbot Calendar Host'}</p>
+                  <div className="sticky top-24 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Eye className="w-4 h-4 text-emerald-400" />
+                        <span>Live Visual Preview</span>
+                      </label>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
+                        {branding.themeMode || 'light'}
+                      </span>
+                    </div>
+
+                    {/* Simulated Booking Card Preview */}
+                    <div
+                      className={`overflow-hidden transition-all duration-300 border ${
+                        branding.themeMode === 'dark' || branding.themeMode === 'midnight'
+                          ? 'bg-gray-900 text-white border-gray-800'
+                          : branding.themeMode === 'minimal'
+                          ? 'bg-white text-zinc-900 border-zinc-200'
+                          : 'bg-white text-gray-900 border-gray-200'
+                      }`}
+                      style={{
+                        borderRadius:
+                          branding.cardRadius === 'none'
+                            ? '0px'
+                            : branding.cardRadius === 'sm'
+                            ? '8px'
+                            : branding.cardRadius === 'md'
+                            ? '16px'
+                            : branding.cardRadius === 'lg'
+                            ? '24px'
+                            : branding.cardRadius === 'full'
+                            ? '36px'
+                            : '24px',
+                        fontFamily: branding.fontFamily || 'Inter',
+                        boxShadow:
+                          branding.cardShadow === 'glow'
+                            ? `0 0 30px -5px ${branding.brandColor || '#10B981'}40`
+                            : branding.cardShadow === 'deep'
+                            ? '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                            : branding.cardShadow === 'none'
+                            ? 'none'
+                            : '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                      }}
+                    >
+                      {/* Optional Cover Banner */}
+                      {branding.coverImageUrl && (
+                        <div className="h-24 w-full overflow-hidden">
+                          <img src={branding.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
                         </div>
+                      )}
+
+                      <div className="p-6">
+                        {/* Host Header */}
+                        <div className="flex items-center gap-3.5 mb-5">
+                          {branding.avatarUrl ? (
+                            <img src={branding.avatarUrl} alt="Avatar" className="w-12 h-12 rounded-full object-cover shadow" />
+                          ) : (
+                            <div
+                              className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0"
+                              style={{ backgroundColor: branding.brandColor || '#10B981' }}
+                            >
+                              {branding.displayName?.charAt(0) || 'U'}
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="font-bold text-base leading-tight">
+                              {branding.displayName || 'Your Name'}
+                            </h4>
+                            <p className="text-xs opacity-70 mt-0.5">
+                              {branding.companyName || 'Nexbot Calendar Host'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <p className="text-xs opacity-80 mb-5 leading-relaxed">
+                          {branding.bio || 'Schedule a meeting with me directly.'}
+                        </p>
+
+                        {/* Simulated Event Box */}
+                        <div
+                          className={`p-4 rounded-xl border mb-5 ${
+                            branding.themeMode === 'dark' || branding.themeMode === 'midnight'
+                              ? 'bg-gray-950/60 border-gray-800'
+                              : 'bg-gray-50 border-gray-100'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-bold text-sm">30m Strategy Call</h5>
+                            <span
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
+                              style={{ backgroundColor: branding.brandColor || '#10B981' }}
+                            >
+                              30 Min
+                            </span>
+                          </div>
+                          <p className="text-xs opacity-70">
+                            {branding.welcomeHeadline || 'Select a Date & Time'}
+                          </p>
+                        </div>
+
+                        {/* Simulated Slot Buttons */}
+                        <div className="space-y-2 mb-5">
+                          <p className="text-[11px] font-semibold opacity-60 uppercase tracking-wider">Available Slots</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {['09:00 AM', '11:30 AM', '02:00 PM', '04:30 PM'].map((slot, i) => (
+                              <button
+                                key={slot}
+                                type="button"
+                                style={{
+                                  borderRadius:
+                                    branding.slotShape === 'pill'
+                                      ? '9999px'
+                                      : branding.slotShape === 'square'
+                                      ? '4px'
+                                      : '10px',
+                                  borderColor: i === 1 ? branding.brandColor || '#10B981' : undefined,
+                                  backgroundColor: i === 1 ? `${branding.brandColor || '#10B981'}15` : undefined,
+                                  color: i === 1 ? branding.brandColor || '#10B981' : undefined,
+                                }}
+                                className={`py-2 text-xs font-semibold border transition text-center ${
+                                  i === 1
+                                    ? 'border-emerald-500 font-bold'
+                                    : branding.themeMode === 'dark' || branding.themeMode === 'midnight'
+                                    ? 'border-gray-800 hover:border-gray-700 text-gray-300'
+                                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                                }`}
+                              >
+                                {slot}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* CTA Button */}
+                        <button
+                          type="button"
+                          style={{
+                            backgroundColor: branding.brandColor || '#10B981',
+                            borderRadius:
+                              branding.slotShape === 'pill'
+                                ? '9999px'
+                                : branding.slotShape === 'square'
+                                ? '4px'
+                                : '12px',
+                          }}
+                          className="w-full py-2.5 text-white font-bold text-xs shadow-md transition"
+                        >
+                          Confirm Time Slot
+                        </button>
+
+                        {/* Footer */}
+                        {!branding.hideNexbotBranding && (
+                          <p className="text-[10px] text-center opacity-50 mt-4">
+                            Powered by Nexbotix Calendar
+                          </p>
+                        )}
                       </div>
-
-                      <p className="text-xs text-gray-600 mb-6 leading-relaxed">
-                        {branding.bio || 'Schedule a meeting with me directly.'}
-                      </p>
-
-                      <div className="border border-gray-100 rounded-xl p-4 bg-gray-50 mb-4">
-                        <h5 className="font-bold text-sm text-gray-900 mb-1">
-                          {branding.welcomeHeadline || 'Select a Date & Time'}
-                        </h5>
-                        <p className="text-xs text-gray-500">Pick an open slot on the calendar.</p>
-                      </div>
-
-                      <button
-                        type="button"
-                        style={{ backgroundColor: branding.brandColor || '#10B981' }}
-                        className="w-full py-2.5 rounded-xl text-white font-semibold text-xs shadow transition"
-                      >
-                        Confirm Booking Preview
-                      </button>
                     </div>
                   </div>
                 </div>
