@@ -1,5 +1,5 @@
 {
-  "name": "@nexbotix/calendar",
+  "name": "nexbot-calendar",
   "version": "1.0.0",
   "description": "Official JavaScript & React SDK for Nexbot Calendar meeting scheduling",
   "author": "Nexbotix",

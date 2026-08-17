@@ -1,4 +1,4 @@
-# @nexbotix/calendar
+# nexbot-calendar
 
 Official JavaScript & React SDK for [Nexbot Calendar](https://nexbotix.online) — Calendly-grade scheduling with 2-way Google Meet sync, embed widgets, and custom branding.
 
@@ -7,11 +7,11 @@ Official JavaScript & React SDK for [Nexbot Calendar](https://nexbotix.online) �
 ## 📦 Installation
 
 ```bash
-npm install @nexbotix/calendar
+npm install nexbot-calendar
 # or
-pnpm add @nexbotix/calendar
+pnpm add nexbot-calendar
 # or
-yarn add @nexbotix/calendar
+yarn add nexbot-calendar
 ```
 
 ---
@@ -22,7 +22,7 @@ yarn add @nexbotix/calendar
 
 ```tsx
 import React from 'react';
-import { useNexbotCalendar } from '@nexbotix/calendar';
+import { useNexbotCalendar } from 'nexbot-calendar';
 
 export function ScheduleButton() {
   const { openBookingModal } = useNexbotCalendar();
@@ -49,7 +49,7 @@ export function ScheduleButton() {
 
 #### Inline Calendar Widget
 ```tsx
-import { NexbotCalendarInline } from '@nexbotix/calendar';
+import { NexbotCalendarInline } from 'nexbot-calendar';
 
 export function BookingSection() {
   return (
@@ -67,7 +67,7 @@ export function BookingSection() {
 
 #### Popup Button
 ```tsx
-import { NexbotCalendarButton } from '@nexbotix/calendar';
+import { NexbotCalendarButton } from 'nexbot-calendar';
 
 export function Header() {
   return (
