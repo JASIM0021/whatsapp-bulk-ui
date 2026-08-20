@@ -415,63 +415,66 @@ export function LifeCompanionPage() {
       {/* ── Top Header Navigation & Permanent AI Progress Tracker ─────────────── */}
       <header className="sticky top-0 z-30 border-b border-purple-900/30 bg-slate-950/90 backdrop-blur-xl shadow-xl">
         <div className="h-1 w-full bg-gradient-to-r from-[#FF9933] via-[#FFFFFF] to-[#138808]" />
-        <div className="px-4 py-3 sm:px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="px-4 py-3 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => navigate('/app')}
-              className="p-2 rounded-xl bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-800 transition-colors"
+              className="p-2 rounded-xl bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-800 transition-colors shrink-0"
               title="Back to Dashboard"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25 shrink-0 hidden xs:block">
                 <Compass className="w-5 h-5 animate-spin-slow" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-base sm:text-lg font-bold text-white tracking-tight">AI Life Companion</h1>
-                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-sm">
-                    PRO GROWTH
-                  </span>
-                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-950/40 text-emerald-300 border border-emerald-500/30">
-                    🇮🇳 Made in India
-                  </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <h1 className="text-sm sm:text-base font-bold text-white tracking-tight truncate">AI Life Companion</h1>
+                  <div className="flex gap-1 items-center shrink-0">
+                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-sm">
+                      PRO
+                    </span>
+                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-emerald-950/40 text-emerald-300 border border-emerald-500/30">
+                      🇮🇳 India
+                    </span>
+                  </div>
                 </div>
-                <p className="text-[11px] text-purple-300/80">Life Understanding • Music Elevation • Earn Roadmaps</p>
+                <p className="text-[10px] sm:text-[11px] text-purple-300/80 truncate hidden xs:block">Life Guidance • Music • Roadmaps</p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 justify-end">
             <button
               onClick={() => setShowResetModal(true)}
-              className="p-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/40 border border-rose-500/30 text-rose-300 transition-all text-xs font-semibold flex items-center gap-1.5"
+              className="p-1.5 sm:p-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/40 border border-rose-500/30 text-rose-300 transition-all text-xs font-semibold flex items-center gap-1.5 shrink-0"
               title="Clear All Chats & Reset Progress"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Clear All Chats</span>
+              <span className="hidden md:inline">Clear All Chats</span>
             </button>
 
             {quote && (
               <button
                 onClick={replayIntro}
-                className="p-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/40 border border-purple-500/30 text-purple-300 transition-all text-xs font-semibold flex items-center gap-1.5"
+                className="p-1.5 sm:p-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/40 border border-purple-500/30 text-purple-300 transition-all text-xs font-semibold flex items-center gap-1.5 shrink-0"
                 title="Replay Motivational Quote Intro"
               >
                 <Play className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Replay Quote</span>
+                <span className="hidden md:inline">Replay Quote</span>
               </button>
             )}
 
             {session?.profile?.name && (
               <button
                 onClick={() => setShowProfileModal(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/40 border border-purple-500/30 text-xs text-purple-200 transition-all"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/40 border border-purple-500/30 text-xs text-purple-200 transition-all max-w-[120px] sm:max-w-none shrink-0"
+                title={`Profile: ${session.profile.name}`}
               >
-                <User className="w-3.5 h-3.5 text-purple-400" />
-                <span className="font-semibold">{session.profile.name}</span>
-                <span className="text-[10px] text-slate-400">({session.profile.gender})</span>
+                <User className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                <span className="font-semibold truncate max-w-[50px] sm:max-w-[100px]">{session.profile.name}</span>
+                <span className="text-[10px] text-slate-400 hidden sm:inline">({session.profile.gender})</span>
               </button>
             )}
           </div>
@@ -479,32 +482,32 @@ export function LifeCompanionPage() {
 
         {/* Permanent Sticky AI Progress Tracker Dashboard Strip */}
         <div className="border-t border-purple-900/30 bg-slate-900/90 px-4 py-2.5 sm:px-6">
-          <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div className="p-1 rounded-lg bg-purple-500/20 text-purple-400 border border-purple-500/30">
+          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className="p-1 rounded-lg bg-purple-500/20 text-purple-400 border border-purple-500/30 shrink-0">
                 <TrendingUp className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs font-extrabold text-purple-200 tracking-wide">
+              <span className="text-[11px] sm:text-xs font-extrabold text-purple-200 tracking-wide truncate">
                 {session?.milestone_name || `Milestone ${session?.current_milestone || 1}: Roadmap Execution`}
               </span>
-              <span className="text-xs text-slate-400 hidden sm:inline">•</span>
-              <span className="text-xs text-purple-300 font-semibold truncate max-w-[180px] sm:max-w-xs">
+              <span className="text-xs text-slate-400 hidden xs:inline">•</span>
+              <span className="text-[11px] sm:text-xs text-purple-300 font-semibold truncate max-w-[180px] sm:max-w-xs md:max-w-md">
                 {session?.current_task?.title ? `Task: ${session.current_task.title}` : 'Active Growth Track'}
               </span>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-              <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end shrink-0">
+              <span className="text-[10px] sm:text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                 {session?.completed_tasks_count || 0} / {session?.total_tasks_count || 5} Verified
               </span>
-              <div className="flex items-center gap-2 w-28 sm:w-36">
-                <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden p-0.5 border border-slate-800">
+              <div className="flex items-center gap-2 w-24 sm:w-32">
+                <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden p-0.5 border border-slate-800">
                   <div
                     className="bg-gradient-to-r from-purple-500 via-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-700 shadow-md shadow-emerald-500/30"
                     style={{ width: `${Math.max(session?.progress_percent || 0, 5)}%` }}
                   />
                 </div>
-                <span className="text-xs font-black text-purple-200 shrink-0">
+                <span className="text-[10px] sm:text-xs font-black text-purple-200 shrink-0">
                   {session?.progress_percent || 0}%
                 </span>
               </div>
