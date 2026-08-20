@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles, Search, Code2, Calendar as CalendarIcon } from 'lucide-react';
+import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles, Search, Code2, Calendar as CalendarIcon, Compass } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 
 function FacebookIcon({ size = 32 }: { size?: number }) {
@@ -140,6 +140,18 @@ export function DashboardPage() {
       iconBg: 'bg-teal-100',
       path: '/calendar',
       dbId: 'calendar',
+    },
+    {
+      id: 'life-companion',
+      title: 'AI Life & Growth Companion',
+      description: 'Understand emotions & sadness, elevate mood with music, generate earning roadmaps, and verify tasks via AI.',
+      icon: <Compass size={32} className="text-purple-600" />,
+      bg: 'bg-purple-50',
+      border: 'border-purple-100',
+      hoverBorder: 'hover:border-purple-300',
+      iconBg: 'bg-purple-100',
+      path: '/life-companion',
+      dbId: 'life_companion',
     },
   ];
 
@@ -293,7 +305,7 @@ export function DashboardPage() {
               <p className="text-sm text-gray-500">AI-powered automation for every channel</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-4">
             {[
               { id: 'whatsapp-bot', label: 'WhatsApp Bot',  icon: <Smartphone size={22} className="text-green-600" />,  bg: 'bg-green-50',  border: 'border-green-200',  hoverBorder: 'hover:border-green-400', service: 'whatsapp',  path: '/bot' },
               { id: 'chatbot',      label: 'Website Chatbot', icon: <Globe size={22} className="text-sky-600" />,      bg: 'bg-sky-50',    border: 'border-sky-200',    hoverBorder: 'hover:border-sky-400',   service: 'chatbot',   path: '/website-chatbot' },
@@ -301,6 +313,7 @@ export function DashboardPage() {
               { id: 'email-bot',   label: 'Email Bot',      icon: <Mail size={22} className="text-blue-600" />,       bg: 'bg-blue-50',   border: 'border-blue-200',   hoverBorder: 'hover:border-blue-400',  service: 'email',     path: '/email' },
               { id: 'seo-bot',     label: 'SEO Bot',        icon: <Search size={22} className="text-emerald-600" />,  bg: 'bg-emerald-50',border: 'border-emerald-200',hoverBorder: 'hover:border-emerald-400',service: 'seo',      path: '/seo' },
               { id: 'linkedin-bot',label: 'LinkedIn Bot',   icon: <LinkedInIcon size={22} />,                         bg: 'bg-indigo-50', border: 'border-indigo-200', hoverBorder: 'hover:border-indigo-400',service: 'linkedin',  path: '/linkedin' },
+              { id: 'life-companion-bot', label: 'AI Life Companion', icon: <Compass size={22} className="text-purple-600" />, bg: 'bg-purple-50', border: 'border-purple-200', hoverBorder: 'hover:border-purple-400', service: 'life_companion', path: '/life-companion' },
               { id: 'blog-bot',    label: 'Blog Bot',       icon: <Sparkles size={22} className="text-amber-500" />,  bg: 'bg-amber-50',  border: 'border-amber-200',  hoverBorder: 'hover:border-amber-400', service: null,        path: null },
             ].map((bot) => {
               const enabled = user?.subscription?.enabledServices ?? [];

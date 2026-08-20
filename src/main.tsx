@@ -64,6 +64,7 @@ const MCPOAuthApprovePage = lazy(() => import('./pages/MCPOAuthApprovePage').the
 const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage').then(m => ({ default: m.CalendarPage })))
 const PublicBookingPage = lazy(() => import('./pages/calendar/PublicBookingPage').then(m => ({ default: m.PublicBookingPage })))
 const PublicEmbedPage = lazy(() => import('./pages/calendar/PublicEmbedPage').then(m => ({ default: m.PublicEmbedPage })))
+const LifeCompanionPage = lazy(() => import('./pages/life_companion/LifeCompanionPage').then(m => ({ default: m.LifeCompanionPage })))
 
 function GmailCallbackRedirect() {
   const location = useLocation();
@@ -299,6 +300,15 @@ function AppRoutes() {
       } />
       <Route path="/book/:username/:slug" element={<PublicBookingPage />} />
       <Route path="/embed/:username/:slug" element={<PublicEmbedPage />} />
+
+      {/* AI Life Companion & Growth Accelerator */}
+      <Route path="/life-companion" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <LifeCompanionPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
