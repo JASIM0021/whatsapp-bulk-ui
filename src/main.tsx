@@ -46,7 +46,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ de
 const SessionsPage = lazy(() => import('./pages/SessionsPage').then(m => ({ default: m.SessionsPage })))
 const CheckChatbotPage = lazy(() => import('./pages/CheckChatbotPage').then(m => ({ default: m.CheckChatbotPage })))
 const ChatbotDemoPage = lazy(() => import('./pages/ChatbotDemoPage').then(m => ({ default: m.ChatbotDemoPage })))
-const BotOnboardingModal = lazy(() => import('./components/onboarding/BotOnboardingModal').then(m => ({ default: m.BotOnboardingModal })))
+// const BotOnboardingModal = lazy(() => import('./components/onboarding/BotOnboardingModal').then(m => ({ default: m.BotOnboardingModal })))
 const SetupPage = lazy(() => import('./pages/SetupPage').then(m => ({ default: m.SetupPage })))
 const DataDeletionPage = lazy(() => import('./pages/DataDeletionPage').then(m => ({ default: m.DataDeletionPage })))
 const FacebookPage = lazy(() => import('./pages/facebook/FacebookPage').then(m => ({ default: m.FacebookPage })))
@@ -144,7 +144,7 @@ function AppRoutes() {
   }, []);
   return (
     <Suspense fallback={<RouteSpinner />}>
-      <BotOnboardingModal />
+      {/* <BotOnboardingModal /> */}
       <SetupGuard />
       <Routes>
         {/* Public landing pages */}
