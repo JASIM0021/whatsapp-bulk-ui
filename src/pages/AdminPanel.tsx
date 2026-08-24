@@ -536,6 +536,7 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
               { id: 'seo_bot',      label: 'SEO AI Bot' },
               { id: 'leads',        label: 'Leads Manager' },
               { id: 'calendar',     label: 'Nexbot Calendar' },
+              { id: 'trading',      label: 'AI Trading Workspace' },
             ].map(({ id, label }) => {
               const active = grantedServices.has(id);
               return (
@@ -1268,6 +1269,7 @@ const ALL_SERVICES = [
   'seo_bot',      // SEO auto-fix bot + blog bot (premium)
   'leads',        // Leads scraping & outreach
   'calendar',     // Nexbot Calendar & scheduling
+  'trading',      // AI Trading Workspace
 ] as const;
 
 interface PlanFormState {
@@ -2825,6 +2827,7 @@ const SVC_LABELS: Record<string, { label: string; desc: string }> = {
   seo_bot:      { label: 'SEO AI Bot',       desc: 'AI blog & recommendations' },
   leads:        { label: 'Leads Manager',    desc: 'Scrape & enrich maps leads' },
   calendar:     { label: 'Nexbot Calendar',  desc: 'Calendly-grade scheduling & Meet sync' },
+  trading:      { label: 'AI Trading Workspace', desc: 'Secure E2EE algo trading' },
 };
 
 interface ServiceStatus {
