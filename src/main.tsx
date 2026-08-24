@@ -65,6 +65,8 @@ const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage').then(m =
 const PublicBookingPage = lazy(() => import('./pages/calendar/PublicBookingPage').then(m => ({ default: m.PublicBookingPage })))
 const PublicEmbedPage = lazy(() => import('./pages/calendar/PublicEmbedPage').then(m => ({ default: m.PublicEmbedPage })))
 const LifeCompanionPage = lazy(() => import('./pages/life_companion/LifeCompanionPage').then(m => ({ default: m.LifeCompanionPage })))
+const TradingWorkspacePage = lazy(() => import('./pages/trading/TradingWorkspacePage').then(m => ({ default: m.TradingWorkspacePage })))
+const FreelancerPage = lazy(() => import('./pages/freelancer/FreelancerPage').then(m => ({ default: m.FreelancerPage })))
 
 function GmailCallbackRedirect() {
   const location = useLocation();
@@ -306,6 +308,24 @@ function AppRoutes() {
         <ProtectedRoute>
           <AppProvider>
             <LifeCompanionPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+
+      {/* AI Trading Workspace */}
+      <Route path="/trading" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <TradingWorkspacePage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+
+      {/* Freelancer Automation Workspace */}
+      <Route path="/freelancer" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <FreelancerPage />
           </AppProvider>
         </ProtectedRoute>
       } />

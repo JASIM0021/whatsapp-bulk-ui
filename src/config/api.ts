@@ -295,6 +295,28 @@ export const API_ENDPOINTS = {
     verifyScreenshot: `${API_BASE_URL}/api/life-companion/verify-screenshot`,
     reset: `${API_BASE_URL}/api/life-companion/reset`,
   },
+  trading: {
+    authUrl: `${API_BASE_URL}/api/trading/broker/auth-url`,
+    callback: `${API_BASE_URL}/api/trading/broker/callback`,
+    saveEncrypted: `${API_BASE_URL}/api/trading/broker/save-encrypted`,
+    status: `${API_BASE_URL}/api/trading/broker/status`,
+    strategies: `${API_BASE_URL}/api/trading/strategies`,
+    strategy: (id: string) => `${API_BASE_URL}/api/trading/strategies/${id}`,
+    backtest: `${API_BASE_URL}/api/trading/backtest`,
+    botStart: `${API_BASE_URL}/api/trading/bot/start`,
+    botStop: `${API_BASE_URL}/api/trading/bot/stop`,
+    signals: `${API_BASE_URL}/api/trading/bot/signals`,
+    signalAction: `${API_BASE_URL}/api/trading/bot/signal-action`,
+  },
+  freelancer: {
+    credentials: `${API_BASE_URL}/api/freelancer/credentials`,
+    status:      `${API_BASE_URL}/api/freelancer/status`,
+    disconnect:  `${API_BASE_URL}/api/freelancer/disconnect`,
+    botConfig:   `${API_BASE_URL}/api/freelancer/bot/config`,
+    botRun:      `${API_BASE_URL}/api/freelancer/bot/run`,
+    botPending:  `${API_BASE_URL}/api/freelancer/bot/pending`,
+    botHistory:  `${API_BASE_URL}/api/freelancer/bot/history`,
+  },
 };
 
 /**

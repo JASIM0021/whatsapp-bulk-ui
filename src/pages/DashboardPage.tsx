@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles, Search, Code2, Calendar as CalendarIcon, Compass } from 'lucide-react';
+import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles, Search, Code2, Calendar as CalendarIcon, Compass, TrendingUp } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 
 function FacebookIcon({ size = 32 }: { size?: number }) {
@@ -153,6 +153,18 @@ export function DashboardPage() {
       path: '/life-companion',
       dbId: 'life_companion',
     },
+    {
+      id: 'freelancer',
+      title: 'Freelancer Auto-Bidder',
+      description: 'Automate project discovery and generate tailored winning AI proposals for Freelancer.com.',
+      icon: <Code2 size={32} className="text-violet-600" />,
+      bg: 'bg-violet-50',
+      border: 'border-violet-100',
+      hoverBorder: 'hover:border-violet-300',
+      iconBg: 'bg-violet-100',
+      path: '/freelancer',
+      dbId: 'freelancer',
+    },
   ];
 
   return (
@@ -268,6 +280,11 @@ export function DashboardPage() {
                           👥 {stats.leads.scrapedCount} MAPS LEADS
                         </span>
                       )}
+                      {service.id === 'freelancer' && (
+                        <span className="text-[11px] font-bold text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-md">
+                          {stats.freelancer?.isConnected ? '🟢 CONNECTED' : '🔴 DISCONNECTED'} • {stats.freelancer?.totalBids || 0} BIDS
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -314,6 +331,8 @@ export function DashboardPage() {
               { id: 'seo-bot',     label: 'SEO Bot',        icon: <Search size={22} className="text-emerald-600" />,  bg: 'bg-emerald-50',border: 'border-emerald-200',hoverBorder: 'hover:border-emerald-400',service: 'seo',      path: '/seo' },
               { id: 'linkedin-bot',label: 'LinkedIn Bot',   icon: <LinkedInIcon size={22} />,                         bg: 'bg-indigo-50', border: 'border-indigo-200', hoverBorder: 'hover:border-indigo-400',service: 'linkedin',  path: '/linkedin' },
               { id: 'life-companion-bot', label: 'AI Life Companion', icon: <Compass size={22} className="text-purple-600" />, bg: 'bg-purple-50', border: 'border-purple-200', hoverBorder: 'hover:border-purple-400', service: 'life_companion', path: '/life-companion' },
+              { id: 'trading-bot', label: 'AI Trading', icon: <TrendingUp size={22} className="text-orange-600" />, bg: 'bg-orange-50', border: 'border-orange-200', hoverBorder: 'hover:border-orange-400', service: 'trading', path: '/trading' },
+              { id: 'freelancer-bot', label: 'Freelancer Bot', icon: <Code2 size={22} className="text-violet-600" />, bg: 'bg-violet-50', border: 'border-violet-200', hoverBorder: 'hover:border-violet-400', service: 'freelancer', path: '/freelancer' },
               { id: 'blog-bot',    label: 'Blog Bot',       icon: <Sparkles size={22} className="text-amber-500" />,  bg: 'bg-amber-50',  border: 'border-amber-200',  hoverBorder: 'hover:border-amber-400', service: null,        path: null },
             ].map((bot) => {
               const enabled = user?.subscription?.enabledServices ?? [];
