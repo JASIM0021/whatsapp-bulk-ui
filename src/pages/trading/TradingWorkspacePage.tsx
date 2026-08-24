@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
-import { encryptToken } from './crypto';
+import { encryptToken, decryptToken } from './crypto';
 import { 
   TrendingUp, Shield, Key, Bot, Play, Square, FileText, 
-  Lock, RefreshCw, Code, ChevronRight
+  Lock, RefreshCw, Code, ChevronRight, AlertTriangle
 } from 'lucide-react';
 
 interface Strategy {
@@ -45,12 +45,16 @@ export function TradingWorkspacePage() {
   // Broker credentials status
   const [isConfigured, setIsConfigured] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [apiKeyVal, setApiKeyVal] = useState('');
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   
   // Custom BYO Key config fields
-  const [manualToken, setManualToken] = useState('');
+  const [inputApiKey, setInputApiKey] = useState('');
+  const [inputApiSecret, setInputApiSecret] = useState('');
+  const [manualAccessToken, setManualAccessToken] = useState('');
+  
   const [saveLoading, setSaveLoading] = useState(false);
-  const [authUrlLoading, setAuthUrlLoading] = useState(false);
+  const [exchangeLoading, setExchangeLoading] = useState(false);
 
   // Strategy list & form
   const [strategies, setStrategies] = useState<Strategy[]>([]);
@@ -84,6 +88,7 @@ export function TradingWorkspacePage() {
   useEffect(() => {
     fetchBrokerStatus();
     fetchStrategies();
+    detectAndProcessRedirectToken();
   }, []);
 
   // Fetch broker status
@@ -94,6 +99,7 @@ export function TradingWorkspacePage() {
       if (data.success) {
         setIsConfigured(data.is_configured);
         setIsConnected(data.is_connected);
+        if (data.api_key) setApiKeyVal(data.api_key);
         if (data.updated_at) {
           setUpdatedAt(new Date(data.updated_at).toLocaleString());
         }
@@ -116,6 +122,90 @@ export function TradingWorkspacePage() {
       }
     } catch (err) {
       console.error('Failed to fetch strategies:', err);
+    }
+  };
+
+  // Auto-detect request_token from callback redirect URL
+  const detectAndProcessRedirectToken = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const requestToken = params.get('request_token');
+    if (!requestToken) return;
+
+    // Clear url parameters cleanly
+    window.history.replaceState({}, document.title, window.location.pathname);
+    
+    // Switch to broker tab to show status
+    setActiveTab('broker');
+    setExchangeLoading(true);
+
+    // Prompt user to enter their PIN to unlock their stored API Secret
+    const userPin = prompt("Enter your 6-digit Trading PIN to complete Zerodha authorization:");
+    if (!userPin) {
+      alert("PIN is required to decrypt API Secret and exchange token securely.");
+      setExchangeLoading(false);
+      return;
+    }
+
+    try {
+      // 1. Get the E2E encrypted secret details from server
+      const resDetail = await apiFetch(`${API_ENDPOINTS.trading.status}/detail`);
+      const dataDetail = await resDetail.json();
+      if (!dataDetail.success) {
+        throw new Error(dataDetail.detail || "Credentials details not found");
+      }
+
+      // 2. Decrypt the API Secret client-side
+      const decryptedSecret = await decryptToken(
+        dataDetail.encrypted_api_secret,
+        userPin,
+        dataDetail.encryption_salt,
+        dataDetail.iv
+      );
+
+      // 3. Exchange request token using the decrypted credentials via server proxy
+      const resEx = await apiFetch(API_ENDPOINTS.trading.callback, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: dataDetail.api_key,
+          api_secret: decryptedSecret,
+          request_token: requestToken
+        })
+      });
+      const dataEx = await resEx.json();
+      if (!dataEx.success) {
+        throw new Error(dataEx.detail || "Failed to exchange token with Zerodha");
+      }
+
+      // 4. Encrypt the returned access_token client-side using user PIN
+      const encryptedAccess = await encryptToken(dataEx.access_token, userPin);
+      const encryptedSecret = await encryptToken(decryptedSecret, userPin);
+
+      // 5. Save everything back to DB
+      const resSave = await apiFetch(API_ENDPOINTS.trading.saveEncrypted, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: dataDetail.api_key,
+          encrypted_api_secret: encryptedSecret.ciphertext,
+          encrypted_access_token: encryptedAccess.ciphertext,
+          encrypted_public_token: encryptedAccess.ciphertext,
+          encryption_salt: encryptedAccess.salt,
+          iv: encryptedAccess.iv
+        })
+      });
+      
+      const dataSave = await resSave.json();
+      if (dataSave.success) {
+        setIsPinAuthorized(true);
+        setPin(userPin);
+        alert("Zerodha account authorized and daily session established securely!");
+        fetchBrokerStatus();
+      }
+    } catch (err: any) {
+      alert(`Authorization failed: ${err.message}`);
+    } finally {
+      setExchangeLoading(false);
     }
   };
 
@@ -151,56 +241,92 @@ export function TradingWorkspacePage() {
     setPinError('');
   };
 
-  // 3. Save Encrypted Token
-  const handleSaveEncryptedToken = async (e: React.FormEvent) => {
+  // 3. Save Developer Config
+  const handleSaveCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualToken) return;
+    if (!inputApiKey || !inputApiSecret) return;
     setSaveLoading(true);
     try {
-      // Encrypt the token using user PIN
-      const encrypted = await encryptToken(manualToken, pin);
+      // Encrypt the API Secret locally
+      const encryptedSecret = await encryptToken(inputApiSecret, pin);
+      
+      // Encrypt dummy or empty access_token initially
+      const encryptedAccess = await encryptToken(manualAccessToken || "empty_init_token", pin);
       
       const res = await apiFetch(API_ENDPOINTS.trading.saveEncrypted, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          encrypted_access_token: encrypted.ciphertext,
-          encrypted_public_token: encrypted.ciphertext, // reuse for public_token placeholder
-          encryption_salt: encrypted.salt,
-          iv: encrypted.iv
+          api_key: inputApiKey,
+          encrypted_api_secret: encryptedSecret.ciphertext,
+          encrypted_access_token: encryptedAccess.ciphertext,
+          encrypted_public_token: encryptedAccess.ciphertext,
+          encryption_salt: encryptedSecret.salt,
+          iv: encryptedSecret.iv
         })
       });
       const data = await res.json();
       if (data.success) {
         setIsConfigured(true);
-        setManualToken('');
-        alert('Credentials stored and E2E encrypted successfully!');
+        setInputApiKey('');
+        setInputApiSecret('');
+        setManualAccessToken('');
+        alert('BYO-Key configuration saved and E2E encrypted successfully!');
         fetchBrokerStatus();
       }
     } catch (err: any) {
-      alert(`Encryption / Save failed: ${err.message}`);
+      alert(`Configuration save failed: ${err.message}`);
     } finally {
       setSaveLoading(false);
     }
   };
 
-  // Shared App OAuth Flow
-  const handleStartOAuth = async () => {
-    setAuthUrlLoading(true);
+  const handleSaveEncryptedToken = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualAccessToken) return;
+    setSaveLoading(true);
     try {
-      const res = await apiFetch(API_ENDPOINTS.trading.authUrl);
+      const resDetail = await apiFetch(`${API_ENDPOINTS.trading.status}/detail`);
+      const dataDetail = await resDetail.json();
+      
+      const apiKey = dataDetail.success ? dataDetail.api_key : "byo_api_key";
+      const encSecret = dataDetail.success ? dataDetail.encrypted_api_secret : "";
+      
+      const encryptedAccess = await encryptToken(manualAccessToken, pin);
+      
+      const res = await apiFetch(API_ENDPOINTS.trading.saveEncrypted, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: apiKey,
+          encrypted_api_secret: encSecret,
+          encrypted_access_token: encryptedAccess.ciphertext,
+          encrypted_public_token: encryptedAccess.ciphertext,
+          encryption_salt: encryptedAccess.salt,
+          iv: encryptedAccess.iv
+        })
+      });
       const data = await res.json();
-      if (data.success && data.login_url) {
-        // Direct the user to Zerodha's official page
-        window.open(data.login_url, '_blank');
-      } else {
-        alert(data.detail || 'Failed to generate Kite Auth URL');
+      if (data.success) {
+        setManualAccessToken('');
+        alert('Manual access token E2E encrypted and saved successfully!');
+        fetchBrokerStatus();
       }
-    } catch (err) {
-      alert('OAuth initialization failed');
+    } catch (err: any) {
+      alert(`Manual save failed: ${err.message}`);
     } finally {
-      setAuthUrlLoading(false);
+      setSaveLoading(false);
     }
+  };
+
+  // Generate Authorize URL using user's stored config
+  const handleStartOAuth = () => {
+    if (!apiKeyVal) {
+      alert("Please configure your API Key first.");
+      return;
+    }
+    const loginUrl = `https://kite.zerodha.com/connect/login?api_key=${apiKeyVal}&v=3`;
+    window.open(loginUrl, '_self');
   };
 
   // 4. Create Strategy
@@ -261,17 +387,22 @@ export function TradingWorkspacePage() {
     if (!selectedStrategyId) return;
     setBotLoading(true);
     try {
-      // 1. Get the stored encrypted credentials
-      const resStatus = await apiFetch(API_ENDPOINTS.trading.status);
-      const dataStatus = await resStatus.json();
-      if (!dataStatus.is_configured) {
-        alert('Broker credentials are not configured! Go to the Broker tab first.');
+      // 1. Get E2E encrypted token details
+      const resDetail = await apiFetch(`${API_ENDPOINTS.trading.status}/detail`);
+      const dataDetail = await resDetail.json();
+      if (!dataDetail.success) {
+        alert('Broker credentials are not configured! Connect your broker first.');
         setBotLoading(false);
         return;
       }
       
-      // Let's assume we pass the decrypted token directly for session authentication
-      const decryptedToken = manualToken || "mock_active_kite_session_token_key"; // fallback for mockup test
+      // 2. Decrypt access_token locally in browser
+      const decryptedToken = await decryptToken(
+        dataDetail.encrypted_api_secret, // Use secret/token mapping
+        pin,
+        dataDetail.encryption_salt,
+        dataDetail.iv
+      );
       
       const res = await apiFetch(API_ENDPOINTS.trading.botStart, {
         method: 'POST',
@@ -289,7 +420,7 @@ export function TradingWorkspacePage() {
         fetchBrokerStatus();
       }
     } catch (err) {
-      alert('Failed to start algo bot');
+      alert('Failed to start algo bot. Make sure your PIN is correct and daily session is active.');
     } finally {
       setBotLoading(false);
     }
@@ -318,7 +449,6 @@ export function TradingWorkspacePage() {
       const data = await res.json();
       if (data.success) {
         alert(data.message);
-        // Refresh signals list
         setPendingSignals(prev => prev.filter(s => s.token !== token));
       } else {
         alert(data.error);
@@ -454,8 +584,8 @@ export function TradingWorkspacePage() {
           {activeTab === 'broker' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-white mb-1">Connect Zerodha Broker</h2>
-                <p className="text-sm text-gray-400">Configure your connection parameters securely. Plaintext secrets are encrypted in your browser.</p>
+                <h2 className="text-xl font-bold text-white mb-1">Zerodha Broker Setup (BYO-Key)</h2>
+                <p className="text-sm text-gray-400">Configure your connection parameters securely. Secrets are encrypted locally inside your browser.</p>
               </div>
 
               {/* Secure E2EE Notice banner */}
@@ -469,51 +599,117 @@ export function TradingWorkspacePage() {
                 </div>
               </div>
 
-              {/* Connection Wizard */}
+              {/* Developer Configuration instructions */}
+              <div className="bg-gray-950 border border-gray-800 p-5 rounded-2xl space-y-3 text-xs">
+                <h3 className="font-semibold text-white text-sm flex items-center gap-1.5">
+                  <AlertTriangle className="text-amber-500 animate-pulse" size={16} />
+                  Kite Developer App Configuration Guide
+                </h3>
+                <p className="text-gray-400">
+                  To connect your account, you must register a developer app on Zerodha:
+                </p>
+                <ol className="list-decimal pl-5 space-y-1 text-gray-450">
+                  <li>Visit Zerodha Developer Portal: <a href="https://kite.trade" target="_blank" rel="noreferrer" className="text-orange-500 underline">kite.trade</a></li>
+                  <li>Create a new developer app under your account dashboard.</li>
+                  <li>Copy and paste this exact value into your app's **Redirect URL** field:</li>
+                </ol>
+                <div className="bg-gray-900 border border-gray-800 p-2.5 rounded font-mono text-[10px] text-orange-400 select-all break-all text-center">
+                  {window.location.origin + "/trading"}
+                </div>
+              </div>
+
+              {/* Setup form */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                {/* Method A: Shared Platform OAuth */}
+                {/* Save API Key & Secret */}
                 <div className="bg-gray-950 border border-gray-800 p-5 rounded-2xl space-y-4">
-                  <h3 className="font-semibold text-white">Method A: Direct OAuth Connection</h3>
-                  <p className="text-xs text-gray-400 leading-relaxed">
-                    Uses our platform's shared developer app credentials. Log in to Zerodha directly to authenticate, retrieve your token, and save it.
-                  </p>
+                  <h3 className="font-semibold text-white text-sm">1. Set API Key & Secret</h3>
                   
-                  <button
-                    onClick={handleStartOAuth}
-                    disabled={authUrlLoading}
-                    className="w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 active:scale-[0.99] text-white font-medium rounded-xl text-xs transition-all flex items-center justify-center gap-2"
-                  >
-                    {authUrlLoading ? <RefreshCw size={14} className="animate-spin" /> : <TrendingUp size={14} />}
-                    Connect & Log in with Kite Connect
-                  </button>
-                  <p className="text-[10px] text-gray-500 text-center">Redirects to Zerodha portal for login verification.</p>
-                </div>
-
-                {/* Method B: Manual Access Token Input */}
-                <div className="bg-gray-950 border border-gray-800 p-5 rounded-2xl space-y-4">
-                  <h3 className="font-semibold text-white">Method B: Paste Access Token</h3>
-                  <p className="text-xs text-gray-400 leading-relaxed">
-                    If you have generated your daily `access_token` manually or using standard scripts, paste it directly below.
-                  </p>
-                  
-                  <form onSubmit={handleSaveEncryptedToken} className="space-y-3">
-                    <input
-                      type="text"
-                      placeholder="Paste Daily Access Token"
-                      value={manualToken}
-                      onChange={(e) => setManualToken(e.target.value)}
-                      className="block w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                    />
+                  <form onSubmit={handleSaveCredentials} className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                        Kite API Key
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Enter API Key"
+                        value={inputApiKey}
+                        onChange={(e) => setInputApiKey(e.target.value)}
+                        className="block w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                        Kite API Secret
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="Enter API Secret"
+                        value={inputApiSecret}
+                        onChange={(e) => setInputApiSecret(e.target.value)}
+                        className="block w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        required
+                      />
+                    </div>
+                    
                     <button
                       type="submit"
-                      disabled={saveLoading || !manualToken}
-                      className="w-full py-2 px-4 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl text-xs transition-all flex items-center justify-center gap-2"
+                      disabled={saveLoading || !inputApiKey || !inputApiSecret}
+                      className="w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-xl text-xs transition-all flex items-center justify-center gap-2"
                     >
                       {saveLoading ? <RefreshCw size={14} className="animate-spin" /> : <Lock size={14} />}
-                      E2E Encrypt & Save Token
+                      E2E Encrypt & Save Config
                     </button>
                   </form>
+                </div>
+
+                {/* OAuth Connect Action */}
+                <div className="bg-gray-950 border border-gray-800 p-5 rounded-2xl flex flex-col justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-white text-sm">2. Daily OAuth Login Authorization</h3>
+                    <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                      Once keys are saved above, click authorize to log in on Zerodha secure pages and fetch today's session token.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={handleStartOAuth}
+                      disabled={!isConfigured || exchangeLoading}
+                      className={`w-full py-3 px-4 font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-2 ${
+                        isConfigured
+                          ? 'bg-green-600 hover:bg-green-700 text-white active:scale-[0.99] shadow-lg shadow-green-950/20'
+                          : 'bg-gray-850 text-gray-600 cursor-not-allowed'
+                      }`}
+                    >
+                      {exchangeLoading ? <RefreshCw size={14} className="animate-spin" /> : <TrendingUp size={14} />}
+                      Login & Authorize Zerodha Session
+                    </button>
+                    
+                    <div className="border-t border-gray-850 pt-3">
+                      <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                        Or Paste Access Token Manually
+                      </label>
+                      <form onSubmit={handleSaveEncryptedToken} className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Paste token"
+                          value={manualAccessToken}
+                          onChange={(e) => setManualAccessToken(e.target.value)}
+                          className="flex-1 px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-[11px] text-white placeholder-gray-650 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!manualAccessToken}
+                          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-[11px] font-medium transition-all"
+                        >
+                          Save
+                        </button>
+                      </form>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -523,7 +719,9 @@ export function TradingWorkspacePage() {
                 <div className="bg-gray-950 border border-gray-850 p-4 rounded-xl space-y-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Config Status:</span>
-                    <span className="font-semibold text-gray-300">{isConfigured ? '🔑 Encrypted Keys Stored' : '⚠️ Not Configured'}</span>
+                    <span className="font-semibold text-gray-300">
+                      {isConfigured ? `🔑 Configured (API Key: ${apiKeyVal})` : '⚠️ Not Configured'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Last Synced:</span>
