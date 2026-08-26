@@ -11,23 +11,27 @@ This guide serves as the official reference for the NexBotix platform architectu
 
 ---
 
-## 1. AI Trading Workspace (E2EE)
+## 1. AI Trading Workspace (Dhan Integration & AI Sandbox)
 
-The AI Trading Workspace is built on a **Bring-Your-Own-Key (BYO-Key)** model utilizing **End-to-End Encryption (E2EE)** to ensure user credential privacy.
+The AI Trading Workspace is built on a **Bring-Your-Own-Key (BYO-Key)** model utilizing **End-to-End Encryption (E2EE)** to ensure user credential privacy with the **Dhan Broker**.
 
 ### A. Client-Side Cryptography (`crypto.ts`)
-* Uses the browser's native **Web Crypto API** to encrypt/decrypt sensitive credentials (e.g. Zerodha API Key, Secret, and Access Tokens).
+* Uses the browser's native **Web Crypto API** to encrypt/decrypt sensitive credentials (Dhan Client ID and Personal Access Token).
 * Derives a 256-bit key from a user-provided 6-digit **Trading PIN** using **PBKDF2** with 100,000 iterations and SHA-256 hashing.
 * Encrypts the payload using **AES-GCM (256-bit)**. 
 * Plaintext credentials and access tokens are **never** stored in MongoDB or written to server logs.
 
-### B. Redirect URL & Authorization Flow
-* Users register their personal developer app at `https://kite.trade` setting the **Redirect URL** to:
-  `window.location.origin + "/trading"` (e.g., `https://nexbotix.online/trading`).
-* Zerodha redirects the authenticated session to our page with the parameter `?request_token=XXXXXX`.
-* A `useEffect` hook in [`TradingWorkspacePage.tsx`](file:///root/project/nextbotix/whatsapp-bulk-ui/src/pages/trading/TradingWorkspacePage.tsx) auto-detects this parameter, prompts the user to enter their Trading PIN, decrypts the stored `api_secret` in-browser, and dispatches the proxy exchange.
-* The proxy exchange resolves CORS restrictions by posting to `/api/trading/broker/exchange` (hosted on the Python service) to acquire the `access_token` server-to-server.
-* Once returned, the `access_token` is E2E encrypted in the browser and stored securely in MongoDB.
+### B. Direct Credentials Session Validation
+* Dhan uses Personal Access Tokens generated directly under profile API settings on `web.dhan.co`. This removes Zerodha's redirect/callback requirements.
+* When the user unlocks the session with their PIN, the client sends the decrypted access token to `/api/trading/broker/connect` on the Python service. The server verifies connectivity by requesting limits (`get_fund_limits()`) and caches the active session in RAM.
+
+### C. Visual & AI Prompt Strategy Studio
+* **Visual Builder**: Offers dropdowns to select indicators (SMA, EMA, RSI) and parameters, automatically generating and injecting the corresponding Python signal code.
+* **AI Prompt Editor**: Calls Google Gemini API (`GEMINI_API_KEY`) to translate user plain-text instructions into a python `check_signal(df)` callback.
+
+### D. Candlestick Sandbox Charting & Backtest Engine
+* Markets data is fetched dynamically from Yahoo Finance (`yfinance`) for any input symbol.
+* The backend compiles user strategy code dynamically (`exec()`), runs a portfolio simulation, and returns performance metrics alongside custom SVG-drawn candlesticks and transaction overlays.
 
 ---
 
