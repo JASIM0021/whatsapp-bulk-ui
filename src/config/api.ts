@@ -302,6 +302,7 @@ export const API_ENDPOINTS = {
     status: `${API_BASE_URL}/api/trading/broker/status`,
     strategies: `${API_BASE_URL}/api/trading/strategies`,
     strategy: (id: string) => `${API_BASE_URL}/api/trading/strategies/${id}`,
+    strategyGenerateAI: `${API_BASE_URL}/api/trading/strategy/generate-ai`,
     backtest: `${API_BASE_URL}/api/trading/backtest`,
     botStart: `${API_BASE_URL}/api/trading/bot/start`,
     botStop: `${API_BASE_URL}/api/trading/bot/stop`,
