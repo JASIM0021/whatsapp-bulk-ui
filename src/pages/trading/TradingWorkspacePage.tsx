@@ -84,6 +84,12 @@ export function TradingWorkspacePage() {
   });
   const [stratSavingLoading, setStratSavingLoading] = useState(false);
 
+  // Asset autocomplete search state
+  const [assetSearchQuery, setAssetSearchQuery] = useState('');
+  const [assetSearchResults, setAssetSearchResults] = useState<any[]>([]);
+  const [assetSearchLoading, setAssetSearchLoading] = useState(false);
+  const [showAssetSuggestions, setShowAssetSuggestions] = useState(false);
+
   // Visual strategy builder parameters
   const [visualIndicator, setVisualIndicator] = useState<'sma' | 'ema' | 'rsi' | 'macd'>('ema');
   const [paramFast, setParamFast] = useState(9);
@@ -398,6 +404,37 @@ export function TradingWorkspacePage() {
       setStratSavingLoading(false);
     }
   };
+
+  // Asset search suggestion effect
+  useEffect(() => {
+    if (!assetSearchQuery.trim()) {
+      setAssetSearchResults([]);
+      return;
+    }
+    const delayDebounceFn = setTimeout(async () => {
+      setAssetSearchLoading(true);
+      try {
+        const res = await apiFetch(`${API_ENDPOINTS.trading.marketSearch}?q=${encodeURIComponent(assetSearchQuery)}`);
+        const data = await res.json();
+        if (data.success && data.results) {
+          setAssetSearchResults(data.results);
+        }
+      } catch (err) {
+        console.error("Failed to query symbols", err);
+      } finally {
+        setAssetSearchLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [assetSearchQuery]);
+
+  // Sync search input text with external newStrategy.asset_symbol updates
+  useEffect(() => {
+    if (newStrategy.asset_symbol !== assetSearchQuery.toUpperCase()) {
+      setAssetSearchQuery(newStrategy.asset_symbol);
+    }
+  }, [newStrategy.asset_symbol]);
 
   // 7. Run Sandbox Backtest Simulation
   const handleRunBacktest = async () => {
@@ -1343,18 +1380,59 @@ export function TradingWorkspacePage() {
                       required
                     />
                   </div>
-                  <div>
+                  <div className="relative">
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                       Target Ticker (Yahoo Symbol)
                     </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. RELIANCE.NS, TSLA"
-                      value={newStrategy.asset_symbol}
-                      onChange={(e) => setNewStrategy({...newStrategy, asset_symbol: e.target.value.toUpperCase()})}
-                      className="block w-full px-3 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-xs text-white placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-500 font-mono font-medium"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search assets e.g. Reliance, Apple..."
+                        value={assetSearchQuery || newStrategy.asset_symbol}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setAssetSearchQuery(val);
+                          setNewStrategy({...newStrategy, asset_symbol: val.toUpperCase()});
+                          setShowAssetSuggestions(true);
+                        }}
+                        onFocus={() => setShowAssetSuggestions(true)}
+                        onBlur={() => {
+                          setTimeout(() => setShowAssetSuggestions(false), 200);
+                        }}
+                        className="block w-full px-3 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-xs text-white placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-500 font-mono font-medium"
+                        required
+                      />
+                      {assetSearchLoading && (
+                        <div className="absolute right-3 top-3.5">
+                          <RefreshCw className="animate-spin text-orange-500" size={12} />
+                        </div>
+                      )}
+                    </div>
+
+                    {showAssetSuggestions && assetSearchResults.length > 0 && (
+                      <div className="absolute left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-gray-950 border border-gray-800 rounded-xl shadow-2xl z-50 font-mono divide-y divide-gray-900">
+                        {assetSearchResults.map((res, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              setNewStrategy({ ...newStrategy, asset_symbol: res.symbol });
+                              setAssetSearchQuery(res.symbol);
+                              setShowAssetSuggestions(false);
+                            }}
+                            className="w-full text-left px-3 py-2.5 hover:bg-gray-900/60 transition-all flex justify-between items-center text-xs"
+                          >
+                            <div className="truncate pr-2">
+                              <p className="font-bold text-white leading-none mb-0.5">{res.symbol}</p>
+                              <p className="text-[10px] text-gray-500 truncate">{res.name}</p>
+                            </div>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-900 text-gray-400 font-bold shrink-0">
+                              {res.exchange}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">

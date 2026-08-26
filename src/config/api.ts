@@ -303,6 +303,7 @@ export const API_ENDPOINTS = {
     strategies: `${API_BASE_URL}/api/trading/strategies`,
     strategy: (id: string) => `${API_BASE_URL}/api/trading/strategies/${id}`,
     strategyGenerateAI: `${API_BASE_URL}/api/trading/strategy/generate-ai`,
+    marketSearch: `${API_BASE_URL}/api/trading/market/search`,
     backtest: `${API_BASE_URL}/api/trading/backtest`,
     botStart: `${API_BASE_URL}/api/trading/bot/start`,
     botStop: `${API_BASE_URL}/api/trading/bot/stop`,
