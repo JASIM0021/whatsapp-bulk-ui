@@ -3,7 +3,7 @@ import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { encryptToken, decryptToken } from './crypto';
 import { 
   TrendingUp, Shield, Key, Bot, Play, Square, FileText, 
-  Lock, RefreshCw, Code, ChevronRight, AlertTriangle, Sparkles, BarChart2, Sliders, Cpu, ArrowUpRight, ArrowDownRight, Layers, Sparkle
+  Lock, RefreshCw, Code, ChevronRight, Sparkles, BarChart2, Sliders, Cpu, ArrowUpRight, ArrowDownRight, Layers, Sparkle
 } from 'lucide-react';
 
 interface Strategy {
@@ -48,7 +48,8 @@ interface Candle {
 
 export function TradingWorkspacePage() {
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<'broker' | 'strategy' | 'backtest' | 'bot'>('broker');
+  const [activeTab, setActiveTab] = useState<'strategy' | 'backtest' | 'bot'>('strategy');
+  const [showBrokerDropdown, setShowBrokerDropdown] = useState(false);
   
   // Strategy Studio sub-tabs
   const [stratSubTab, setStratSubTab] = useState<'visual' | 'ai' | 'code'>('visual');
@@ -957,19 +958,125 @@ export function TradingWorkspacePage() {
         </div>
         
         {/* Status flags */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap relative">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800/80 border border-gray-800 text-[10px] font-mono">
             <Shield size={12} className="text-orange-500" />
             <span className="text-gray-400">E2EE CRYPTO GATEWAY</span>
           </div>
           
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[11px] font-mono ${
-            isConnected 
-              ? 'bg-green-950/30 border-green-500/20 text-green-400' 
-              : 'bg-red-950/30 border-red-500/20 text-red-400'
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-            <span>{isConnected ? `CONNECTED: ₹${fundBalance?.toLocaleString() || 0}` : 'DISCONNECTED'}</span>
+          <div className="relative">
+            <button
+              onClick={() => setShowBrokerDropdown(!showBrokerDropdown)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[11px] font-mono transition-all hover:brightness-110 active:scale-95 ${
+                isConnected 
+                  ? 'bg-green-950/30 border-green-500/20 text-green-400' 
+                  : 'bg-red-950/30 border-red-500/20 text-red-400'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+              <span>{isConnected ? `CONNECTED: ₹${fundBalance?.toLocaleString() || 0}` : 'DISCONNECTED'}</span>
+              <ChevronRight size={12} className={`transition-all ${showBrokerDropdown ? 'rotate-90' : ''}`} />
+            </button>
+
+            {showBrokerDropdown && (
+              <div className="absolute right-0 top-10 mt-1 w-96 bg-gray-950 border border-gray-800 rounded-2xl p-5 shadow-2xl z-50 space-y-4">
+                <div className="flex justify-between items-center border-b border-gray-800 pb-2">
+                  <h3 className="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <Key size={14} className="text-orange-500" />
+                    Dhan Connection Settings
+                  </h3>
+                  <button 
+                    type="button"
+                    onClick={() => setShowBrokerDropdown(false)}
+                    className="text-gray-500 hover:text-white text-xs font-semibold"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="space-y-4 text-[11px]">
+                  {/* Secure E2EE Notice banner */}
+                  <div className="bg-orange-950/10 border border-orange-500/20 rounded-xl p-3 flex gap-2.5">
+                    <Shield className="text-orange-500 shrink-0 mt-0.5" size={16} />
+                    <p className="text-[10px] text-gray-400 leading-relaxed">
+                      Decryption is client-side. Access tokens are cached strictly in server RAM loops and cleared upon disconnect.
+                    </p>
+                  </div>
+
+                  {/* Stored credentials form */}
+                  <form onSubmit={handleSaveCredentials} className="space-y-3">
+                    <div>
+                      <label className="block text-[9px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                        Dhan Client ID
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Enter Client ID"
+                        value={inputClientId}
+                        onChange={(e) => setInputClientId(e.target.value)}
+                        className="block w-full px-2.5 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500 font-mono"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                        Dhan Access Token
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="Enter Access Token"
+                        value={inputAccessToken}
+                        onChange={(e) => setInputAccessToken(e.target.value)}
+                        className="block w-full px-2.5 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500 font-mono"
+                        required
+                      />
+                    </div>
+                    
+                    <button
+                      type="submit"
+                      disabled={saveLoading || !inputClientId || !inputAccessToken}
+                      className="w-full py-2 px-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
+                    >
+                      {saveLoading ? <RefreshCw size={12} className="animate-spin" /> : <Lock size={12} />}
+                      Save E2EE Credentials
+                    </button>
+                  </form>
+
+                  {/* Connect / Unlock session */}
+                  <div className="border-t border-gray-800 pt-3 space-y-3">
+                    <button
+                      type="button"
+                      onClick={handleConnectDhan}
+                      disabled={!isConfigured || connectLoading}
+                      className={`w-full py-2 px-3 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                        isConfigured
+                          ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
+                          : 'bg-gray-800 border border-gray-805 text-gray-600 cursor-not-allowed'
+                      }`}
+                    >
+                      {connectLoading ? <RefreshCw size={12} className="animate-spin" /> : <TrendingUp size={12} />}
+                      Verify & Sync Live Session
+                    </button>
+                  </div>
+
+                  {/* Status details */}
+                  <div className="border-t border-gray-800 pt-3 space-y-1.5 font-mono text-[10px]">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Vault Configuration:</span>
+                      <span className="font-semibold text-gray-300">
+                        {isConfigured ? `🔒 SECURE KEY (ID: ${dhanClientIdVal})` : '⚠️ NOT CONFIGURED'}
+                      </span>
+                    </div>
+                    {updatedAt && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Last Staged:</span>
+                        <span className="text-gray-300">{updatedAt}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -980,10 +1087,9 @@ export function TradingWorkspacePage() {
         {/* Navigation Sidebar */}
         <div className="lg:col-span-1 space-y-2">
           {[
-            { id: 'broker', label: '1. Dhan Connection', desc: 'Secure E2EE Credentials', icon: Key },
-            { id: 'strategy', label: '2. Strategy Studio', desc: 'Visual Composer & AI Prompts', icon: Code },
-            { id: 'backtest', label: '3. Backtest Sandbox', desc: 'Yahoo Finance Simulation', icon: FileText },
-            { id: 'bot', label: '4. Live Algo Bot Control', desc: 'Start real-time loops', icon: Bot },
+            { id: 'strategy', label: '1. Strategy Studio', desc: 'Visual Composer & AI Prompts', icon: Code },
+            { id: 'backtest', label: '2. Backtest Sandbox', desc: 'Yahoo Finance Simulation', icon: FileText },
+            { id: 'bot', label: '3. Live Algo Bot Control', desc: 'Start real-time loops', icon: Bot },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
@@ -1012,133 +1118,7 @@ export function TradingWorkspacePage() {
         {/* Content Panel */}
         <div className="lg:col-span-3 bg-gray-900 rounded-3xl border border-gray-800 p-6 flex flex-col min-h-[500px] shadow-xl">
           
-          {/* TAB 1: CONNECT DHAN BROKER */}
-          {activeTab === 'broker' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-bold text-white mb-1">Dhan Connection & Security Settings</h2>
-                <p className="text-xs text-gray-450">Input your Personal Access Token. Standard encryption protocols ensure plaintext keys are never stored on disk or server databases.</p>
-              </div>
 
-              {/* Secure E2EE Notice banner */}
-              <div className="bg-orange-950/10 border border-orange-500/20 rounded-2xl p-4 flex gap-3">
-                <Shield className="text-orange-500 shrink-0 mt-0.5" size={20} />
-                <div>
-                  <h4 className="text-xs font-bold text-orange-400 uppercase tracking-wider">Zero-Knowledge Storage Model</h4>
-                  <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
-                    Decryption is processed in-browser. The backend caches access tokens in volatile RAM loops. Stopping the bot automatically purges sessions from RAM, locking credentials immediately.
-                  </p>
-                </div>
-              </div>
-
-              {/* Developer Configuration instructions */}
-              <div className="bg-gray-955 border border-gray-800 p-5 rounded-2xl space-y-3 text-[11px]">
-                <h3 className="font-bold text-white uppercase tracking-wider text-xs flex items-center gap-1.5">
-                  <AlertTriangle className="text-amber-500 animate-pulse" size={15} />
-                  Access Token Guidelines
-                </h3>
-                <p className="text-gray-400">
-                  Dhan personal API access tokens are free of charge. You can generate them directly in your profile:
-                </p>
-                <ol className="list-decimal pl-5 space-y-1 text-gray-300">
-                  <li>Log in to the web panel at <a href="https://web.dhan.co" target="_blank" rel="noreferrer" className="text-orange-500 underline">web.dhan.co</a></li>
-                  <li>Click Profile &gt; **DhanHQ API Access** in settings.</li>
-                  <li>Generate a **Personal Access Token** and copy it along with your **Client ID**.</li>
-                  <li>Insert the keys below and apply your secure session Trading PIN.</li>
-                </ol>
-              </div>
-
-              {/* Setup form */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* Save API Key & Secret */}
-                <div className="bg-gray-955 border border-gray-800 p-5 rounded-2xl space-y-4">
-                  <h3 className="font-bold text-white text-xs uppercase tracking-wider">Store E2EE Credentials</h3>
-                  
-                  <form onSubmit={handleSaveCredentials} className="space-y-3">
-                    <div>
-                      <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                        Dhan Client ID
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Enter Client ID"
-                        value={inputClientId}
-                        onChange={(e) => setInputClientId(e.target.value)}
-                        className="block w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500 font-mono"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                        Dhan Access Token
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="Enter Access Token"
-                        value={inputAccessToken}
-                        onChange={(e) => setInputAccessToken(e.target.value)}
-                        className="block w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500 font-mono"
-                        required
-                      />
-                    </div>
-                    
-                    <button
-                      type="submit"
-                      disabled={saveLoading || !inputClientId || !inputAccessToken}
-                      className="w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
-                    >
-                      {saveLoading ? <RefreshCw size={14} className="animate-spin" /> : <Lock size={14} />}
-                      Encrypt & Save Credentials
-                    </button>
-                  </form>
-                </div>
-
-                {/* OAuth Connect Action */}
-                <div className="bg-gray-955 border border-gray-800 p-5 rounded-2xl flex flex-col justify-between gap-4">
-                  <div>
-                    <h3 className="font-bold text-white text-xs uppercase tracking-wider">Mount Dhan Live Session</h3>
-                    <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
-                      Decrypt your access token locally using your PIN and verify connection limits. Successful validation establishes a live trading session.
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <button
-                      type="button"
-                      onClick={handleConnectDhan}
-                      disabled={!isConfigured || connectLoading}
-                      className={`w-full py-3 px-4 font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                        isConfigured
-                          ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white shadow-lg active:scale-98'
-                          : 'bg-gray-800 border border-gray-805 text-gray-600 cursor-not-allowed'
-                      }`}
-                    >
-                      {connectLoading ? <RefreshCw size={14} className="animate-spin" /> : <TrendingUp size={14} />}
-                      Verify Connection & Sync Funds
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Status details */}
-              <div className="border-t border-gray-800 pt-6">
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Stored Configuration Status</h4>
-                <div className="bg-gray-955 border border-gray-805 p-4 rounded-xl space-y-2 text-xs font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Vault Configuration:</span>
-                    <span className="font-semibold text-gray-300">
-                      {isConfigured ? `🔒 SECURE KEY (Client ID: ${dhanClientIdVal})` : '⚠️ NOT CONFIGURED'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Metadata Staged at:</span>
-                    <span className="text-gray-300">{updatedAt || 'Never'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* TAB 2: STRATEGY STUDIO */}
           {activeTab === 'strategy' && (
