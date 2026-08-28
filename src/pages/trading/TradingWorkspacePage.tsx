@@ -912,7 +912,7 @@ export function TradingWorkspacePage() {
                     onClick={() => isAction ? handleKeypadPress(actionType) : handleKeypadPress(key)}
                     className={`py-3 rounded-xl font-mono text-sm font-semibold border transition-all active:scale-95 flex items-center justify-center ${
                       isAction
-                        ? 'bg-gray-805 border-gray-800 text-gray-405 hover:text-white'
+                        ? 'bg-gray-800 border-gray-800 text-gray-400 hover:text-white'
                         : 'bg-gray-950 border-gray-800 hover:border-gray-700 text-white hover:bg-gray-800'
                     }`}
                   >
@@ -969,7 +969,7 @@ export function TradingWorkspacePage() {
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[11px] font-mono transition-all hover:brightness-110 active:scale-95 ${
                 isConnected 
                   ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400' 
-                  : 'bg-red-955/20 border-red-500/20 text-red-400'
+                  : 'bg-red-950/20 border-red-500/20 text-red-400'
               }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
@@ -1026,7 +1026,7 @@ export function TradingWorkspacePage() {
                         placeholder="Enter Access Token"
                         value={inputAccessToken}
                         onChange={(e) => setInputAccessToken(e.target.value)}
-                        className="block w-full px-2.5 py-1.5 bg-gray-955 border border-gray-800 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 font-mono"
+                        className="block w-full px-2.5 py-1.5 bg-gray-950 border border-gray-800 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 font-mono"
                         required
                       />
                     </div>
@@ -1050,7 +1050,7 @@ export function TradingWorkspacePage() {
                       className={`w-full py-2 px-3 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
                         isConfigured
                           ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg'
-                          : 'bg-gray-800 border border-gray-805 text-gray-600 cursor-not-allowed'
+                          : 'bg-gray-800 border border-gray-800 text-gray-600 cursor-not-allowed'
                       }`}
                     >
                       {connectLoading ? <RefreshCw size={12} className="animate-spin" /> : <TrendingUp size={12} />}
@@ -1374,7 +1374,7 @@ export function TradingWorkspacePage() {
                       <textarea
                         value={newStrategy.code}
                         onChange={(e) => setNewStrategy({...newStrategy, code: e.target.value})}
-                        className="block w-full min-h-[220px] p-3 bg-gray-955 border border-gray-800 rounded-xl text-xs text-emerald-400 font-mono focus:outline-none focus:border-emerald-500/50 leading-relaxed"
+                        className="block w-full min-h-[220px] p-3 bg-gray-950 border border-gray-800 rounded-xl text-xs text-emerald-400 font-mono focus:outline-none focus:border-emerald-500/50 leading-relaxed"
                         required
                       />
                     </div>
@@ -1565,7 +1565,7 @@ export function TradingWorkspacePage() {
               </div>
 
               {/* Controls Form Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-955 p-5 rounded-xl border border-gray-800">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-950 p-5 rounded-xl border border-gray-800">
                 <div>
                   <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Active Strategy
@@ -1626,7 +1626,7 @@ export function TradingWorkspacePage() {
                   <button
                     onClick={handleStopBot}
                     disabled={botLoading}
-                    className="flex-1 py-3 px-6 bg-red-655 hover:bg-red-700 active:scale-95 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg"
+                    className="flex-1 py-3 px-6 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg"
                   >
                     {botLoading ? <RefreshCw size={14} className="animate-spin" /> : <Square size={14} />}
                     Stop & Purge Session Credentials
