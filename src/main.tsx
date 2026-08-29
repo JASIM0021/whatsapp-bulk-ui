@@ -67,6 +67,7 @@ const PublicEmbedPage = lazy(() => import('./pages/calendar/PublicEmbedPage').th
 const LifeCompanionPage = lazy(() => import('./pages/life_companion/LifeCompanionPage').then(m => ({ default: m.LifeCompanionPage })))
 const TradingWorkspacePage = lazy(() => import('./pages/trading/TradingWorkspacePage').then(m => ({ default: m.TradingWorkspacePage })))
 const FreelancerPage = lazy(() => import('./pages/freelancer/FreelancerPage').then(m => ({ default: m.FreelancerPage })))
+const YouTubeAgentPage = lazy(() => import('./pages/youtube/YouTubeAgentPage').then(m => ({ default: m.YouTubeAgentPage })))
 
 function GmailCallbackRedirect() {
   const location = useLocation();
@@ -326,6 +327,15 @@ function AppRoutes() {
         <ProtectedRoute>
           <AppProvider>
             <FreelancerPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+
+      {/* YouTube Creator Agent Workspace */}
+      <Route path="/youtube" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <YouTubeAgentPage />
           </AppProvider>
         </ProtectedRoute>
       } />

@@ -161,6 +161,18 @@ export function DashboardPage() {
       path: '/trading',
       dbId: 'trading',
     },
+    {
+      id: 'youtube',
+      title: 'Tuber - YouTube Growth Employee',
+      description: 'Discover viral trends, generate video scripts, check video SEO health, suggest relative tags, and design thumbnails.',
+      iconPath: '/agents/agent-youtube.jpg?v=2',
+      bg: 'bg-red-50',
+      border: 'border-red-100',
+      hoverBorder: 'hover:border-red-300',
+      iconBg: 'bg-red-100',
+      path: '/youtube',
+      dbId: 'youtube',
+    },
   ];
 
   return (
@@ -333,6 +345,7 @@ export function DashboardPage() {
               { id: 'linkedin-bot',label: 'Linko (LinkedIn)',   iconPath: '/agents/agent-linkedin.jpg?v=2',                         bg: 'bg-indigo-50', border: 'border-indigo-200', hoverBorder: 'hover:border-indigo-400',service: 'linkedin',  path: '/linkedin' },
               { id: 'life-companion-bot', label: 'Mitra (Life)', iconPath: '/agents/agent-life-companion.jpg?v=2', bg: 'bg-purple-50', border: 'border-purple-200', hoverBorder: 'hover:border-purple-400', service: 'life_companion', path: '/life-companion' },
               { id: 'trading-bot', label: 'Dhana (Trading)', iconPath: '/agents/agent-trading.jpg?v=2', bg: 'bg-orange-50', border: 'border-orange-200', hoverBorder: 'hover:border-orange-400', service: 'trading', path: '/trading' },
+              { id: 'youtube-bot', label: 'Tuber (YouTube)', iconPath: '/agents/agent-youtube.jpg?v=2', bg: 'bg-red-50', border: 'border-red-200', hoverBorder: 'hover:border-red-400', service: 'youtube', path: '/youtube' },
               { id: 'freelancer-bot', label: 'Bidder (Freelancer)', iconPath: '/agents/agent-freelancer.jpg?v=2', bg: 'bg-violet-50', border: 'border-violet-200', hoverBorder: 'hover:border-violet-400', service: 'freelancer', path: '/freelancer' },
               { id: 'blog-bot',    label: 'Blog Bot',       iconPath: null,  bg: 'bg-amber-50',  border: 'border-amber-200',  hoverBorder: 'hover:border-amber-400', service: null,        path: null },
             ].map((bot) => {
