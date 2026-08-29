@@ -19,6 +19,7 @@ const SVC_META = [
   { id: 'leads',        planMonthly: 'leads',    planYearly: 'leads_yr',    label: 'Leads Manager',   desc: 'Scrape & enrich maps leads', colorBg: 'bg-amber-500',   icon: 'Sparkles' },
   { id: 'calendar',     planMonthly: 'calendar', planYearly: 'calendar_yr', label: 'Nexbot Calendar', desc: 'Google Meet sync & booking', colorBg: 'bg-teal-600',    icon: 'Calendar' },
   { id: 'trading',      planMonthly: 'trading',  planYearly: 'trading_yr',  label: 'AI Trading Workspace', desc: 'Secure E2EE algo trading', colorBg: 'bg-orange-600', icon: 'TrendingUp' },
+  { id: 'youtube',      planMonthly: 'youtube',  planYearly: 'youtube_yr',  label: 'Tuber YouTube AI Employee', desc: 'YouTube Growth Automation', colorBg: 'bg-red-600', icon: 'Tv' },
 ] as const;
 
 const COMBO_DEFS = [
@@ -26,14 +27,14 @@ const COMBO_DEFS = [
   { planId: 'social',   name: 'Social Suite',   services: ['whatsapp', 'facebook', 'linkedin'] as const,                                                                          savingsPct: '16%', highlight: false },
   { planId: 'growth',   name: 'Growth Pack',    services: ['whatsapp', 'email', 'linkedin', 'seo'] as const,                                                                      savingsPct: '25%', highlight: true  },
   { planId: 'business', name: 'Business Suite', services: ['whatsapp', 'whatsapp_bot', 'email', 'linkedin', 'linkedin_bot', 'seo'] as const,                                      savingsPct: '24%', highlight: false },
-  { planId: 'ultimate', name: 'Ultimate',       services: ['whatsapp', 'whatsapp_bot', 'chatbot', 'email', 'facebook', 'linkedin', 'linkedin_bot', 'seo', 'seo_bot', 'leads', 'calendar', 'trading'] as const,   savingsPct: '33%', highlight: true  },
+  { planId: 'ultimate', name: 'Ultimate',       services: ['whatsapp', 'whatsapp_bot', 'chatbot', 'email', 'facebook', 'linkedin', 'linkedin_bot', 'seo', 'seo_bot', 'leads', 'calendar', 'trading', 'youtube'] as const,   savingsPct: '33%', highlight: true  },
 ];
 
 const SVC_TO_PLAN: Record<string, string> = {
   whatsapp: 'wa', whatsapp_bot: 'wa_bot', email: 'email',
   chatbot: 'chatbot', facebook: 'facebook', linkedin: 'li',
   linkedin_bot: 'li_bot', seo: 'seo', seo_bot: 'seo_bot', leads: 'leads',
-  calendar: 'calendar', trading: 'trading',
+  calendar: 'calendar', trading: 'trading', youtube: 'youtube',
 };
 
 // Display groups — LinkedIn & SEO each collapse their sub-bot into one card
@@ -48,6 +49,7 @@ const SVC_GROUPS = [
   { ids: ['leads'],                     label: 'Leads Manager',   desc: 'Scrape & enrich local leads', colorBg: 'bg-amber-500',   icon: 'Sparkles',      subLabels: [] as string[] },
   { ids: ['calendar'],                  label: 'Nexbot Calendar', desc: 'Calendly-grade scheduling + Meet sync', colorBg: 'bg-teal-600', icon: 'Calendar', subLabels: [] as string[] },
   { ids: ['trading'],                   label: 'AI Trading Workspace', desc: 'Secure E2EE algo trading', colorBg: 'bg-orange-600', icon: 'TrendingUp', subLabels: [] as string[] },
+  { ids: ['youtube'],                   label: 'Tuber YouTube AI Employee', desc: 'YouTube Growth Automation', colorBg: 'bg-red-600', icon: 'Tv', subLabels: [] as string[] },
 ];
 
 type BestPlan = { planId: string; name: string; price: number; isExact: boolean; savingsPct: string | null; extras: string[] };
