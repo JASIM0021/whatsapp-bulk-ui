@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '@/config/api';
 import { 
   ArrowLeft, 
   Sparkles, 
@@ -52,95 +53,123 @@ export function YouTubeAgentPage() {
   const [copiedDesc, setCopiedDesc] = useState(false);
   const [copiedThumb, setCopiedThumb] = useState(false);
 
-  // Mock Trend List Data
-  const mockTrends = [
+  // Dynamic Trend List Data
+  const [trends, setTrends] = useState<any[]>([
     { id: 1, keyword: 'AI Coding Assistant agentic loops', views: '240K', growth: '+142%', category: 'Tech & Development', engagement: '9.2%', viralMultiplier: '3.4x' },
     { id: 2, keyword: 'Google Antigravity setup tutorial', views: '110K', growth: '+280%', category: 'SaaS Tools', engagement: '11.5%', viralMultiplier: '4.8x' },
     { id: 3, keyword: 'Vite React production deployment guide', views: '480K', growth: '+45%', category: 'Web Dev', engagement: '6.8%', viralMultiplier: '1.9x' },
     { id: 4, keyword: 'Full Stack AI digital employee squad', views: '95K', growth: '+310%', category: 'Futurism', engagement: '12.4%', viralMultiplier: '5.2x' },
-  ];
+  ]);
+  const [scriptDuration, setScriptDuration] = useState<string>('1m');
 
-  const handleSearchTrends = (e: React.FormEvent) => {
+  const handleSearchTrends = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSearching(true);
-    setTimeout(() => {
+    try {
+      const res = await apiFetch('/api/youtube/trends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchKeyword }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.trends)) {
+        setTrends(data.trends);
+      }
+    } catch (err) {
+      console.error('Failed to search trends', err);
+    } finally {
       setIsSearching(false);
       setSearched(true);
-    }, 800);
+    }
   };
 
-  const handleGenerateScript = (keyword: string) => {
+  const handleGenerateScript = async (keyword: string) => {
     setSelectedTrend(keyword);
-    setScriptPrompt(`Create a 5-minute video script about: ${keyword}. Focus on hooks and engagement loops.`);
+    setScriptPrompt(`Create a script about: ${keyword}. Focus on hooks and engagement loops.`);
     setIsGeneratingScript(true);
     setGeneratedScript('');
     
-    setTimeout(() => {
+    try {
+      const res = await apiFetch('/api/youtube/script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: keyword, duration: scriptDuration }),
+      });
+      const data = await res.json();
+      if (data.success && data.script) {
+        setGeneratedScript(data.script);
+      }
+    } catch (err) {
+      console.error('Failed to generate script', err);
+    } finally {
       setIsGeneratingScript(false);
-      setGeneratedScript(`# VIDEO SCRIPT: "${keyword.toUpperCase()}"
-      
-[0:00 - 0:30] Hook & Intro
-Wait! Stop writing boilerplate code manually in 2026. What if I told you that you could deploy an entire autonomous AI coding squad to do it for you, while you grab a coffee? Today we are breaking down the exact agentic loops that power modern developer employees...
-
-[0:30 - 2:00] The Core Problem
-Most developers use basic autocomplete AI. But autocomplete gets stuck. It doesn't compile code, check tests, or push fixes to Git. That's where agentic loops come in...
-
-[2:00 - 4:00] The Agentic Solution & Workflow
-1. Autonomously read repo files using semantic indexers.
-2. Formulate step-by-step implementation plans.
-3. Edit code, verify compilation via local tests, and fix TypeScript lints.
-4. Auto-commit and push cleanly directly to master.
-
-[4:00 - 5:00] Call To Action & Conclusion
-If you want to 10x your dev speed, make sure to hit that Subscribe button and deploy these templates from the link in our description. Let me know in the comments: would you trust an AI employee with your master branch? Let's discuss below!`);
-    }, 1500);
+    }
   };
 
-  const handleSeoAnalysis = (e: React.FormEvent) => {
+  const triggerCustomScriptGen = async () => {
+    if (!scriptPrompt) return;
+    setIsGeneratingScript(true);
+    setGeneratedScript('');
+    try {
+      const res = await apiFetch('/api/youtube/script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: scriptPrompt, duration: scriptDuration }),
+      });
+      const data = await res.json();
+      if (data.success && data.script) {
+        setGeneratedScript(data.script);
+      }
+    } catch (err) {
+      console.error('Failed to generate custom script', err);
+    } finally {
+      setIsGeneratingScript(false);
+    }
+  };
+
+  const handleSeoAnalysis = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoUrl) return;
     setIsAnalyzingSeo(true);
     setSeoResult(null);
 
-    setTimeout(() => {
-      setIsAnalyzingSeo(false);
-      setSeoResult({
-        score: 84,
-        details: {
-          title: { status: 'Excellent', text: 'Title length is perfect (54 chars) and contains core key phrases.' },
-          description: { status: 'Warning', text: 'Missing structured links and timestamps in the first 200 characters.' },
-          tags: { status: 'Average', text: 'Contains general terms but lacks long-tail search matches.' }
-        },
-        suggestedTags: [
-          'ai coding agent', 'autonomous coding assistant', 'agentic developer loop', 
-          'react app deployment', 'vercel build auto-git', 'ai employee squad', 
-          'google deepmind coding', 'tailwind dark mode studio'
-        ],
-        optimizedTitle: 'I Deployed an AI Coding Agent Squad to My Git Repo (And It Worked!)',
-        optimizedDescription: `Deploying an autonomous AI coding agent directly to our code repository! In this video, we test how an agentic workflow plans edits, compiles React frontends, resolves TypeScript errors, and pushes commits directly to Git.
-
-Chapters:
-0:00 - AI Coding Agent Hooks
-1:15 - Boilerplate vs Agentic Loops
-2:45 - Live Git Build & Push Test
-4:10 - Outro & Template Access
-
-Follow NextBotix for more AI growth automation updates!`
+    try {
+      const res = await apiFetch('/api/youtube/seo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: videoUrl }),
       });
-    }, 1500);
+      const data = await res.json();
+      if (data.success && data.seo) {
+        setSeoResult(data.seo);
+      }
+    } catch (err) {
+      console.error('Failed to run SEO analysis', err);
+    } finally {
+      setIsAnalyzingSeo(false);
+    }
   };
 
-  const handleGenerateThumbnail = (e: React.FormEvent) => {
+  const handleGenerateThumbnail = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsGeneratingThumbnail(true);
     setThumbnailPromptText('');
 
-    setTimeout(() => {
+    try {
+      const res = await apiFetch('/api/youtube/thumbnail-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: thumbnailTopic, style: thumbnailStyle }),
+      });
+      const data = await res.json();
+      if (data.success && data.prompt) {
+        setThumbnailPromptText(data.prompt);
+      }
+    } catch (err) {
+      console.error('Failed to generate thumbnail prompt', err);
+    } finally {
       setIsGeneratingThumbnail(false);
-      setThumbnailPromptText(
-        `Close-up cinematic rendering of a modern white robot face merged with a glowing red YouTube play button, high tech glowing elements, neon light reflection, dark cyber background with abstract code streams, bold yellow 3D text overlay saying '10x FASTER!', ultra-detailed, 8k resolution, photorealistic studio lighting.`
-      );
-    }, 1200);
+    }
   };
 
   const copyToClipboard = (text: string, setter: (val: boolean) => void) => {
@@ -250,7 +279,7 @@ Follow NextBotix for more AI growth automation updates!`
                 <div className="flex flex-col gap-3 mt-2">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-gray-500">Trending keywords for "{searchKeyword}"</span>
                   
-                  {mockTrends.map((trend) => (
+                  {trends.map((trend) => (
                     <div 
                       key={trend.id}
                       className={`p-4 rounded-2xl border transition-all flex flex-col gap-3 ${selectedTrend === trend.keyword ? 'bg-red-950/20 border-red-500/30' : 'bg-gray-950/50 border-gray-900 hover:border-gray-800'}`}
@@ -319,10 +348,36 @@ Follow NextBotix for more AI growth automation updates!`
                   placeholder="Select a trend or write customized instructions for Tuber to compose a script..."
                   className="w-full h-16 bg-transparent text-xs text-white placeholder-gray-600 resize-none focus:outline-none"
                 />
+
+                {/* Duration options selector */}
+                <div className="flex items-center gap-3 border-t border-gray-900/40 pt-2 flex-wrap">
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Duration / Format:</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      { id: '10s', label: 'Shorts (10s)' },
+                      { id: '30s', label: 'Shorts (30s)' },
+                      { id: '1m',  label: 'Shorts (1m)' },
+                      { id: '2m',  label: 'Video (max 2m)' }
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => setScriptDuration(opt.id)}
+                        className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all ${
+                          scriptDuration === opt.id
+                            ? 'bg-red-950/40 border-red-500/50 text-red-400'
+                            : 'bg-transparent border-gray-900 text-gray-400 hover:border-gray-800'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between border-t border-gray-900/60 pt-3">
                   <span className="text-[10px] text-gray-500">Output: Structured video hooks & pacing timestamps</span>
                   <button
-                    onClick={() => handleGenerateScript(scriptPrompt || searchKeyword)}
+                    onClick={triggerCustomScriptGen}
                     disabled={isGeneratingScript || !scriptPrompt}
                     className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
                   >
