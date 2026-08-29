@@ -1708,7 +1708,7 @@ export function TradingWorkspacePage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-md border border-emerald-500/20">
-                <img src="/agents/agent-trading.jpg" alt="Dhana" className="w-full h-full object-cover" />
+                <img src="/agents/agent-trading.jpg?v=2" alt="Dhana" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h3 className="font-bold text-white text-sm">Dhana - Trading Assistant</h3>
@@ -1779,7 +1779,7 @@ export function TradingWorkspacePage() {
           title="Dhana (AI Trading Employee Coach)"
           className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full overflow-hidden border-2 border-emerald-500/30 hover:border-emerald-500 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 bg-gray-900 group"
         >
-          <img src="/agents/agent-trading.jpg" alt="Dhana" className="w-full h-full object-cover" />
+          <img src="/agents/agent-trading.jpg?v=2" alt="Dhana" className="w-full h-full object-cover" />
           <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-gray-900 rounded-full animate-pulse" />
         </button>
       )}
