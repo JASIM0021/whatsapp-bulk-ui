@@ -952,7 +952,7 @@ export function TradingWorkspacePage() {
               <h1 className="text-base font-bold text-white leading-none">Dhan Studio</h1>
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800 border border-gray-800 text-gray-400 font-mono">v1.2</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Quantitative Strategy Composer & Sandbox</p>
+            <p className="hidden md:block text-xs text-gray-400 mt-1">Quantitative Strategy Composer & Sandbox</p>
           </div>
         </div>
         
@@ -1084,7 +1084,7 @@ export function TradingWorkspacePage() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
         
         {/* Navigation Sidebar */}
-        <div className="lg:col-span-1 flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+        <div className="lg:col-span-1 flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 h-fit scrollbar-none mb-2 lg:mb-0">
           {[
             { id: 'strategy', label: 'Strategy Composer', icon: Code },
             { id: 'backtest', label: 'Backtest Sandbox', icon: FileText },
@@ -1095,14 +1095,14 @@ export function TradingWorkspacePage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex-1 lg:flex-initial text-left px-4 py-3.5 rounded-xl border transition-all flex items-center gap-3 ${
+                className={`whitespace-nowrap px-4 py-2.5 rounded-full lg:rounded-xl border transition-all flex items-center justify-center lg:justify-start gap-2 text-xs font-semibold ${
                   activeTab === tab.id
                     ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400 shadow-md'
-                    : 'bg-gray-900 border-gray-800 hover:border-gray-700 text-gray-400 hover:bg-gray-900/60'
+                    : 'bg-gray-900 border-gray-800 text-gray-400 hover:bg-gray-900/60'
                 }`}
               >
-                <Icon size={16} className={activeTab === tab.id ? 'text-emerald-400' : 'text-gray-400'} />
-                <span className="text-xs font-semibold tracking-wide">{tab.label}</span>
+                <Icon size={14} className={activeTab === tab.id ? 'text-emerald-400' : 'text-gray-400'} />
+                <span>{tab.label}</span>
               </button>
             );
           })}
