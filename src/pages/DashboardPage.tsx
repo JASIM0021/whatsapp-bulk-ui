@@ -1,24 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Smartphone, Mail, Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Sparkles, Search, Code2, Calendar as CalendarIcon, Compass, TrendingUp } from 'lucide-react';
+import { Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Code2, Sparkles } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
-
-function FacebookIcon({ size = 32 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12.07h2.54V9.845c0-2.507 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562v1.875h2.773l-.443 2.89h-2.33v6.988C20.343 21.201 24 17.064 24 12.073z" />
-    </svg>
-  );
-}
-
-function LinkedInIcon({ size = 32 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-    </svg>
-  );
-}
 
 export function DashboardPage() {
   const { user, logout } = useAuth();
@@ -47,9 +31,9 @@ export function DashboardPage() {
   const services = [
     {
       id: 'whatsapp',
-      title: 'WhatsApp Marketing',
-      description: 'Send bulk WhatsApp messages, schedule campaigns, and set up automated chatbot responses.',
-      icon: <Smartphone size={32} className="text-green-600" />,
+      title: 'Nexa - WhatsApp AI Employee',
+      description: 'Send bulk WhatsApp campaigns, schedule broadcasts, and configure automated replies.',
+      iconPath: '/agents/agent-whatsapp.jpg',
       bg: 'bg-green-50',
       border: 'border-green-100',
       hoverBorder: 'hover:border-green-300',
@@ -59,9 +43,9 @@ export function DashboardPage() {
     },
     {
       id: 'email',
-      title: 'Email Campaigns',
-      description: 'Create and broadcast professional email marketing campaigns with custom HTML templates.',
-      icon: <Mail size={32} className="text-blue-600" />,
+      title: 'Mailo - Email Outreach Employee',
+      description: 'Create and broadcast professional email marketing campaigns with custom templates.',
+      iconPath: '/agents/agent-email.jpg',
       bg: 'bg-blue-50',
       border: 'border-blue-100',
       hoverBorder: 'hover:border-blue-300',
@@ -71,9 +55,9 @@ export function DashboardPage() {
     },
     {
       id: 'website-chatbot',
-      title: 'Website Chatbot',
-      description: 'Embed a smart AI-powered chat widget on your website to instantly answer questions and capture leads.',
-      icon: <Globe size={32} className="text-purple-600" />,
+      title: 'Webby - Web Conversation Employee',
+      description: 'Embed a smart AI-powered chat widget on your website to capture leads and capture prospects.',
+      iconPath: '/agents/agent-chatbot.jpg',
       bg: 'bg-purple-50',
       border: 'border-purple-100',
       hoverBorder: 'hover:border-purple-300',
@@ -83,9 +67,9 @@ export function DashboardPage() {
     },
     {
       id: 'facebook',
-      title: 'Facebook Pages',
-      description: 'Publish posts, schedule content, and view reach analytics for your Facebook Pages.',
-      icon: <FacebookIcon size={32} />,
+      title: 'Pagey - Facebook Social Employee',
+      description: 'Publish posts, schedule updates, and view analytics for your Facebook Pages.',
+      iconPath: '/agents/agent-facebook.jpg',
       bg: 'bg-blue-50',
       border: 'border-blue-100',
       hoverBorder: 'hover:border-blue-400',
@@ -95,9 +79,9 @@ export function DashboardPage() {
     },
     {
       id: 'linkedin',
-      title: 'LinkedIn',
-      description: 'Automate LinkedIn posts and schedule content to your feed using browser automation.',
-      icon: <LinkedInIcon size={32} />,
+      title: 'Linko - LinkedIn Growth Employee',
+      description: 'Automate LinkedIn posts and schedule high-quality content using browser engines.',
+      iconPath: '/agents/agent-linkedin.jpg',
       bg: 'bg-sky-50',
       border: 'border-sky-100',
       hoverBorder: 'hover:border-sky-400',
@@ -107,9 +91,9 @@ export function DashboardPage() {
     },
     {
       id: 'seo',
-      title: 'SEO Manager',
-      description: 'Embed one script to track SEO scores, Core Web Vitals, and page-level issues across your entire website.',
-      icon: <Search size={32} className="text-emerald-600" />,
+      title: 'Seona - SEO Optimization Employee',
+      description: 'Embed a tracking script to monitor Core Web Vitals and page rankings across your domain.',
+      iconPath: '/agents/agent-seo.jpg',
       bg: 'bg-emerald-50',
       border: 'border-emerald-100',
       hoverBorder: 'hover:border-emerald-300',
@@ -119,9 +103,9 @@ export function DashboardPage() {
     },
     {
       id: 'leads',
-      title: 'Leads Manager',
-      description: 'Scrape business leads from maps by niche and location, enrich with email addresses, and launch campaigns.',
-      icon: <Search size={32} className="text-amber-600" />,
+      title: 'Scrappy - Lead Finder Employee',
+      description: 'Scrape business leads from local maps by niche & location, enrich email details, and start campaigns.',
+      iconPath: '/agents/agent-leads.jpg',
       bg: 'bg-amber-50',
       border: 'border-amber-100',
       hoverBorder: 'hover:border-amber-300',
@@ -131,9 +115,9 @@ export function DashboardPage() {
     },
     {
       id: 'calendar',
-      title: 'Nexbot Calendar & Meetings',
-      description: 'Calendly-grade scheduling with Google Meet 2-way sync, custom branding, and embed scripts.',
-      icon: <CalendarIcon size={32} className="text-teal-600" />,
+      title: 'Schedula - Calendar Booking Assistant',
+      description: 'Schedule meeting slots with Google Meet sync, custom branding, and embed scripts.',
+      iconPath: '/agents/agent-calendar.jpg',
       bg: 'bg-teal-50',
       border: 'border-teal-100',
       hoverBorder: 'hover:border-teal-300',
@@ -143,9 +127,9 @@ export function DashboardPage() {
     },
     {
       id: 'life-companion',
-      title: 'AI Life & Growth Companion',
-      description: 'Understand emotions & sadness, elevate mood with music, generate earning roadmaps, and verify tasks via AI.',
-      icon: <Compass size={32} className="text-purple-600" />,
+      title: 'Mitra - Life Growth Companion',
+      description: 'Understand emotions & sadness, suggest music, and build custom roadmaps.',
+      iconPath: '/agents/agent-life-companion.jpg',
       bg: 'bg-purple-50',
       border: 'border-purple-100',
       hoverBorder: 'hover:border-purple-300',
@@ -155,15 +139,27 @@ export function DashboardPage() {
     },
     {
       id: 'freelancer',
-      title: 'Freelancer Auto-Bidder',
-      description: 'Automate project discovery and generate tailored winning AI proposals for Freelancer.com.',
-      icon: <Code2 size={32} className="text-violet-600" />,
+      title: 'Bidder - Freelancer Bid Automator',
+      description: 'Automate project discovery and generate tailored winning proposals for Freelancer.com.',
+      iconPath: '/agents/agent-freelancer.jpg',
       bg: 'bg-violet-50',
       border: 'border-violet-100',
       hoverBorder: 'hover:border-violet-300',
       iconBg: 'bg-violet-100',
       path: '/freelancer',
       dbId: 'freelancer',
+    },
+    {
+      id: 'trading',
+      title: 'Dhana - Dhan Trading AI Employee',
+      description: 'Compose quantitative strategy rules, run historical backtests, and deploy live Dhan loops.',
+      iconPath: '/agents/agent-trading.jpg',
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-100',
+      hoverBorder: 'hover:border-emerald-300',
+      iconBg: 'bg-emerald-100',
+      path: '/trading',
+      dbId: 'trading',
     },
   ];
 
@@ -176,7 +172,7 @@ export function DashboardPage() {
             <img src="/icon-192.png" alt="NexBotix" className="w-9 h-9 rounded-xl object-contain shadow-sm" />
             <div>
               <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-none">NexBotix</h1>
-              <p className="text-xs font-medium text-gray-500 mt-1">Unified Workspace</p>
+              <p className="text-xs font-medium text-gray-500 mt-1">AI Agent Hub</p>
             </div>
           </div>
           
@@ -230,8 +226,8 @@ export function DashboardPage() {
               >
                 <div className="p-8 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-6">
-                    <div className={`w-16 h-16 rounded-2xl ${service.iconBg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300`}>
-                      {service.icon}
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md group-hover:scale-105 transition-transform duration-300">
+                      <img src={service.iconPath} alt={service.title} className="w-full h-full object-cover" />
                     </div>
                     {isLocked && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">
@@ -285,6 +281,11 @@ export function DashboardPage() {
                           {stats.freelancer?.isConnected ? '🟢 CONNECTED' : '🔴 DISCONNECTED'} • {stats.freelancer?.totalBids || 0} BIDS
                         </span>
                       )}
+                      {service.id === 'trading' && (
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">
+                          📈 LIVE QUANT BOT LOOP
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -299,7 +300,7 @@ export function DashboardPage() {
                     </button>
                   ) : (
                     <>
-                      <span className="text-sm font-semibold text-gray-900">Open Workspace</span>
+                      <span className="text-sm font-semibold text-gray-900">Deploy Agent</span>
                       <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:translate-x-1 transition-transform">
                         <ChevronRight size={16} className="text-gray-700" />
                       </div>
@@ -318,22 +319,22 @@ export function DashboardPage() {
               <Bot size={18} className="text-violet-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Your Bots</h2>
-              <p className="text-sm text-gray-500">AI-powered automation for every channel</p>
+              <h2 className="text-xl font-bold text-gray-900">Your AI Employee Squad</h2>
+              <p className="text-sm text-gray-500">Autonomous digital employees active on your channels</p>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-4">
             {[
-              { id: 'whatsapp-bot', label: 'WhatsApp Bot',  icon: <Smartphone size={22} className="text-green-600" />,  bg: 'bg-green-50',  border: 'border-green-200',  hoverBorder: 'hover:border-green-400', service: 'whatsapp',  path: '/bot' },
-              { id: 'chatbot',      label: 'Website Chatbot', icon: <Globe size={22} className="text-sky-600" />,      bg: 'bg-sky-50',    border: 'border-sky-200',    hoverBorder: 'hover:border-sky-400',   service: 'chatbot',   path: '/website-chatbot' },
-              { id: 'calendar-bot', label: 'Calendar Meeting', icon: <CalendarIcon size={22} className="text-teal-600" />,bg: 'bg-teal-50',   border: 'border-teal-200',   hoverBorder: 'hover:border-teal-400',  service: 'calendar',  path: '/calendar' },
-              { id: 'email-bot',   label: 'Email Bot',      icon: <Mail size={22} className="text-blue-600" />,       bg: 'bg-blue-50',   border: 'border-blue-200',   hoverBorder: 'hover:border-blue-400',  service: 'email',     path: '/email' },
-              { id: 'seo-bot',     label: 'SEO Bot',        icon: <Search size={22} className="text-emerald-600" />,  bg: 'bg-emerald-50',border: 'border-emerald-200',hoverBorder: 'hover:border-emerald-400',service: 'seo',      path: '/seo' },
-              { id: 'linkedin-bot',label: 'LinkedIn Bot',   icon: <LinkedInIcon size={22} />,                         bg: 'bg-indigo-50', border: 'border-indigo-200', hoverBorder: 'hover:border-indigo-400',service: 'linkedin',  path: '/linkedin' },
-              { id: 'life-companion-bot', label: 'AI Life Companion', icon: <Compass size={22} className="text-purple-600" />, bg: 'bg-purple-50', border: 'border-purple-200', hoverBorder: 'hover:border-purple-400', service: 'life_companion', path: '/life-companion' },
-              { id: 'trading-bot', label: 'AI Trading', icon: <TrendingUp size={22} className="text-orange-600" />, bg: 'bg-orange-50', border: 'border-orange-200', hoverBorder: 'hover:border-orange-400', service: 'trading', path: '/trading' },
-              { id: 'freelancer-bot', label: 'Freelancer Bot', icon: <Code2 size={22} className="text-violet-600" />, bg: 'bg-violet-50', border: 'border-violet-200', hoverBorder: 'hover:border-violet-400', service: 'freelancer', path: '/freelancer' },
-              { id: 'blog-bot',    label: 'Blog Bot',       icon: <Sparkles size={22} className="text-amber-500" />,  bg: 'bg-amber-50',  border: 'border-amber-200',  hoverBorder: 'hover:border-amber-400', service: null,        path: null },
+              { id: 'whatsapp-bot', label: 'Nexa (WhatsApp)',  iconPath: '/agents/agent-whatsapp.jpg',  bg: 'bg-green-50',  border: 'border-green-200',  hoverBorder: 'hover:border-green-400', service: 'whatsapp',  path: '/bot' },
+              { id: 'chatbot',      label: 'Webby (Chatbot)', iconPath: '/agents/agent-chatbot.jpg',      bg: 'bg-sky-50',    border: 'border-sky-200',    hoverBorder: 'hover:border-sky-400',   service: 'chatbot',   path: '/website-chatbot' },
+              { id: 'calendar-bot', label: 'Schedula (Calendar)', iconPath: '/agents/agent-calendar.jpg',bg: 'bg-teal-50',   border: 'border-teal-200',   hoverBorder: 'hover:border-teal-400',  service: 'calendar',  path: '/calendar' },
+              { id: 'email-bot',   label: 'Mailo (Email)',      iconPath: '/agents/agent-email.jpg',       bg: 'bg-blue-50',   border: 'border-blue-200',   hoverBorder: 'hover:border-blue-400',  service: 'email',     path: '/email' },
+              { id: 'seo-bot',     label: 'Seona (SEO)',        iconPath: '/agents/agent-seo.jpg',  bg: 'bg-emerald-50',border: 'border-emerald-200',hoverBorder: 'hover:border-emerald-400',service: 'seo',      path: '/seo' },
+              { id: 'linkedin-bot',label: 'Linko (LinkedIn)',   iconPath: '/agents/agent-linkedin.jpg',                         bg: 'bg-indigo-50', border: 'border-indigo-200', hoverBorder: 'hover:border-indigo-400',service: 'linkedin',  path: '/linkedin' },
+              { id: 'life-companion-bot', label: 'Mitra (Life)', iconPath: '/agents/agent-life-companion.jpg', bg: 'bg-purple-50', border: 'border-purple-200', hoverBorder: 'hover:border-purple-400', service: 'life_companion', path: '/life-companion' },
+              { id: 'trading-bot', label: 'Dhana (Trading)', iconPath: '/agents/agent-trading.jpg', bg: 'bg-orange-50', border: 'border-orange-200', hoverBorder: 'hover:border-orange-400', service: 'trading', path: '/trading' },
+              { id: 'freelancer-bot', label: 'Bidder (Freelancer)', iconPath: '/agents/agent-freelancer.jpg', bg: 'bg-violet-50', border: 'border-violet-200', hoverBorder: 'hover:border-violet-400', service: 'freelancer', path: '/freelancer' },
+              { id: 'blog-bot',    label: 'Blog Bot',       iconPath: null,  bg: 'bg-amber-50',  border: 'border-amber-200',  hoverBorder: 'hover:border-amber-400', service: null,        path: null },
             ].map((bot) => {
               const enabled = user?.subscription?.enabledServices ?? [];
               const isActive = !!user?.subscription?.isActive;
@@ -354,8 +355,14 @@ export function DashboardPage() {
                   {comingSoon && (
                     <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>
                   )}
-                  <div className={`w-11 h-11 rounded-xl ${bot.bg} border ${bot.border} flex items-center justify-center shadow-sm`}>
-                    {bot.icon}
+                  <div className="w-11 h-11 rounded-xl overflow-hidden shadow-sm border border-gray-200">
+                    {bot.iconPath ? (
+                      <img src={bot.iconPath} alt={bot.label} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-amber-50 flex items-center justify-center text-amber-600 font-bold text-[9px] uppercase tracking-wider">
+                        Soon
+                      </div>
+                    )}
                   </div>
                   <span className="text-xs font-semibold text-gray-700 text-center leading-tight">{bot.label}</span>
                 </div>

@@ -3,7 +3,7 @@ import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { encryptToken, decryptToken } from './crypto';
 import { 
   TrendingUp, Shield, Key, Bot, Play, Square, FileText, 
-  Lock, RefreshCw, Code, ChevronRight, Sparkles, BarChart2, Sliders, ArrowUpRight, ArrowDownRight, Layers
+  Lock, RefreshCw, Code, ChevronRight, Sparkles, BarChart2, Sliders, ArrowUpRight, ArrowDownRight, Layers, X
 } from 'lucide-react';
 
 interface Strategy {
@@ -50,6 +50,9 @@ export function TradingWorkspacePage() {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<'strategy' | 'backtest' | 'bot'>('strategy');
   const [showBrokerDropdown, setShowBrokerDropdown] = useState(false);
+  const [showAgentCoach, setShowAgentCoach] = useState(() => {
+    return localStorage.getItem('dhan_agent_coach_dismissed') !== 'true';
+  });
   
   // Strategy Studio sub-tabs
   const [stratSubTab, setStratSubTab] = useState<'visual' | 'ai' | 'code'>('visual');
@@ -1698,6 +1701,88 @@ export function TradingWorkspacePage() {
 
         </div>
       </main>
+
+      {/* Dhan AI Agent Coach Popover */}
+      {showAgentCoach ? (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm w-[calc(100vw-3rem)] bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-2xl flex flex-col gap-4 animate-in slide-in-from-bottom-5 duration-300">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-md border border-emerald-500/20">
+                <img src="/agents/agent-trading.jpg" alt="Dhana" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm">Dhana - Trading Assistant</h3>
+                <span className="text-[10px] text-emerald-400 font-medium tracking-wide flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Online & Ready to Teach
+                </span>
+              </div>
+            </div>
+            <button 
+              onClick={() => {
+                localStorage.setItem('dhan_agent_coach_dismissed', 'true');
+                setShowAgentCoach(false);
+              }}
+              className="p-1.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="bg-emerald-950/10 border border-emerald-500/10 rounded-2xl p-4 text-xs text-gray-300 leading-relaxed">
+            <p className="font-medium text-white mb-2">👋 Welcome to your Dhan Trading workspace!</p>
+            <p>I am <strong className="text-emerald-400">Dhana</strong>, your AI Quantitative Trading employee. I automate the composition, verification, and live execution of your trading ideas. Here is what I can do:</p>
+            
+            <ul className="mt-3 space-y-2.5">
+              <li className="flex gap-2">
+                <span className="text-emerald-500 font-bold">1.</span>
+                <div>
+                  <strong className="text-white">Compose Strategies</strong>: Define visual variables (MACD, RSI, EMA) or generate custom Python signals using my integrated Gemini AI engine.
+                </div>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-emerald-500 font-bold">2.</span>
+                <div>
+                  <strong className="text-white">Run Backtests</strong>: Verify custom code against historical Yahoo Finance candles instantly to see logs and P&L charts.
+                </div>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-emerald-500 font-bold">3.</span>
+                <div>
+                  <strong className="text-white">Deploy Live Order Loops</strong>: Connect your secure Dhan API token at the top right to execute signals in real time!
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div className="flex gap-2.5">
+            <button
+              onClick={() => {
+                localStorage.setItem('dhan_agent_coach_dismissed', 'true');
+                setShowAgentCoach(false);
+              }}
+              className="flex-1 py-2 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold text-xs transition-colors"
+            >
+              Dismiss
+            </button>
+            <button
+              onClick={() => setShowAgentCoach(false)}
+              className="flex-1 py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/10 transition-colors"
+            >
+              Let's Start!
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowAgentCoach(true)}
+          title="Dhana (AI Trading Employee Coach)"
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full overflow-hidden border-2 border-emerald-500/30 hover:border-emerald-500 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 bg-gray-900 group"
+        >
+          <img src="/agents/agent-trading.jpg" alt="Dhana" className="w-full h-full object-cover" />
+          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-gray-900 rounded-full animate-pulse" />
+        </button>
+      )}
     </div>
   );
 }
