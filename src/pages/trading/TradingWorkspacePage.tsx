@@ -11,7 +11,7 @@ import { VersionComparisonModal } from './VersionComparisonModal';
 import { 
   TrendingUp, Shield, Key, Bot, Play, Square, FileText, 
   Lock, RefreshCw, Code, ChevronRight,
-  X, History, Plus
+  X, History, Plus, Copy, Trash2
 } from 'lucide-react';
 
 interface StrategyListItem {
@@ -156,6 +156,43 @@ export function TradingWorkspacePage() {
     defaultStrat.name = `Strategy ${strategies.length + 1}`;
     setSelectedStrategyId('');
     setCurrentStrategy(defaultStrat);
+  };
+
+  // Duplicate / Clone Active Strategy
+  const handleDuplicateStrategy = () => {
+    const clone: StrategyDefinition = JSON.parse(JSON.stringify(currentStrategy));
+    clone.name = `${currentStrategy.name} (Copy)`;
+    clone.version = 1;
+    setSelectedStrategyId('');
+    setCurrentStrategy(clone);
+  };
+
+  // Delete Strategy
+  const handleDeleteStrategy = async (strategyId: string) => {
+    if (!strategyId) return;
+    const toDelete = strategies.find(s => s._id === strategyId);
+    if (!window.confirm(`Are you sure you want to delete "${toDelete?.name || 'this strategy'}"?`)) {
+      return;
+    }
+    try {
+      const res = await apiFetch(`${API_ENDPOINTS.trading.strategies}/${strategyId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        const remaining = strategies.filter(s => s._id !== strategyId);
+        setStrategies(remaining);
+        if (remaining.length > 0) {
+          handleSelectStrategy(remaining[0]._id);
+        } else {
+          handleCreateNewStrategy();
+        }
+      } else {
+        alert(data.detail || 'Failed to delete strategy');
+      }
+    } catch (err: any) {
+      alert(`Delete error: ${err.message}`);
+    }
   };
 
   // Keypad Helper for PIN
@@ -402,12 +439,12 @@ export function TradingWorkspacePage() {
         <div className="flex items-center gap-3 flex-wrap relative">
           
           {/* Strategy Quick Switcher */}
-          <div className="flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-xl px-3 py-1.5">
+          <div className="flex items-center gap-1.5 bg-gray-900 border border-gray-800 rounded-xl px-2.5 py-1.5">
             <span className="text-[10px] text-gray-500 uppercase font-mono font-bold">Strategy:</span>
             <select
               value={selectedStrategyId}
               onChange={(e) => handleSelectStrategy(e.target.value)}
-              className="bg-transparent text-xs font-mono font-bold text-emerald-400 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-mono font-bold text-emerald-400 focus:outline-none cursor-pointer max-w-[160px] truncate"
             >
               {strategies.map((s) => (
                 <option key={s._id} value={s._id} className="bg-gray-900 text-white">
@@ -415,22 +452,44 @@ export function TradingWorkspacePage() {
                 </option>
               ))}
             </select>
+
             <button
               type="button"
               onClick={handleCreateNewStrategy}
               className="p-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
               title="Create New Strategy"
             >
-              <Plus size={12} />
+              <Plus size={13} />
             </button>
+
+            <button
+              type="button"
+              onClick={handleDuplicateStrategy}
+              className="p-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
+              title="Duplicate / Save as Copy"
+            >
+              <Copy size={13} />
+            </button>
+
             <button
               type="button"
               onClick={() => setVersionModalOpen(true)}
               className="p-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
               title="Version History"
             >
-              <History size={12} />
+              <History size={13} />
             </button>
+
+            {strategies.length > 1 && selectedStrategyId && (
+              <button
+                type="button"
+                onClick={() => handleDeleteStrategy(selectedStrategyId)}
+                className="p-1 rounded bg-gray-800 hover:bg-rose-900/60 text-gray-400 hover:text-rose-300"
+                title="Delete Strategy"
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
           </div>
 
           <div className="relative">
