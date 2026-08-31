@@ -174,6 +174,74 @@ export function VisualStrategyCanvas({
         </div>
       </div>
 
+      {/* Strategy Properties & Timeframe Selector Toolbar */}
+      <div className="bg-gray-950 p-4 rounded-2xl border border-gray-800 grid grid-cols-1 md:grid-cols-3 gap-4 items-center font-mono text-xs shadow-lg">
+        {/* Strategy Name & Symbol */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <label className="block text-[9px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
+              Strategy Name
+            </label>
+            <input
+              type="text"
+              value={strategy.name}
+              onChange={(e) => onChange({ ...strategy, name: e.target.value })}
+              className="w-full px-2.5 py-1.5 bg-gray-900 border border-gray-800 rounded-xl text-white font-bold focus:outline-none focus:border-emerald-500/50"
+            />
+          </div>
+          <div className="w-28">
+            <label className="block text-[9px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
+              Symbol
+            </label>
+            <input
+              type="text"
+              value={strategy.asset_symbol}
+              onChange={(e) => onChange({ ...strategy, asset_symbol: e.target.value.toUpperCase() })}
+              className="w-full px-2.5 py-1.5 bg-gray-900 border border-gray-800 rounded-xl text-emerald-400 font-bold focus:outline-none focus:border-emerald-500/50 text-center"
+            />
+          </div>
+        </div>
+
+        {/* Timeframe Selector Pills */}
+        <div className="md:col-span-2 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <label className="block text-[9px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
+              Base Timeframe
+            </label>
+            <div className="flex flex-wrap gap-1">
+              {['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'].map((tf) => (
+                <button
+                  key={tf}
+                  type="button"
+                  onClick={() => onChange({ ...strategy, timeframe: tf as any })}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                    strategy.timeframe === tf
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+                  }`}
+                >
+                  {tf}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-44">
+            <label className="block text-[9px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
+              Intrabar Model
+            </label>
+            <select
+              value={strategy.intrabar_model || 'conservative'}
+              onChange={(e) => onChange({ ...strategy, intrabar_model: e.target.value as any })}
+              className="w-full px-2.5 py-1.5 bg-gray-900 border border-gray-800 rounded-xl text-white font-semibold focus:outline-none"
+            >
+              <option value="conservative">Conservative</option>
+              <option value="ohlc_deterministic">OHLC Deterministic</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Validation Status Strip */}
       <div className={`p-3.5 rounded-xl border flex flex-wrap justify-between items-center gap-3 text-xs font-mono ${
         validation.valid 

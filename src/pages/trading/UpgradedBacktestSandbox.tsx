@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { StrategyDefinition } from './strategyDsl';
 import { 
@@ -89,8 +89,15 @@ export function UpgradedBacktestSandbox({
   const [startDate, setStartDate] = useState('2026-06-01');
   const [endDate, setEndDate] = useState('2026-08-28');
   const [capital] = useState(100000);
-  const [interval] = useState(strategy.timeframe || '1d');
+  const [interval, setInterval] = useState(strategy.timeframe || '1d');
   const [intrabarModel, setIntrabarModel] = useState(strategy.intrabar_model || 'conservative');
+
+  // Sync state when strategy changes
+  useEffect(() => {
+    if (strategy.asset_symbol) setSymbol(strategy.asset_symbol);
+    if (strategy.timeframe) setInterval(strategy.timeframe);
+    if (strategy.intrabar_model) setIntrabarModel(strategy.intrabar_model);
+  }, [strategy]);
 
   const [loading, setLoading] = useState(false);
   const [backtestResult, setBacktestResult] = useState<any | null>(null);
@@ -473,6 +480,27 @@ export function UpgradedBacktestSandbox({
               onChange={(e) => setEndDate(e.target.value)}
               className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
+              Timeframe
+            </label>
+            <select
+              value={interval}
+              onChange={(e) => setInterval(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-emerald-400 font-bold focus:outline-none"
+            >
+              <option value="1m">1 min (1m)</option>
+              <option value="3m">3 min (3m)</option>
+              <option value="5m">5 min (5m)</option>
+              <option value="15m">15 min (15m)</option>
+              <option value="30m">30 min (30m)</option>
+              <option value="1h">1 hour (1h)</option>
+              <option value="4h">4 hours (4h)</option>
+              <option value="1d">Daily (1d)</option>
+              <option value="1w">Weekly (1w)</option>
+            </select>
           </div>
 
           <div>
