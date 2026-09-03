@@ -1,31 +1,31 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-	Download, Database, ArrowLeft, Crown, LogOut, MessageSquare, Menu, X, Mail, Search, Sparkles
+	Database, ArrowLeft, Crown, LogOut, MessageSquare, Menu, X, Mail, Search, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { LeadsScraperTab } from './leads/LeadsScraperTab';
+import { LeadsExtractorTab } from './leads/LeadsExtractorTab';
 import { LeadsDatabaseTab } from './leads/LeadsDatabaseTab';
 import { LeadsAutopilotTab } from './leads/LeadsAutopilotTab';
 
-type Tab = 'scraper' | 'database' | 'autopilot';
+type Tab = 'extractor' | 'database' | 'autopilot';
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
-	{ id: 'scraper',  label: 'Extension Setup', icon: <Download size={20} />,   desc: 'Install & connect' },
-	{ id: 'database', label: 'Leads Database',  icon: <Database size={20} />,   desc: 'Browse & contact leads' },
-	{ id: 'autopilot', label: 'AI Auto Pilot',   icon: <Sparkles size={20} />,   desc: 'Automate outreach & follow-up' },
+	{ id: 'extractor', label: 'Lead Extractor',  icon: <Sparkles size={20} />,   desc: 'Automated scraping' },
+	{ id: 'database',  label: 'Leads Database',  icon: <Database size={20} />,   desc: 'Browse & contact leads' },
+	{ id: 'autopilot', label: 'AI Auto Pilot',   icon: <Search size={20} />,     desc: 'Automate outreach & follow-up' },
 ];
 
 const TAB_LABELS: Record<Tab, string> = {
-	scraper: 'Extension Setup',
+	extractor: 'Lead Extractor',
 	database: 'Leads Database',
 	autopilot: 'AI Auto Pilot',
 };
 
 export function LeadsPage() {
 	const [tab, setTab] = useState<Tab>(() => {
-		const saved = localStorage.getItem('leads_active_tab');
-		return (saved === 'scraper' || saved === 'database') ? saved : 'scraper';
+		const saved = localStorage.getItem('leads_active_tab') as Tab;
+		return (saved === 'extractor' || saved === 'database' || saved === 'autopilot') ? saved : 'extractor';
 	});
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const { user, logout } = useAuth();
@@ -177,7 +177,7 @@ export function LeadsPage() {
 				{/* Main Workspace Pane */}
 				<main className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-950">
 					<div className="max-w-6xl mx-auto space-y-6">
-						{tab === 'scraper' && <LeadsScraperTab />}
+						{tab === 'extractor' && <LeadsExtractorTab />}
 						{tab === 'database' && <LeadsDatabaseTab />}
 						{tab === 'autopilot' && <LeadsAutopilotTab />}
 					</div>

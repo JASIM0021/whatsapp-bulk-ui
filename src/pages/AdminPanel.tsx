@@ -43,6 +43,8 @@ import {
   Receipt,
   Cpu,
   Zap,
+  Sparkles,
+  Database,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -61,6 +63,11 @@ interface AdminUser {
   role: string;
   status?: string;
   isTestUser?: boolean;
+  isEnterprise?: boolean;
+  canEditLeadSources?: boolean;
+  allowedLeadSources?: string[];
+  leadBalance?: number;
+  freeLeadsClaimed?: boolean;
   createdAt: string;
   subscription?: {
     plan: string;
@@ -74,7 +81,7 @@ interface AdminUser {
   };
 }
 
-type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers' | 'transactions' | 'ai';
+type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers' | 'transactions' | 'ai' | 'leads';
 
 interface Invoice {
   id: string;
@@ -306,6 +313,10 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
 }) {
   const [name, setName] = useState('');
   const [role, setRole] = useState<'user' | 'admin'>('user');
+  const [isEnterprise, setIsEnterprise] = useState(false);
+  const [canEditLeadSources, setCanEditLeadSources] = useState(false);
+  const [allowedLeadSources, setAllowedLeadSources] = useState<Set<string>>(new Set(['gmap', 'bing']));
+  const [leadBalance, setLeadBalance] = useState<number>(0);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -325,6 +336,10 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
     if (user) {
       setName(user.name);
       setRole(user.role as 'user' | 'admin');
+      setIsEnterprise(user.isEnterprise ?? false);
+      setCanEditLeadSources(user.canEditLeadSources ?? false);
+      setAllowedLeadSources(new Set(user.allowedLeadSources && user.allowedLeadSources.length > 0 ? user.allowedLeadSources : ['gmap', 'bing']));
+      setLeadBalance(user.leadBalance ?? 0);
       setError('');
       setPlanMsg('');
       setSvcMsg('');
@@ -342,6 +357,15 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
       .catch(() => { /* ignore */ });
   }, [open]);
 
+  const toggleLeadSource = (src: string) => {
+    setAllowedLeadSources(prev => {
+      const next = new Set(prev);
+      if (next.has(src)) next.delete(src);
+      else next.add(src);
+      return next;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !name.trim()) return;
@@ -350,7 +374,14 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
     try {
       const res = await apiFetch(API_ENDPOINTS.admin.user(user.id), {
         method: 'PUT',
-        body: JSON.stringify({ name: name.trim(), role }),
+        body: JSON.stringify({
+          name: name.trim(),
+          role,
+          isEnterprise,
+          canEditLeadSources,
+          allowedLeadSources: Array.from(allowedLeadSources),
+          leadBalance: Number(leadBalance),
+        }),
       });
       const data = await res.json();
       if (!data.success) {
@@ -452,6 +483,73 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
               ))}
             </div>
           </div>
+
+          {/* Enterprise & Lead Extractor Controls */}
+          <div className="pt-2 border-t border-gray-100 space-y-3">
+            <p className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles size={14} className="text-amber-500" />
+              Lead Extractor & Enterprise Access
+            </p>
+
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
+              <input
+                type="checkbox"
+                checked={isEnterprise}
+                onChange={(e) => {
+                  setIsEnterprise(e.target.checked);
+                  if (e.target.checked) setCanEditLeadSources(true);
+                }}
+                className="w-4 h-4 rounded text-amber-600 border-gray-300 focus:ring-amber-500"
+              />
+              <span>Promote to <strong>Enterprise User</strong> (Unlimited quota)</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
+              <input
+                type="checkbox"
+                checked={canEditLeadSources}
+                onChange={(e) => setCanEditLeadSources(e.target.checked)}
+                className="w-4 h-4 rounded text-amber-600 border-gray-300 focus:ring-amber-500"
+              />
+              <span>Allow <strong>Custom Lead Source Selection</strong> (Unlock 50/50 lock)</span>
+            </label>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-gray-600">Allowed Extraction Sources</label>
+              <div className="grid grid-cols-2 gap-1.5 text-xs text-gray-700">
+                {[
+                  { id: 'gmap', label: 'Google Maps' },
+                  { id: 'bing', label: 'Bing Maps' },
+                  { id: 'trustpilot', label: 'Trustpilot' },
+                  { id: 'googleplaystore', label: 'Google Play Store' },
+                ].map(s => (
+                  <label key={s.id} className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={allowedLeadSources.has(s.id)}
+                      onChange={() => toggleLeadSource(s.id)}
+                      className="w-3.5 h-3.5 rounded text-amber-600 border-gray-300"
+                    />
+                    <span>{s.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Lead Credits Balance (Used when not enterprise)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={leadBalance}
+                onChange={(e) => setLeadBalance(Number(e.target.value))}
+                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
           )}
@@ -731,6 +829,11 @@ function UsersTab() {
                           </div>
                           {isBlocked && (
                             <span className="px-1.5 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded uppercase">Blocked</span>
+                          )}
+                          {u.isEnterprise && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded uppercase">
+                              <Crown size={9} /> Enterprise
+                            </span>
                           )}
                           {u.isTestUser && (
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded uppercase">
@@ -3487,6 +3590,364 @@ function TransactionsTab() {
   );
 }
 
+/* ─── Admin Master Leads & Extractor Scheduler Tab ─── */
+function AdminLeadsTab() {
+  // Scheduler Settings State
+  const [settings, setSettings] = useState<{
+    dailyExtractTime: string;
+    timezone: string;
+    cronEnabled: boolean;
+    lastRunAt?: string;
+    lastRunUsers?: number;
+    lastRunLeads?: number;
+    lastRunSummary?: string;
+  }>({
+    dailyExtractTime: '02:00',
+    timezone: 'UTC',
+    cronEnabled: true,
+  });
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsMsg, setSettingsMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // Manual Trigger State
+  const [triggering, setTriggering] = useState(false);
+  const [triggerResult, setTriggerResult] = useState<any>(null);
+
+  // Global Leads Explorer State
+  const [leads, setLeads] = useState<any[]>([]);
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [platform, setPlatform] = useState('');
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      setSettingsLoading(true);
+      const res = await apiFetch(API_ENDPOINTS.admin.leadsSettings);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setSettings(data.data);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setSettingsLoading(false);
+    }
+  }, []);
+
+  const fetchLeads = useCallback(async () => {
+    try {
+      setLeadsLoading(true);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: '25',
+      });
+      if (search.trim()) params.set('q', search.trim());
+      if (platform) params.set('platform', platform);
+
+      const res = await apiFetch(`${API_ENDPOINTS.admin.leadsAll}?${params.toString()}`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setLeads(data.data.leads || []);
+        setTotalLeads(data.data.total || 0);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setLeadsLoading(false);
+    }
+  }, [page, search, platform]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useEffect(() => {
+    fetchLeads();
+  }, [fetchLeads]);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    setSettingsMsg(null);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.leadsSettings, {
+        method: 'POST',
+        body: JSON.stringify(settings),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSettingsMsg({ text: 'Daily extractor schedule settings updated successfully!', type: 'success' });
+        fetchSettings();
+      } else {
+        setSettingsMsg({ text: data.error || 'Failed to save settings', type: 'error' });
+      }
+    } catch {
+      setSettingsMsg({ text: 'Network error saving settings', type: 'error' });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleManualTrigger = async () => {
+    if (!window.confirm('Run lead extraction for all eligible users right now?')) return;
+    setTriggering(true);
+    setTriggerResult(null);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.leadsTrigger, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setTriggerResult(data.data);
+        fetchSettings();
+        fetchLeads();
+      } else {
+        alert(data.error || 'Extraction failed');
+      }
+    } catch {
+      alert('Network error triggering extraction');
+    } finally {
+      setTriggering(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* ── Daily Schedule & Trigger Card ── */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+          <div>
+            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <Clock size={18} className="text-amber-500" />
+              Automated Lead Extractor Schedule
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Configure daily execution time and global cron settings for all enterprise and quota users.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleManualTrigger}
+            disabled={triggering}
+            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 self-start sm:self-auto"
+          >
+            {triggering ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Executing Pipeline...
+              </>
+            ) : (
+              <>
+                <Zap size={14} />
+                Trigger Extraction Now
+              </>
+            )}
+          </button>
+        </div>
+
+        {triggerResult && (
+          <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
+            <span>{triggerResult.summary}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveSettings} className="mt-5 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Daily Extract Time (24h format)
+            </label>
+            <input
+              type="time"
+              value={settings.dailyExtractTime}
+              onChange={(e) => setSettings({ ...settings, dailyExtractTime: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Timezone</label>
+            <select
+              value={settings.timezone}
+              onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 outline-none"
+            >
+              <option value="UTC">UTC (Coordinated Universal Time)</option>
+              <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+              <option value="America/New_York">America/New_York (EST/EDT)</option>
+              <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+              <option value="Europe/London">Europe/London (GMT/BST)</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 pb-2">
+            <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.cronEnabled}
+                onChange={(e) => setSettings({ ...settings, cronEnabled: e.target.checked })}
+                className="w-4 h-4 rounded text-amber-600 border-gray-300 focus:ring-amber-500"
+              />
+              <span>Cron Scheduler Active</span>
+            </label>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={savingSettings || settingsLoading}
+              className="w-full py-2 px-4 bg-gray-900 hover:bg-gray-800 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              {savingSettings ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              Save Extractor Settings
+            </button>
+          </div>
+        </form>
+
+        {settingsMsg && (
+          <div className={`mt-3 p-2.5 rounded-lg text-xs ${settingsMsg.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+            {settingsMsg.text}
+          </div>
+        )}
+
+        {settings.lastRunAt && (
+          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+            <span>Last Cron Execution: <strong>{new Date(settings.lastRunAt).toLocaleString()}</strong></span>
+            <span>{settings.lastRunSummary}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Global Master Leads Database Viewer ── */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <Database size={18} className="text-amber-500" />
+              Master Database Leads ({totalLeads.toLocaleString()})
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Deduplicated master lead repository across all system accounts.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                placeholder="Search leads..."
+                className="pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-xs w-48 outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+            <select
+              value={platform}
+              onChange={(e) => { setPlatform(e.target.value); setPage(1); }}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option value="">All Sources</option>
+              <option value="gmap">Google Maps</option>
+              <option value="bing">Bing Maps</option>
+              <option value="trustpilot">Trustpilot</option>
+              <option value="googleplaystore">Play Store</option>
+            </select>
+          </div>
+        </div>
+
+        {leadsLoading ? (
+          <div className="p-12 text-center text-gray-400 text-xs">
+            <Loader2 size={24} className="animate-spin mx-auto mb-2 text-amber-500" />
+            Loading master leads pool...
+          </div>
+        ) : leads.length === 0 ? (
+          <div className="p-12 text-center text-gray-400 text-xs">
+            No leads found matching current filter.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-50 text-gray-600 font-semibold border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3">Business / Name</th>
+                  <th className="px-4 py-3">Source</th>
+                  <th className="px-4 py-3">Contact Info</th>
+                  <th className="px-4 py-3">Rating / Niche</th>
+                  <th className="px-4 py-3">Address</th>
+                  <th className="px-4 py-3">Date Added</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 text-gray-700">
+                {leads.map((l) => (
+                  <tr key={l.id || l._id} className="hover:bg-gray-50/60">
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      <div>{l.name}</div>
+                      {l.website && (
+                        <a href={l.website} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 mt-0.5">
+                          {l.website.replace(/^https?:\/\//, '')} <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                        {l.platform || 'gmap'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {l.phone && <div className="font-mono">{l.phone}</div>}
+                      {l.email && <div className="text-gray-500 text-[11px]">{l.email}</div>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{l.category || l.keyword || '—'}</div>
+                      {l.rating > 0 && (
+                        <div className="text-[11px] text-amber-600">★ {l.rating.toFixed(1)} ({l.reviews} reviews)</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 max-w-[200px] truncate" title={l.address}>
+                      {l.address || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-[11px] whitespace-nowrap">
+                      {l.scrapedAt ? new Date(l.scrapedAt).toLocaleDateString() : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalLeads > 25 && (
+          <div className="p-4 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
+            <span>Showing page {page} of {Math.ceil(totalLeads / 25)}</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage(p => p + 1)}
+                disabled={page >= Math.ceil(totalLeads / 25)}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Admin Panel ─── */
 export function AdminPanel() {
   const { user } = useAuth();
@@ -3515,6 +3976,7 @@ export function AdminPanel() {
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
+    { id: 'leads', label: 'Leads & Extractor', icon: Sparkles },
     { id: 'transactions', label: 'Purchase Logs', icon: Receipt },
     { id: 'invoices', label: 'Invoices', icon: FileText },
     { id: 'plans', label: 'Plans', icon: Settings },
@@ -3555,12 +4017,12 @@ export function AdminPanel() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-6 w-fit">
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-6 w-fit overflow-x-auto max-w-full">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
                 tab === t.id
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
@@ -3575,6 +4037,7 @@ export function AdminPanel() {
         {/* Content */}
         {tab === 'dashboard' && <DashboardTab stats={stats} loading={statsLoading} />}
         {tab === 'users' && <UsersTab />}
+        {tab === 'leads' && <AdminLeadsTab />}
         {tab === 'transactions' && <TransactionsTab />}
         {tab === 'invoices' && <InvoicesTab />}
         {tab === 'plans' && <PlansTab />}
