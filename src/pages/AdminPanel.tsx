@@ -3601,10 +3601,12 @@ function AdminLeadsTab() {
     lastRunUsers?: number;
     lastRunLeads?: number;
     lastRunSummary?: string;
+    isRunning?: boolean;
   }>({
     dailyExtractTime: '02:00',
     timezone: 'UTC',
     cronEnabled: true,
+    isRunning: false,
   });
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -3668,6 +3670,16 @@ function AdminLeadsTab() {
     fetchLeads();
   }, [fetchLeads]);
 
+  // Poll status while extraction is running
+  useEffect(() => {
+    if (!settings.isRunning && !triggering) return;
+    const interval = setInterval(() => {
+      fetchSettings();
+      fetchLeads();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [settings.isRunning, triggering, fetchSettings, fetchLeads]);
+
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -3692,6 +3704,10 @@ function AdminLeadsTab() {
   };
 
   const handleManualTrigger = async () => {
+    if (triggering || settings.isRunning) {
+      alert('An extraction cycle is already in progress. Please wait for it to finish.');
+      return;
+    }
     if (!window.confirm('Run lead extraction for all eligible users right now?')) return;
     setTriggering(true);
     setTriggerResult(null);
@@ -3712,6 +3728,8 @@ function AdminLeadsTab() {
     }
   };
 
+  const isExtractionActive = triggering || !!settings.isRunning;
+
   return (
     <div className="space-y-6">
       {/* ── Daily Schedule & Trigger Card ── */}
@@ -3729,13 +3747,17 @@ function AdminLeadsTab() {
           <button
             type="button"
             onClick={handleManualTrigger}
-            disabled={triggering}
-            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 self-start sm:self-auto"
+            disabled={isExtractionActive}
+            className={`px-4 py-2 text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 self-start sm:self-auto ${
+              isExtractionActive
+                ? 'bg-amber-400 cursor-not-allowed opacity-80'
+                : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500'
+            }`}
           >
-            {triggering ? (
+            {isExtractionActive ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
-                Executing Pipeline...
+                Extraction in Progress...
               </>
             ) : (
               <>
