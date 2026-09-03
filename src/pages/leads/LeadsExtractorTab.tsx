@@ -38,6 +38,7 @@ export function LeadsExtractorTab() {
   const [claimingTrial, setClaimingTrial] = useState(false);
   const [purchasingAddon, setPurchasingAddon] = useState(false);
   const [addonPacks, setAddonPacks] = useState(1);
+  const [pricePerPack, setPricePerPack] = useState(500);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [addonSuccess, setAddonSuccess] = useState<string | null>(null);
@@ -53,9 +54,10 @@ export function LeadsExtractorTab() {
     try {
       setLoading(true);
       setError(null);
-      const [qRes, cRes] = await Promise.all([
+      const [qRes, cRes, pRes] = await Promise.all([
         apiFetch(API_ENDPOINTS.leads.quota),
         apiFetch(API_ENDPOINTS.leads.config),
+        apiFetch(API_ENDPOINTS.subscription.plans).catch(() => null),
       ]);
 
       const qData = await qRes.json();
@@ -71,6 +73,17 @@ export function LeadsExtractorTab() {
         setKeyword(cData.data.keyword || '');
         setLocation(cData.data.location || '');
         setTargetCount(cData.data.targetCount || 25);
+      }
+      if (pRes) {
+        try {
+          const pData = await pRes.json();
+          if (pData.success && Array.isArray(pData.data)) {
+            const leadPlan = pData.data.find((p: any) => p.plan === 'addon_leads_1' || p.plan === 'addon_leads');
+            if (leadPlan && typeof leadPlan.amount === 'number' && leadPlan.amount > 0) {
+              setPricePerPack(leadPlan.amount);
+            }
+          }
+        } catch { /* use default */ }
       }
     } catch (e: any) {
       setError(e.message || 'Failed to load extraction settings');
@@ -545,7 +558,7 @@ const loadRazorpayScript = (): Promise<void> =>
               </p>
 
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-center">
-                <p className="text-xs font-bold text-amber-300">Rate: ₹500 INR per 1,000 Leads</p>
+                <p className="text-xs font-bold text-amber-300">Rate: ₹{pricePerPack} INR per 1,000 Leads</p>
                 <p className="text-[10px] text-slate-400 mt-0.5">Deduplicated, enriched with email & phone numbers</p>
               </div>
 
@@ -556,10 +569,10 @@ const loadRazorpayScript = (): Promise<void> =>
                   onChange={(e) => setAddonPacks(Number(e.target.value))}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
                 >
-                  <option value={1}>1,000 Leads (₹500)</option>
-                  <option value={2}>2,000 Leads (₹1,000)</option>
-                  <option value={5}>5,000 Leads (₹2,500)</option>
-                  <option value={10}>10,000 Leads (₹5,000)</option>
+                  <option value={1}>1,000 Leads (₹{(1 * pricePerPack).toLocaleString()})</option>
+                  <option value={2}>2,000 Leads (₹{(2 * pricePerPack).toLocaleString()})</option>
+                  <option value={5}>5,000 Leads (₹{(5 * pricePerPack).toLocaleString()})</option>
+                  <option value={10}>10,000 Leads (₹{(10 * pricePerPack).toLocaleString()})</option>
                 </select>
               </div>
 
@@ -574,7 +587,7 @@ const loadRazorpayScript = (): Promise<void> =>
                 ) : (
                   <Zap size={14} />
                 )}
-                Purchase {(addonPacks * 1000).toLocaleString()} Leads (₹{addonPacks * 500})
+                Purchase {(addonPacks * 1000).toLocaleString()} Leads (₹{(addonPacks * pricePerPack).toLocaleString()})
               </button>
             </div>
           )}
