@@ -133,25 +133,79 @@ export function LeadsExtractorTab() {
     }
   };
 
+const loadRazorpayScript = (): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if ((window as any).Razorpay) { resolve(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+    document.body.appendChild(script);
+  });
+
   const handlePurchaseAddon = async () => {
     setPurchasingAddon(true);
     setError(null);
     setAddonSuccess(null);
     try {
-      const res = await apiFetch(API_ENDPOINTS.leads.addon, {
+      const planId = `addon_leads_${addonPacks}`;
+      const res = await apiFetch(API_ENDPOINTS.subscription.initiate, {
         method: 'POST',
-        body: JSON.stringify({ packs: addonPacks }),
+        body: JSON.stringify({ plan: planId, currency: 'INR' }),
       });
       const data = await res.json();
       if (!data.success) {
-        throw new Error(data.error || 'Purchase failed');
+        throw new Error(data.error || 'Failed to initiate payment');
       }
-      setAddonSuccess(`Successfully added ${addonPacks * 1000} leads to your balance!`);
-      await fetchQuotaAndConfig();
-      setTimeout(() => setAddonSuccess(null), 4000);
+
+      const rzpData = data.data;
+      await loadRazorpayScript();
+
+      const options = {
+        key: rzpData.keyId,
+        amount: rzpData.amount,
+        currency: rzpData.currency || 'INR',
+        name: 'NexBotix',
+        description: rzpData.description || `${addonPacks * 1000} Verified Leads Pack`,
+        order_id: rzpData.orderId,
+        prefill: {
+          name: rzpData.prefillName,
+          email: rzpData.prefillEmail,
+          contact: rzpData.prefillPhone,
+        },
+        theme: { color: '#f59e0b' },
+        modal: { ondismiss: () => setPurchasingAddon(false) },
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+          try {
+            const verifyRes = await apiFetch(API_ENDPOINTS.subscription.razorpayVerify, {
+              method: 'POST',
+              body: JSON.stringify({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                txnId: rzpData.txnId,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              setAddonSuccess(`Payment successful! Added ${addonPacks * 1000} leads to your balance.`);
+              await fetchQuotaAndConfig();
+              setTimeout(() => setAddonSuccess(null), 5000);
+            } else {
+              setError(verifyData.error || 'Payment verification failed');
+            }
+          } catch (err: any) {
+            setError(err.message || 'Payment verification error');
+          } finally {
+            setPurchasingAddon(false);
+          }
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
     } catch (err: any) {
-      setError(err.message || 'Error purchasing addon');
-    } finally {
+      setError(err.message || 'Error initiating payment');
       setPurchasingAddon(false);
     }
   };
