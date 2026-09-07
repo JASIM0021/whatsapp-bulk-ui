@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Database, Search, Filter, Trash2, Download, MessageSquare, Mail, Loader2, ChevronLeft, ChevronRight, CheckSquare, Square, Star, Globe, Phone, RefreshCw, X, Save, Copy, Share2 } from 'lucide-react';
+import {
+	Database, Search, Filter, Trash2, Download, MessageSquare, Mail, Loader2,
+	ChevronLeft, ChevronRight, CheckSquare, Square, Star, Globe, Phone, RefreshCw,
+	X, Save, Copy, Share2, UploadCloud, FileSpreadsheet, FileJson, FileText
+} from 'lucide-react';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
+import { LeadImportModal } from './LeadImportModal';
 
 interface Lead {
 	id: string;
@@ -10,6 +15,9 @@ interface Lead {
 	phone?: string;
 	website?: string;
 	email?: string;
+	allEmails?: string[];
+	emailConfidence?: string;
+	emailSource?: string;
 	category?: string;
 	rating?: number;
 	reviews?: number;
@@ -70,6 +78,9 @@ export function LeadsDatabaseTab() {
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [deleting, setDeleting] = useState(false);
 	const [copiedLeadId, setCopiedLeadId] = useState<string | null>(null);
+
+	// Import leads modal state
+	const [showImportModal, setShowImportModal] = useState(false);
 
 	// Sharing leads modal state
 	const [showShareModal, setShowShareModal] = useState(false);
@@ -351,7 +362,7 @@ Requirements:
 		}
 	};
 
-	const handleExport = (format: 'excel' | 'csv') => {
+	const handleExport = (format: 'excel' | 'csv' | 'json') => {
 		const params = new URLSearchParams({
 			format,
 		});
@@ -388,12 +399,25 @@ Requirements:
 
 	const handleEmailCampaign = () => {
 		const selectedLeads = leads.filter(l => selectedIds.has(l.id));
-		const validEmails = selectedLeads
-			.filter(l => l.email)
-			.map(l => ({
-				email: l.email!,
-				name: l.name,
-			}));
+		const validEmails: { email: string; name: string }[] = [];
+		const seenEmails = new Set<string>();
+
+		selectedLeads.forEach(l => {
+			const emailsToInclude: string[] = [];
+			if (l.email) emailsToInclude.push(l.email);
+			if (Array.isArray(l.allEmails)) emailsToInclude.push(...l.allEmails);
+
+			emailsToInclude.forEach(e => {
+				const clean = e.trim().toLowerCase();
+				if (clean && !seenEmails.has(clean) && clean.includes('@')) {
+					seenEmails.add(clean);
+					validEmails.push({
+						email: clean,
+						name: l.name,
+					});
+				}
+			});
+		});
 
 		if (validEmails.length === 0) {
 			alert('None of the selected leads have email addresses.');
@@ -416,11 +440,19 @@ Requirements:
 						<span>Leads Database</span>
 					</h2>
 					<p className="text-slate-400 text-sm mt-1">
-						Browse and filter scraped leads, export to Excel, or directly broadcast marketing campaigns.
+						Browse and filter scraped leads, import external datasets, export to Excel/CSV/JSON, or broadcast marketing campaigns.
 					</p>
 				</div>
 
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex flex-wrap items-center gap-2 shrink-0">
+					<button
+						onClick={() => setShowImportModal(true)}
+						className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-amber-900/30 active:scale-95 border border-amber-400/30"
+					>
+						<UploadCloud size={14} />
+						<span>Import Leads</span>
+					</button>
+
 					<a
 						href="https://github.com/TodayInTech-in/nexbotx-leads-generator-P/releases/download/v2.0.0/nexbotx-leads-generator-v2.0.0.zip"
 						download="nexbotx-leads-generator-v2.0.0.zip"
@@ -429,8 +461,9 @@ Requirements:
 						className="px-3 py-2 bg-gradient-to-r from-blue-600/90 to-indigo-600/90 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 border border-blue-500/20"
 					>
 						<Download size={14} className="animate-pulse" />
-						<span>Download Extension</span>
+						<span>Extension</span>
 					</a>
+
 					<button
 						onClick={fetchLeads}
 						disabled={loading}
@@ -441,21 +474,34 @@ Requirements:
 						) : (
 							<RefreshCw size={14} className="text-amber-500" />
 						)}
-						<span>Reload Data</span>
+						<span>Reload</span>
 					</button>
+
+					<div className="h-5 w-px bg-slate-800 mx-0.5 hidden sm:block" />
+
 					<button
 						onClick={() => handleExport('excel')}
 						className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+						title="Export to Microsoft Excel (.xlsx)"
 					>
-						<Download size={14} />
-						<span>Export Excel</span>
+						<FileSpreadsheet size={13} className="text-emerald-400" />
+						<span>Excel</span>
 					</button>
 					<button
 						onClick={() => handleExport('csv')}
 						className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+						title="Export to CSV (.csv)"
 					>
-						<Download size={14} />
-						<span>Export CSV</span>
+						<FileText size={13} className="text-blue-400" />
+						<span>CSV</span>
+					</button>
+					<button
+						onClick={() => handleExport('json')}
+						className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+						title="Export to Nexbotix JSON format (.json)"
+					>
+						<FileJson size={13} className="text-amber-400" />
+						<span>JSON</span>
 					</button>
 				</div>
 			</div>
@@ -599,8 +645,27 @@ Requirements:
 								</tr>
 							) : leads.length === 0 ? (
 								<tr>
-									<td colSpan={10} className="p-12 text-center text-slate-500 italic">
-										No leads found. Scrape some listings first or adjust your filters.
+									<td colSpan={10} className="p-12 text-center text-slate-500">
+										<div className="flex flex-col items-center justify-center space-y-3">
+											<div className="w-12 h-12 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400">
+												<Database size={22} className="text-amber-500" />
+											</div>
+											<div>
+												<p className="text-slate-300 font-semibold text-sm">No leads in database</p>
+												<p className="text-xs text-slate-500 mt-0.5 max-w-sm mx-auto">
+													Import your existing contacts via CSV, Excel, or JSON, or extract leads using the automated scraper.
+												</p>
+											</div>
+											<div className="flex items-center gap-2 pt-1">
+												<button
+													onClick={() => setShowImportModal(true)}
+													className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-amber-900/30 transition-all active:scale-95"
+												>
+													<UploadCloud size={14} />
+													<span>Import Leads File</span>
+												</button>
+											</div>
+										</div>
 									</td>
 								</tr>
 							) : (
@@ -639,8 +704,22 @@ Requirements:
 											</td>
 											<td className="p-4">
 												{lead.email ? (
-													<span className="text-emerald-400 font-semibold bg-emerald-950/20 border border-emerald-900/30 px-2 py-0.5 rounded-md text-[11px] whitespace-nowrap">
-														{lead.email}
+													<div className="flex items-center gap-1.5 flex-wrap max-w-[220px]">
+														<span className="text-emerald-400 font-semibold bg-emerald-950/20 border border-emerald-900/30 px-2 py-0.5 rounded-md text-[11px] truncate max-w-[150px]">
+															{lead.email}
+														</span>
+														{lead.allEmails && lead.allEmails.length > 1 && (
+															<span
+																title={`All emails:\n${lead.allEmails.join('\n')}`}
+																className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded cursor-help shrink-0"
+															>
+																+{lead.allEmails.length - 1}
+															</span>
+														)}
+													</div>
+												) : lead.allEmails && lead.allEmails.length > 0 ? (
+													<span className="text-emerald-400 font-semibold bg-emerald-950/20 border border-emerald-900/30 px-2 py-0.5 rounded-md text-[11px] truncate max-w-[150px]">
+														{lead.allEmails[0]}
 													</span>
 												) : (
 													<span className="text-slate-700/60">-</span>
@@ -1097,6 +1176,16 @@ Requirements:
 					</div>
 				</div>
 			)}
+
+			{/* Import Leads Modal */}
+			<LeadImportModal
+				isOpen={showImportModal}
+				onClose={() => setShowImportModal(false)}
+				onSuccess={() => {
+					setShowImportModal(false);
+					fetchLeads();
+				}}
+			/>
 		</div>
 	);
 }

@@ -225,6 +225,7 @@ export const API_ENDPOINTS = {
 		list:          `${API_BASE_URL}/api/leads`,
 		delete:        `${API_BASE_URL}/api/leads`,
 		export:        `${API_BASE_URL}/api/leads/export`,
+		import:        `${API_BASE_URL}/api/leads/import`,
 		quota:         `${API_BASE_URL}/api/leads/quota`,
 		claimTrial:    `${API_BASE_URL}/api/leads/claim-trial`,
 		addon:         `${API_BASE_URL}/api/leads/addon`,
