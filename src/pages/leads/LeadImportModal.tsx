@@ -67,9 +67,30 @@ const NEXBOTIX_FIELDS: FieldDefinition[] = [
 	},
 	{
 		key: 'address',
-		label: 'Address / Location',
-		description: 'Street address, city, or physical location',
-		synonyms: ['address', 'location', 'full_address', 'street', 'city', 'addr', 'formatted_address', 'place', 'street_address'],
+		label: 'Full Address / Street',
+		description: 'Street address, building, or landmark location',
+		synonyms: ['address', 'location', 'full_address', 'full address', 'street', 'street address', 'street_address', 'addr', 'formatted_address', 'place'],
+		type: 'string',
+	},
+	{
+		key: 'city',
+		label: 'City',
+		description: 'City or municipality name',
+		synonyms: ['city', 'town', 'district', 'municipality', 'metro', 'city_name', 'city name'],
+		type: 'string',
+	},
+	{
+		key: 'state',
+		label: 'State / Province',
+		description: 'State, province, or region',
+		synonyms: ['state', 'province', 'region', 'state_code', 'state_name', 'state / province', 'state/province'],
+		type: 'string',
+	},
+	{
+		key: 'pincode',
+		label: 'Pincode / ZIP',
+		description: 'Postal code or ZIP code',
+		synonyms: ['pincode', 'pin', 'pin_code', 'pin code', 'zip', 'zipcode', 'zip_code', 'zip code', 'postal', 'postal_code', 'postal code', 'postcode'],
 		type: 'string',
 	},
 	{
@@ -153,9 +174,16 @@ export function LeadImportModal({ isOpen, onClose, onSuccess }: LeadImportModalP
 	const [defaultPlatform, setDefaultPlatform] = useState('import');
 	const [defaultKeyword, setDefaultKeyword] = useState('');
 
-	// Import execution state
+	// Import execution & chunked progress state
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [importProgress, setImportProgress] = useState<{
+		current: number;
+		total: number;
+		percent: number;
+		currentBatch: number;
+		totalBatches: number;
+	}>({ current: 0, total: 0, percent: 0, currentBatch: 0, totalBatches: 0 });
 	const [importResult, setImportResult] = useState<{ imported: number; updated: number; total: number } | null>(null);
 
 	if (!isOpen) return null;
@@ -170,6 +198,7 @@ export function LeadImportModal({ isOpen, onClose, onSuccess }: LeadImportModalP
 		setErrorMessage(null);
 		setImportResult(null);
 		setIsProcessing(false);
+		setImportProgress({ current: 0, total: 0, percent: 0, currentBatch: 0, totalBatches: 0 });
 	};
 
 	const handleClose = () => {
@@ -342,6 +371,17 @@ export function LeadImportModal({ isOpen, onClose, onSuccess }: LeadImportModalP
 			}
 		}
 
+		// Auto-compose address if empty but city/state/pincode are provided
+		if (!lead.address) {
+			const addrParts: string[] = [];
+			if (lead.city) addrParts.push(lead.city);
+			if (lead.state) addrParts.push(lead.state);
+			if (lead.pincode) addrParts.push(lead.pincode);
+			if (addrParts.length > 0) {
+				lead.address = addrParts.join(', ');
+			}
+		}
+
 		// Defaults
 		if (!lead.platform && defaultPlatform) {
 			lead.platform = defaultPlatform;
@@ -365,7 +405,10 @@ export function LeadImportModal({ isOpen, onClose, onSuccess }: LeadImportModalP
 			{
 				name: 'Walk In Clinic of NYC',
 				phone: '+1 212-686-5800',
-				address: '35W W 36th St. Rm 4w, New York, NY',
+				address: '35W W 36th St. Rm 4w',
+				city: 'New York',
+				state: 'NY',
+				pincode: '10018',
 				website: 'http://www.walkinclinicnyc.com/',
 				category: 'Walk-in clinic',
 				rating: 4.8,
@@ -381,7 +424,10 @@ export function LeadImportModal({ isOpen, onClose, onSuccess }: LeadImportModalP
 			{
 				name: 'Metro Dental Care NYC',
 				phone: '+1 212-696-5900',
-				address: '35 W 36th St. Ste 7, New York, NY',
+				address: '35 W 36th St. Ste 7',
+				city: 'New York',
+				state: 'NY',
+				pincode: '10018',
 				website: 'https://metrodentalnyc.com/',
 				category: 'Dental Clinic',
 				rating: 4.6,
@@ -419,7 +465,7 @@ export function LeadImportModal({ isOpen, onClose, onSuccess }: LeadImportModalP
 		}
 	};
 
-	// Execute lead import
+	// Execute lead import in batches (handles 80,000+ leads without proxy size/timeout errors)
 	const handleExecuteImport = async () => {
 		setIsProcessing(true);
 		setErrorMessage(null);
@@ -429,30 +475,66 @@ export function LeadImportModal({ isOpen, onClose, onSuccess }: LeadImportModalP
 			// Convert all raw rows using current mapping
 			const mappedLeads = rawRows.map(row => mapRowToLead(row));
 
-			// Filter out empty rows where there is no name, phone, or email
+			// Filter out empty rows where there is no name, phone, email, or website
 			const validLeads = mappedLeads.filter(l => l.name || l.phone || l.email || l.website);
 
 			if (validLeads.length === 0) {
 				throw new Error('No valid leads to import. Please check your field mappings (at least Name, Phone, or Email is required).');
 			}
 
-			const response = await apiFetch(API_ENDPOINTS.leads.import, {
-				method: 'POST',
-				body: JSON.stringify({ leads: validLeads }),
-			});
+			// Batching settings: 1,000 items per chunk prevents huge payloads and timeouts
+			const CHUNK_SIZE = 1000;
+			const totalBatches = Math.ceil(validLeads.length / CHUNK_SIZE);
+			let accumulatedImported = 0;
+			let accumulatedUpdated = 0;
 
-			const res = await response.json();
-			if (res.success) {
-				setImportResult({
-					imported: res.imported || 0,
-					updated: res.updated || 0,
-					total: res.total || validLeads.length,
+			for (let i = 0; i < totalBatches; i++) {
+				const start = i * CHUNK_SIZE;
+				const end = Math.min(start + CHUNK_SIZE, validLeads.length);
+				const chunk = validLeads.slice(start, end);
+
+				setImportProgress({
+					current: end,
+					total: validLeads.length,
+					percent: Math.round((end / validLeads.length) * 100),
+					currentBatch: i + 1,
+					totalBatches,
 				});
-				setStep('completed');
-				onSuccess();
-			} else {
-				throw new Error(res.error || 'Failed to import leads onto server.');
+
+				const response = await apiFetch(API_ENDPOINTS.leads.import, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ leads: chunk }),
+				});
+
+				if (!response.ok) {
+					const errText = await response.text();
+					let errMsg = `Batch ${i + 1}/${totalBatches} failed with HTTP status ${response.status}`;
+					try {
+						const parsed = JSON.parse(errText);
+						if (parsed.error) errMsg = parsed.error;
+					} catch {
+						if (errText.length < 200 && errText.trim()) errMsg = errText.trim();
+					}
+					throw new Error(errMsg);
+				}
+
+				const res = await response.json();
+				if (res.success) {
+					accumulatedImported += res.imported || 0;
+					accumulatedUpdated += res.updated || 0;
+				} else {
+					throw new Error(res.error || `Batch ${i + 1}/${totalBatches} failed to import.`);
+				}
 			}
+
+			setImportResult({
+				imported: accumulatedImported,
+				updated: accumulatedUpdated,
+				total: validLeads.length,
+			});
+			setStep('completed');
+			onSuccess();
 		} catch (err: any) {
 			console.error('Import execution error:', err);
 			setErrorMessage(err.message || 'An error occurred during import.');
@@ -812,17 +894,33 @@ export function LeadImportModal({ isOpen, onClose, onSuccess }: LeadImportModalP
 						</div>
 					)}
 
-					{/* ── STEP 3: IMPORTING LOADER ── */}
+					{/* ── STEP 3: IMPORTING LOADER WITH LIVE PROGRESS BAR ── */}
 					{step === 'importing' && (
-						<div className="py-16 flex flex-col items-center justify-center text-center space-y-4">
+						<div className="py-12 px-4 flex flex-col items-center justify-center text-center space-y-5 max-w-md mx-auto">
 							<div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-xl">
 								<Loader2 size={32} className="animate-spin" />
 							</div>
-							<div>
-								<h4 className="text-lg font-bold text-white">Importing Leads...</h4>
-								<p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-									Normalizing domains, phones, and matching with your workspace database.
+							<div className="w-full">
+								<h4 className="text-lg font-bold text-white">
+									Importing Leads...
+								</h4>
+								<p className="text-xs text-slate-400 mt-1">
+									{importProgress.total > 0
+										? `Processing ${importProgress.current.toLocaleString()} of ${importProgress.total.toLocaleString()} leads (Batch ${importProgress.currentBatch} of ${importProgress.totalBatches})`
+										: 'Normalizing domains, phones, and matching with your workspace database.'}
 								</p>
+
+								{/* Progress Bar */}
+								<div className="w-full bg-slate-950 rounded-full h-3 mt-4 p-0.5 border border-slate-800 overflow-hidden shadow-inner">
+									<div
+										className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-300 ease-out"
+										style={{ width: `${Math.max(importProgress.percent, 5)}%` }}
+									/>
+								</div>
+								<div className="flex justify-between items-center text-[11px] text-slate-500 mt-1.5 font-mono">
+									<span>{importProgress.current.toLocaleString()} / {importProgress.total.toLocaleString()}</span>
+									<span className="text-amber-400 font-bold">{importProgress.percent}%</span>
+								</div>
 							</div>
 						</div>
 					)}

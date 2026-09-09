@@ -12,6 +12,9 @@ interface Lead {
 	id: string;
 	name: string;
 	address?: string;
+	city?: string;
+	state?: string;
+	pincode?: string;
 	phone?: string;
 	website?: string;
 	email?: string;
@@ -109,6 +112,9 @@ export function LeadsDatabaseTab() {
 			website: lead.website || '',
 			category: lead.category || '',
 			address: lead.address || '',
+			city: lead.city || '',
+			state: lead.state || '',
+			pincode: lead.pincode || '',
 			status: lead.status || 'new',
 			notes: lead.notes || '',
 		});
@@ -967,13 +973,46 @@ Requirements:
 
 							{/* Address */}
 							<div>
-								<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Address</label>
+								<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Full Address</label>
 								<input
 									type="text"
 									value={editFields.address || ''}
 									onChange={e => setEditFields(prev => ({ ...prev, address: e.target.value }))}
 									className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500"
 								/>
+							</div>
+
+							<div className="grid grid-cols-3 gap-3">
+								{/* City */}
+								<div>
+									<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">City</label>
+									<input
+										type="text"
+										value={editFields.city || ''}
+										onChange={e => setEditFields(prev => ({ ...prev, city: e.target.value }))}
+										className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500"
+									/>
+								</div>
+								{/* State */}
+								<div>
+									<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">State</label>
+									<input
+										type="text"
+										value={editFields.state || ''}
+										onChange={e => setEditFields(prev => ({ ...prev, state: e.target.value }))}
+										className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500"
+									/>
+								</div>
+								{/* Pincode */}
+								<div>
+									<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pincode / ZIP</label>
+									<input
+										type="text"
+										value={editFields.pincode || ''}
+										onChange={e => setEditFields(prev => ({ ...prev, pincode: e.target.value }))}
+										className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500"
+									/>
+								</div>
 							</div>
 
 							{/* Status Tracker */}
