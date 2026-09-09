@@ -3046,9 +3046,13 @@ function ServiceAvailabilityTab() {
 
 /* ─── AI Settings Tab ─── */
 function AITab() {
-  const [provider, setProvider] = useState<'openai' | 'gemini'>('openai');
+  const [provider, setProvider] = useState<'openai' | 'gemini' | 'groq'>('groq');
+  const [chatbotProvider, setChatbotProvider] = useState<'groq' | 'openai' | 'gemini'>('groq');
   const [openaiKeys, setOpenaiKeys] = useState<string[]>([]);
   const [geminiKeys, setGeminiKeys] = useState<string[]>([]);
+  const [groqKeys, setGroqKeys] = useState<string[]>([]);
+  const [groqModel, setGroqModel] = useState<string>('openai/gpt-oss-20b');
+  const [chatbotModel, setChatbotModel] = useState<string>('openai/gpt-oss-20b');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -3062,9 +3066,13 @@ function AITab() {
         const res = await apiFetch(API_ENDPOINTS.admin.aiConfig);
         const data = await res.json();
         if (data.success && data.data) {
-          setProvider(data.data.provider || 'openai');
+          setProvider(data.data.provider || 'groq');
+          setChatbotProvider(data.data.chatbot_provider || 'groq');
           setOpenaiKeys(data.data.openai_keys || []);
           setGeminiKeys(data.data.gemini_keys || []);
+          setGroqKeys(data.data.groq_keys || []);
+          setGroqModel(data.data.groq_model || 'openai/gpt-oss-20b');
+          setChatbotModel(data.data.chatbot_model || data.data.groq_model || 'openai/gpt-oss-20b');
         } else {
           setMessage({ type: 'error', text: data.error || data.message || 'Failed to load configuration' });
         }
@@ -3076,7 +3084,7 @@ function AITab() {
     })();
   }, []);
 
-  const handleTestKey = async (type: 'openai' | 'gemini', index: number, keyValue: string) => {
+  const handleTestKey = async (type: 'openai' | 'gemini' | 'groq', index: number, keyValue: string) => {
     const statusKey = `${type}-${index}`;
     if (!keyValue.trim()) {
       setTestingStatus(prev => ({ ...prev, [statusKey]: 'error' }));
@@ -3118,6 +3126,7 @@ function AITab() {
     // Clean keys: filter out empty strings
     const cleanOpenai = openaiKeys.map(k => k.trim()).filter(Boolean);
     const cleanGemini = geminiKeys.map(k => k.trim()).filter(Boolean);
+    const cleanGroq = groqKeys.map(k => k.trim()).filter(Boolean);
 
     try {
       const res = await apiFetch(API_ENDPOINTS.admin.aiConfig, {
@@ -3125,8 +3134,12 @@ function AITab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           provider,
+          chatbot_provider: chatbotProvider,
           openai_keys: cleanOpenai,
           gemini_keys: cleanGemini,
+          groq_keys: cleanGroq,
+          groq_model: groqModel.trim() || 'openai/gpt-oss-20b',
+          chatbot_model: chatbotModel.trim() || groqModel.trim() || 'openai/gpt-oss-20b',
         }),
       });
       const data = await res.json();
@@ -3135,9 +3148,14 @@ function AITab() {
         if (data.data) {
           setOpenaiKeys(data.data.openai_keys || []);
           setGeminiKeys(data.data.gemini_keys || []);
+          setGroqKeys(data.data.groq_keys || []);
+          setGroqModel(data.data.groq_model || 'openai/gpt-oss-20b');
+          setChatbotProvider(data.data.chatbot_provider || 'groq');
+          setChatbotModel(data.data.chatbot_model || 'openai/gpt-oss-20b');
         } else {
           setOpenaiKeys(cleanOpenai);
           setGeminiKeys(cleanGemini);
+          setGroqKeys(cleanGroq);
         }
       } else {
         setMessage({ type: 'error', text: data.error || data.message || 'Failed to update configuration' });
@@ -3149,31 +3167,39 @@ function AITab() {
     }
   };
 
-  const handleAddKey = (type: 'openai' | 'gemini') => {
+  const handleAddKey = (type: 'openai' | 'gemini' | 'groq') => {
     if (type === 'openai') {
       setOpenaiKeys([...openaiKeys, '']);
-    } else {
+    } else if (type === 'gemini') {
       setGeminiKeys([...geminiKeys, '']);
+    } else {
+      setGroqKeys([...groqKeys, '']);
     }
   };
 
-  const handleRemoveKey = (type: 'openai' | 'gemini', index: number) => {
+  const handleRemoveKey = (type: 'openai' | 'gemini' | 'groq', index: number) => {
     if (type === 'openai') {
       setOpenaiKeys(openaiKeys.filter((_, i) => i !== index));
-    } else {
+    } else if (type === 'gemini') {
       setGeminiKeys(geminiKeys.filter((_, i) => i !== index));
+    } else {
+      setGroqKeys(groqKeys.filter((_, i) => i !== index));
     }
   };
 
-  const handleKeyChange = (type: 'openai' | 'gemini', index: number, value: string) => {
+  const handleKeyChange = (type: 'openai' | 'gemini' | 'groq', index: number, value: string) => {
     if (type === 'openai') {
       const updated = [...openaiKeys];
       updated[index] = value;
       setOpenaiKeys(updated);
-    } else {
+    } else if (type === 'gemini') {
       const updated = [...geminiKeys];
       updated[index] = value;
       setGeminiKeys(updated);
+    } else {
+      const updated = [...groqKeys];
+      updated[index] = value;
+      setGroqKeys(updated);
     }
   };
 
@@ -3189,8 +3215,8 @@ function AITab() {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-bold text-gray-900">AI Service Adapter & Key Rotation Settings</h2>
-        <p className="text-xs text-gray-500">Configure provider fallback, rotation, and custom API keys</p>
+        <h2 className="text-lg font-bold text-gray-900">AI Service Adapter, Models & Key Rotation Settings</h2>
+        <p className="text-xs text-gray-500">Configure lightning-fast Groq LPU models, OpenAI/Gemini failover, and chatbot model presets</p>
       </div>
 
       <form onSubmit={handleSave} className="p-6 space-y-6">
@@ -3208,8 +3234,31 @@ function AITab() {
 
         {/* Adapter Selection */}
         <div className="space-y-2">
-          <label className="block text-sm font-semibold text-gray-700">Active AI Adapter</label>
-          <div className="grid grid-cols-2 gap-4">
+          <label className="block text-sm font-semibold text-gray-700">Active Primary AI Adapter</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              type="button"
+              onClick={() => setProvider('groq')}
+              className={`p-4 rounded-xl border-2 text-left transition-all ${
+                provider === 'groq'
+                  ? 'border-purple-600 bg-purple-50/50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-gray-900 flex items-center gap-1.5">
+                  <Zap size={15} className="text-amber-500" /> Groq (Ultra-Fast)
+                </span>
+                <input
+                  type="radio"
+                  checked={provider === 'groq'}
+                  onChange={() => setProvider('groq')}
+                  className="text-purple-600 focus:ring-purple-500"
+                />
+              </div>
+              <span className="text-xs text-gray-500 block">Sub-100ms instant token responses. Best for live widget chatbots & real-time apps.</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setProvider('openai')}
@@ -3249,13 +3298,233 @@ function AITab() {
                   className="text-purple-600 focus:ring-purple-500"
                 />
               </div>
-              <span className="text-xs text-gray-500 block">Uses Google Gemini models (gemini-3.5-flash). Rotates key list sequentially if quota is reached.</span>
+              <span className="text-xs text-gray-500 block">Uses Google Gemini models (gemini-1.5-flash). Rotates key list sequentially if quota is reached.</span>
             </button>
           </div>
         </div>
 
+        {/* Website Chatbot Widget Dedicated Settings */}
+        <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-200 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                <Bot size={16} className="text-purple-600" /> Website Chatbot Widget AI Engine
+              </h3>
+              <p className="text-xs text-gray-600">Choose which provider & model powers the live website chatbot widget independently of the global provider.</p>
+            </div>
+            <span className="text-xs font-semibold px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full">
+              Active: {chatbotProvider.toUpperCase()}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setChatbotProvider('groq');
+                if (!chatbotModel || chatbotModel.includes('gpt-4') || chatbotModel.includes('gemini')) {
+                  setChatbotModel('openai/gpt-oss-20b');
+                }
+              }}
+              className={`p-3 rounded-lg border text-left transition-all ${
+                chatbotProvider === 'groq'
+                  ? 'border-purple-600 bg-white shadow-sm ring-2 ring-purple-500/20'
+                  : 'border-gray-200 bg-white/70 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                  <Zap size={13} className="text-amber-500" /> Groq (Ultra-Fast ~200ms)
+                </span>
+                <input
+                  type="radio"
+                  checked={chatbotProvider === 'groq'}
+                  onChange={() => setChatbotProvider('groq')}
+                  className="text-purple-600 focus:ring-purple-500"
+                />
+              </div>
+              <span className="text-[11px] text-gray-500 block">Fastest response time on LPU hardware. Recommended.</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setChatbotProvider('openai');
+                if (!chatbotModel || chatbotModel.includes('gpt-oss')) {
+                  setChatbotModel('gpt-4o-mini');
+                }
+              }}
+              className={`p-3 rounded-lg border text-left transition-all ${
+                chatbotProvider === 'openai'
+                  ? 'border-purple-600 bg-white shadow-sm ring-2 ring-purple-500/20'
+                  : 'border-gray-200 bg-white/70 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-gray-900">OpenAI (GPT-4o Mini)</span>
+                <input
+                  type="radio"
+                  checked={chatbotProvider === 'openai'}
+                  onChange={() => setChatbotProvider('openai')}
+                  className="text-purple-600 focus:ring-purple-500"
+                />
+              </div>
+              <span className="text-[11px] text-gray-500 block">Uses configured OpenAI keys for the chat widget.</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setChatbotProvider('gemini');
+                if (!chatbotModel || chatbotModel.includes('gpt-oss')) {
+                  setChatbotModel('gemini-1.5-flash');
+                }
+              }}
+              className={`p-3 rounded-lg border text-left transition-all ${
+                chatbotProvider === 'gemini'
+                  ? 'border-purple-600 bg-white shadow-sm ring-2 ring-purple-500/20'
+                  : 'border-gray-200 bg-white/70 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-gray-900">Gemini (1.5 Flash)</span>
+                <input
+                  type="radio"
+                  checked={chatbotProvider === 'gemini'}
+                  onChange={() => setChatbotProvider('gemini')}
+                  className="text-purple-600 focus:ring-purple-500"
+                />
+              </div>
+              <span className="text-[11px] text-gray-500 block">Uses configured Gemini keys for the chat widget.</span>
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-800 mb-1">Website Chatbot Model Override</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatbotModel}
+                onChange={(e) => setChatbotModel(e.target.value)}
+                placeholder="e.g. openai/gpt-oss-20b"
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+              />
+              <button
+                type="button"
+                onClick={() => setChatbotModel('openai/gpt-oss-20b')}
+                className="text-xs px-2.5 py-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-lg whitespace-nowrap font-medium"
+                title="Set to ultra-fast 20B model"
+              >
+                GPT-OSS 20B
+              </button>
+              <button
+                type="button"
+                onClick={() => setChatbotModel('groq/compound-mini')}
+                className="text-xs px-2.5 py-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-lg whitespace-nowrap font-medium"
+                title="Set to Groq Compound Mini"
+              >
+                Compound Mini
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Global Model Configuration Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+          <div>
+            <label className="block text-sm font-semibold text-gray-800 mb-1">Groq Global Default Model</label>
+            <p className="text-xs text-gray-500 mb-2">Select the high-speed Groq model for general generation tasks:</p>
+            <select
+              value={groqModel}
+              onChange={(e) => setGroqModel(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+            >
+              <option value="openai/gpt-oss-20b">openai/gpt-oss-20b (Recommended - Ultra Fast ~200ms)</option>
+              <option value="openai/gpt-oss-120b">openai/gpt-oss-120b (High Reasoning 120B)</option>
+              <option value="groq/compound-mini">groq/compound-mini (Compound Agent Mini)</option>
+              <option value="groq/compound">groq/compound (Compound Agent Standard)</option>
+              <option value="qwen/qwen3.6-27b">qwen/qwen3.6-27b (Qwen 3.6 27B)</option>
+              <option value="qwen/qwen3.8-27b">qwen/qwen3.8-27b (Qwen 3.8 27B)</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Groq Keys List */}
+        <div className="space-y-3 pt-4 border-t border-gray-100">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                <Zap size={14} className="text-amber-500" /> Groq API Keys (Ultra Fast Rotation Pool)
+              </h3>
+              <p className="text-xs text-gray-500">Provide multiple Groq keys. The system fails over automatically.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleAddKey('groq')}
+              className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100/70 px-2.5 py-1.5 rounded-lg transition-colors"
+            >
+              + Add Groq Key
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {groqKeys.length === 0 ? (
+              <p className="text-xs text-gray-400 italic">No Groq keys configured. System will fall back to default/environment Groq key.</p>
+            ) : (
+              groqKeys.map((key, index) => (
+                <div key={index} className="space-y-1">
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="password"
+                      value={key}
+                      onChange={(e) => handleKeyChange('groq', index, e.target.value)}
+                      placeholder={`gsk_... (Groq Key #${index + 1})`}
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleTestKey('groq', index, key)}
+                      disabled={testingStatus[`groq-${index}`] === 'testing'}
+                      className="px-3 py-2 text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {testingStatus[`groq-${index}`] === 'testing' && <Loader2 className="w-3 h-3 animate-spin" />}
+                      Test Key
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveKey('groq', index)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  {testingStatus[`groq-${index}`] && testingStatus[`groq-${index}`] !== 'idle' && (
+                    <div className="text-xs pl-1">
+                      {testingStatus[`groq-${index}`] === 'testing' && (
+                        <span className="text-gray-500 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin inline" /> Testing API key...
+                        </span>
+                      )}
+                      {testingStatus[`groq-${index}`] === 'success' && (
+                        <span className="text-green-600 flex items-center gap-1 font-medium">
+                          <Check className="w-3.5 h-3.5 inline" /> Valid Groq Key!
+                        </span>
+                      )}
+                      {testingStatus[`groq-${index}`] === 'error' && (
+                        <span className="text-red-600 flex items-center gap-1 font-medium">
+                          <AlertTriangle className="w-3.5 h-3.5 inline text-red-500" /> {testFeedback[`groq-${index}`] || 'Invalid Key'}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
         {/* OpenAI Keys List */}
-        <div className="space-y-3 pt-2 border-t border-gray-100">
+        <div className="space-y-3 pt-4 border-t border-gray-100">
           <div className="flex justify-between items-center">
             <div>
               <h3 className="text-sm font-semibold text-gray-800">OpenAI API Keys (Rotation Pool)</h3>
@@ -3345,7 +3614,7 @@ function AITab() {
           <div className="space-y-2">
             {geminiKeys.length === 0 ? (
               <p className="text-xs text-gray-400 italic">No Gemini keys configured. System will fall back to environment variables.</p>
-) : (
+            ) : (
               geminiKeys.map((key, index) => (
                 <div key={index} className="space-y-1">
                   <div className="flex gap-2 items-center">
