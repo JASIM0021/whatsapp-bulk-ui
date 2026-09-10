@@ -2,7 +2,8 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   Send, Users, FileText, Plus, Clock, Upload,
   CheckCircle2, AlertCircle, Loader2, Variable,
-  X, Mail, ArrowRight, Sparkles, Eye, Code2, ChevronDown
+  X, Mail, ArrowRight, Sparkles, Eye, Code2, ChevronDown,
+  Tag, Copy, Check
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
@@ -44,16 +45,57 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
   const [globalVars, setGlobalVars] = useState<Record<string, string>>({});
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [copiedTag, setCopiedTag] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Collect all available dynamic variable keys from loaded contacts (e.g. name, email, company, address, website...)
+  const availableTags = useMemo(() => {
+    const tags = new Set<string>(['name', 'email']);
+    for (const c of contacts) {
+      if (c.vars) {
+        for (const k of Object.keys(c.vars)) {
+          const clean = k.trim().toLowerCase();
+          if (clean) tags.add(clean);
+        }
+      }
+    }
+    return Array.from(tags);
+  }, [contacts]);
+
+  const handleCopyTag = (tag: string) => {
+    navigator.clipboard.writeText(`{{${tag}}}`);
+    setCopiedTag(tag);
+    setTimeout(() => setCopiedTag(null), 2000);
+  };
+
+  const handleInsertTag = (tag: string) => {
+    const token = `{{${tag}}}`;
+    setBodyHtml(prev => prev + (prev.endsWith('\n') ? '' : '\n') + token);
+    handleCopyTag(tag);
+  };
 
   const handleGenerateAI = async () => {
     if (!aiPrompt.trim()) return;
     setAiGenerating(true);
     try {
+      const sampleVars: Record<string, string> = {};
+      for (const c of contacts) {
+        if (c.name && !sampleVars['name']) sampleVars['name'] = c.name;
+        if (c.vars) {
+          for (const [k, v] of Object.entries(c.vars)) {
+            if (v && !sampleVars[k]) sampleVars[k] = v;
+          }
+        }
+      }
+
       const response = await apiFetch('/api/leads/generate-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt.trim() }),
+        body: JSON.stringify({
+          prompt: aiPrompt.trim(),
+          availableVars: availableTags,
+          sampleVars,
+        }),
       });
       const d = await response.json();
       if (d.success && d.data) {
@@ -73,22 +115,27 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
     }
   };
 
-  // Auto-detect all {{variable}} tokens from subject + body, excluding contact-level fields
-  const CONTACT_VARS = new Set(['name', 'email']);
+  // Auto-detect all {{variable}} tokens from subject + body
   const detectedVars = useMemo(() => {
     const combined = subject + ' ' + bodyHtml;
-    const matches = [...combined.matchAll(/{{\s*(\w+)\s*}}/g)].map(m => m[1]);
-    return [...new Set(matches)].filter(v => !CONTACT_VARS.has(v));
+    const matches = [...combined.matchAll(/{{\s*(\w+)\s*}}/g)].map(m => m[1].toLowerCase());
+    return [...new Set(matches)];
   }, [subject, bodyHtml]);
+
+  // Variables that need manual/global values because they are NOT provided per-contact in CSV
+  const manualGlobalVars = useMemo(() => {
+    const contactVarSet = new Set(availableTags);
+    return detectedVars.filter(v => !contactVarSet.has(v));
+  }, [detectedVars, availableTags]);
 
   // Keep globalVars in sync — add new keys, drop removed ones
   useEffect(() => {
     setGlobalVars(prev => {
       const next: Record<string, string> = {};
-      for (const v of detectedVars) next[v] = prev[v] ?? '';
+      for (const v of manualGlobalVars) next[v] = prev[v] ?? '';
       return next;
     });
-  }, [detectedVars.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [manualGlobalVars.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (isPaid) loadTemplates(); }, [isPaid]);
 
@@ -99,11 +146,22 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
       try {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const formatted = parsed.map((item: any) => ({
-            email: item.email,
-            name: item.name || '',
-          }));
-          setContacts(formatted);
+          const seen = new Set<string>();
+          const formatted: EmailContact[] = [];
+          for (const item of parsed) {
+            const cleanEmail = (item.email || '').toString().trim().replace(/^["'`]|["'`]$/g, '').toLowerCase();
+            if (cleanEmail && cleanEmail.includes('@') && !seen.has(cleanEmail)) {
+              seen.add(cleanEmail);
+              formatted.push({
+                email: cleanEmail,
+                name: (item.name || '').toString().trim(),
+                vars: item.vars && typeof item.vars === 'object' ? item.vars : undefined,
+              });
+            }
+          }
+          if (formatted.length > 0) {
+            setContacts(formatted);
+          }
         }
       } catch (e) {
         console.error('Failed to load bridged emails:', e);
@@ -131,13 +189,14 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
     if (rows.length === 0) return [];
 
     // Email column aliases (case-insensitive)
-    const EMAIL_ALIASES = ['email', 'e-mail', 'email address', 'emailaddress', 'mail'];
-    const NAME_ALIASES  = ['name', 'full name', 'fullname', 'contact name', 'first name', 'firstname'];
+    const EMAIL_ALIASES = ['email', 'e-mail', 'email address', 'emailaddress', 'mail', 'email_address', 'contact email'];
+    const NAME_ALIASES  = ['name', 'full name', 'fullname', 'contact name', 'first name', 'firstname', 'client name', 'person'];
 
     // Try to detect header row by checking if the first row has a recognisable email column
-    const firstRow = rows[0].map(c => (c ?? '').toString().trim().toLowerCase());
-    const emailColIdx = firstRow.findIndex(h => EMAIL_ALIASES.includes(h));
-    const nameColIdx  = firstRow.findIndex(h => NAME_ALIASES.includes(h));
+    const rawHeaders = rows[0].map(c => (c ?? '').toString().trim());
+    const lowerHeaders = rawHeaders.map(c => c.toLowerCase());
+    const emailColIdx = lowerHeaders.findIndex(h => EMAIL_ALIASES.includes(h));
+    const nameColIdx  = lowerHeaders.findIndex(h => NAME_ALIASES.includes(h));
 
     const hasHeader = emailColIdx !== -1;
     const dataRows  = rows.slice(hasHeader ? 1 : 0);
@@ -146,11 +205,42 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
     const eIdx = hasHeader ? emailColIdx : 0;
     const nIdx = hasHeader ? (nameColIdx !== -1 ? nameColIdx : -1) : 1;
 
+    // Detect all other column headers as dynamic variable keys (e.g. company, address, website, phone...)
+    const extraCols: { idx: number; key: string }[] = [];
+    if (hasHeader) {
+      rawHeaders.forEach((colName, idx) => {
+        if (idx !== eIdx && idx !== nIdx && colName.trim()) {
+          const cleanKey = colName.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+          if (cleanKey) {
+            extraCols.push({ idx, key: cleanKey });
+          }
+        }
+      });
+    }
+
     const parsed: EmailContact[] = [];
+    const seen = new Set<string>();
+
     for (const row of dataRows) {
-      const email = (row[eIdx] ?? '').toString().trim();
+      const rawEmail = (row[eIdx] ?? '').toString().trim().replace(/^["'`]|["'`]$/g, '');
+      const email = rawEmail.toLowerCase();
       const name  = nIdx >= 0 ? (row[nIdx] ?? '').toString().trim() : '';
-      if (email.includes('@')) parsed.push({ email, name: name || undefined });
+
+      if (email.includes('@') && !seen.has(email)) {
+        seen.add(email);
+        const vars: Record<string, string> = {};
+        for (const { idx, key } of extraCols) {
+          const val = (row[idx] ?? '').toString().trim();
+          if (val) {
+            vars[key] = val;
+          }
+        }
+        parsed.push({
+          email,
+          name: name || undefined,
+          vars: Object.keys(vars).length > 0 ? vars : undefined,
+        });
+      }
     }
     return parsed;
   }, []);
@@ -198,31 +288,59 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
     setShowTemplates(false);
     // Pre-populate globalVars from template's declared variables
     const vars: Record<string, string> = {};
-    for (const v of (t.variables ?? [])) { if (!CONTACT_VARS.has(v)) vars[v] = ''; }
+    for (const v of (t.variables ?? [])) {
+      if (!availableTags.includes(v.toLowerCase())) {
+        vars[v] = '';
+      }
+    }
     setGlobalVars(vars);
   };
 
   // Apply all variable substitutions for a given contact
   const applyVars = useCallback((template: string, contact: EmailContact) => {
     let out = template;
-    out = out.replace(/{{\s*name\s*}}/g, contact.name || '');
-    out = out.replace(/{{\s*email\s*}}/g, contact.email);
+    out = out.replace(/{{\s*name\s*}}/gi, contact.name || '');
+    out = out.replace(/{{\s*email\s*}}/gi, contact.email);
+    // Replace per-contact variables (e.g. company, address, website from CSV/Leads)
+    if (contact.vars) {
+      for (const [k, v] of Object.entries(contact.vars)) {
+        if (k) {
+          out = out.replace(new RegExp(`{{\\s*${k}\\s*}}`, 'gi'), v || '');
+        }
+      }
+    }
+    // Replace manual global variables
     for (const [k, v] of Object.entries(globalVars)) {
-      out = out.replace(new RegExp(`{{\\s*${k}\\s*}}`, 'g'), v);
+      if (k) {
+        out = out.replace(new RegExp(`{{\\s*${k}\\s*}}`, 'gi'), v);
+      }
     }
     return out;
   }, [globalVars]);
 
   const send = async () => {
-    const valid = contacts.filter(c => c.email.includes('@'));
+    const seen = new Set<string>();
+    const valid: EmailContact[] = [];
+    for (const c of contacts) {
+      const cleanEmail = (c.email || '').toString().trim().replace(/^["'`]|["'`]$/g, '').toLowerCase();
+      if (cleanEmail && cleanEmail.includes('@') && !seen.has(cleanEmail)) {
+        seen.add(cleanEmail);
+        valid.push({
+          email: cleanEmail,
+          name: (c.name || '').toString().trim(),
+          vars: c.vars,
+        });
+      }
+    }
     if (!valid.length) { alert('Add at least one valid email'); return; }
     if (!subject.trim()) { alert('Subject is required'); return; }
     if (!bodyHtml.trim()) { alert('Body is required'); return; }
 
-    // Build per-contact payloads with variables resolved
+    // Build per-contact payloads with variables resolved and vars preserved
     const resolvedContacts = valid.map(c => ({
       email: c.email,
       name: c.name,
+      vars: c.vars,
       subject: applyVars(subject, c),
       bodyHtml: applyVars(bodyHtml, c),
     }));
@@ -357,10 +475,60 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
           ))}
         </div>
         <div className="px-4 sm:px-5 py-2.5 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1 items-center justify-between">
-          <p className="text-xs text-gray-400">Use <code className="bg-white border border-gray-200 px-1 rounded text-blue-600 font-mono">{'{{name}}'}</code> to personalise</p>
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
+            <span>Dynamic tags:</span>
+            {availableTags.map(tag => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => handleCopyTag(tag)}
+                title="Click to copy placeholder"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white border border-gray-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 font-mono text-[11px] transition-colors"
+              >
+                {`{{${tag}}}`}
+                {copiedTag === tag ? <Check size={10} className="text-green-600" /> : <Copy size={10} className="text-gray-400" />}
+              </button>
+            ))}
+          </div>
           <p className="text-xs text-gray-400">{validCount} valid</p>
         </div>
       </div>
+
+      {/* ── Available Dynamic Variables Bar ──────────────────────── */}
+      {availableTags.length > 2 && (
+        <div className="bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-purple-50/70 rounded-2xl border border-blue-100/80 p-4 sm:p-4.5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2.5">
+            <div className="flex items-center gap-2">
+              <Tag size={15} className="text-blue-600" />
+              <span className="text-xs font-bold text-gray-800 uppercase tracking-wide">Available Personalization Tags ({availableTags.length})</span>
+            </div>
+            <p className="text-[11px] text-gray-500">Click any variable to copy or insert into template</p>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            {availableTags.map(tag => (
+              <div key={tag} className="inline-flex items-center rounded-lg bg-white border border-blue-200/80 shadow-2xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => handleCopyTag(tag)}
+                  title="Click to copy to clipboard"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono font-medium text-blue-700 hover:bg-blue-50 transition-colors"
+                >
+                  {`{{${tag}}}`}
+                  {copiedTag === tag ? <Check size={11} className="text-green-600" /> : <Copy size={11} className="text-gray-400" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertTag(tag)}
+                  title="Insert into email body"
+                  className="px-2 py-1.5 text-[10px] uppercase font-bold text-indigo-600 bg-indigo-50/60 hover:bg-indigo-100/80 border-l border-blue-100 transition-colors"
+                >
+                  + Insert
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Subject + Templates ─────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 space-y-3">
@@ -403,12 +571,14 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
               <Sparkles className="text-violet-600 animate-pulse" size={14} />
               <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">AI Email Writer</span>
             </div>
-            <p className="text-[10px] text-gray-400 font-medium hidden sm:block">Type a prompt to auto-generate subject & HTML email body</p>
+            <p className="text-[10px] text-gray-400 font-medium hidden sm:block">
+              Auto-detects {availableTags.length} dynamic variable{availableTags.length > 1 ? 's' : ''} for deep personalization
+            </p>
           </div>
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Describe the email (e.g., Friendly pitch to restaurants offering our SEO services with a discount code)..."
+              placeholder="Describe the email (e.g., Friendly pitch offering our SEO services with a special offer)..."
               value={aiPrompt}
               onChange={e => setAiPrompt(e.target.value)}
               className="flex-1 px-3.5 py-2.5 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none bg-white shadow-xs"
@@ -438,7 +608,7 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
           <div className="flex items-center gap-1.5 text-xs text-gray-500 min-w-0">
             <Variable size={12} className="text-gray-400 flex-shrink-0" />
-            <span className="truncate">Use <code className="font-mono text-blue-600 bg-blue-50 px-1 rounded">{'{{name}}'}</code> for personalisation</span>
+            <span className="truncate">Use {availableTags.slice(0, 3).map(t => `{{${t}}}`).join(', ')}{availableTags.length > 3 ? '...' : ''} for personalization</span>
           </div>
           <div className="flex bg-gray-200 rounded-lg p-0.5 gap-0.5 self-end sm:self-auto flex-shrink-0">
             <button onClick={() => setViewMode('code')}
@@ -472,7 +642,7 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
             </div>
             <div className="bg-gray-50" style={{ height: 360 }}>
               {bodyHtml
-                ? <iframe srcDoc={bodyHtml.replace(/{{name}}/g, 'John').replace(/{{email}}/g, 'john@example.com')}
+                ? <iframe srcDoc={applyVars(bodyHtml, contacts[0] || { email: 'john@example.com', name: 'John Doe' })}
                     className="w-full h-full border-0" title="Email preview" sandbox="allow-same-origin" />
                 : <div className="flex items-center justify-center h-full text-gray-300"><Mail size={40} /></div>
               }
@@ -483,39 +653,59 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
 
       {/* ── Dynamic Variables ───────────────────────────────────── */}
       {detectedVars.length > 0 && (
-        <div className="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-amber-100 bg-amber-50">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-gray-100 bg-gray-50">
             <div className="flex items-center gap-2">
-              <Variable size={14} className="text-amber-600" />
-              <span className="font-semibold text-amber-900 text-sm">Template Variables</span>
-              <span className="px-2 py-0.5 bg-amber-200 text-amber-800 text-xs font-bold rounded-full">{detectedVars.length}</span>
+              <Variable size={14} className="text-blue-600" />
+              <span className="font-semibold text-gray-900 text-sm">Template Variables in Use</span>
+              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">{detectedVars.length}</span>
             </div>
-            <p className="text-xs text-amber-600 hidden sm:block">Detected from your template — fill in global values</p>
+            <p className="text-xs text-gray-500 hidden sm:block">Variables detected from subject & HTML body</p>
           </div>
-          <div className="px-4 sm:px-5 py-4">
-            <p className="text-xs text-amber-700 mb-3 sm:hidden">Detected from your template — fill in global values</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {detectedVars.map(v => (
-                <div key={v}>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1.5">
-                    <code className="px-1.5 py-0.5 bg-blue-50 border border-blue-100 text-blue-700 rounded font-mono text-xs">{`{{${v}}}`}</code>
-                    <span className="text-gray-400 font-normal">→ value</span>
-                  </label>
-                  <input
-                    value={globalVars[v] ?? ''}
-                    onChange={e => setGlobalVars(prev => ({ ...prev, [v]: e.target.value }))}
-                    placeholder={`Enter ${v.replace(/_/g, ' ')}…`}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none placeholder-gray-300"
-                  />
+          <div className="px-4 sm:px-5 py-4 space-y-4">
+            {/* Auto-filled variables */}
+            {detectedVars.filter(v => availableTags.includes(v)).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="text-green-500" />
+                  Auto-filled per recipient from recipient list / CSV:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {detectedVars.filter(v => availableTags.includes(v)).map(v => (
+                    <span key={v} className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 border border-green-200 text-green-700 rounded-lg text-xs font-mono font-medium">
+                      <Check size={11} />
+                      {`{{${v}}}`}
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2 items-center">
-              <p className="text-xs text-gray-400 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
-                <code className="font-mono text-green-600">{'{{name}}'}</code> and <code className="font-mono text-green-600">{'{{email}}'}</code> are auto-filled per recipient
-              </p>
-            </div>
+              </div>
+            )}
+
+            {/* Manual fallback variables */}
+            {manualGlobalVars.length > 0 && (
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-xs font-semibold text-amber-700 mb-2 flex items-center gap-1.5">
+                  <AlertCircle size={13} className="text-amber-500" />
+                  Global Fallback Variables (not in recipient list):
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {manualGlobalVars.map(v => (
+                    <div key={v}>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1.5">
+                        <code className="px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-800 rounded font-mono text-xs">{`{{${v}}}`}</code>
+                        <span className="text-gray-400 font-normal">→ global value</span>
+                      </label>
+                      <input
+                        value={globalVars[v] ?? ''}
+                        onChange={e => setGlobalVars(prev => ({ ...prev, [v]: e.target.value }))}
+                        placeholder={`Enter ${v.replace(/_/g, ' ')} for all recipients…`}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none placeholder-gray-300"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

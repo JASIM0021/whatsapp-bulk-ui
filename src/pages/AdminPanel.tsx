@@ -3298,7 +3298,7 @@ function AITab() {
                   className="text-purple-600 focus:ring-purple-500"
                 />
               </div>
-              <span className="text-xs text-gray-500 block">Uses Google Gemini models (gemini-1.5-flash). Rotates key list sequentially if quota is reached.</span>
+              <span className="text-xs text-gray-500 block">Uses Google Gemini models (gemini-3.7-flash). Rotates key list sequentially if quota is reached.</span>
             </button>
           </div>
         </div>
@@ -3377,7 +3377,7 @@ function AITab() {
               onClick={() => {
                 setChatbotProvider('gemini');
                 if (!chatbotModel || chatbotModel.includes('gpt-oss')) {
-                  setChatbotModel('gemini-1.5-flash');
+                  setChatbotModel('gemini-3.7-flash');
                 }
               }}
               className={`p-3 rounded-lg border text-left transition-all ${
@@ -3387,7 +3387,7 @@ function AITab() {
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-gray-900">Gemini (1.5 Flash)</span>
+                <span className="text-xs font-bold text-gray-900">Gemini (3.7 Flash)</span>
                 <input
                   type="radio"
                   checked={chatbotProvider === 'gemini'}

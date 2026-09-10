@@ -405,7 +405,7 @@ Requirements:
 
 	const handleEmailCampaign = () => {
 		const selectedLeads = leads.filter(l => selectedIds.has(l.id));
-		const validEmails: { email: string; name: string }[] = [];
+		const validEmails: { email: string; name: string; vars?: Record<string, string> }[] = [];
 		const seenEmails = new Set<string>();
 
 		selectedLeads.forEach(l => {
@@ -419,7 +419,17 @@ Requirements:
 					seenEmails.add(clean);
 					validEmails.push({
 						email: clean,
-						name: l.name,
+						name: l.name || '',
+						vars: {
+							company: l.name || '',
+							address: l.address || '',
+							city: l.city || '',
+							state: l.state || '',
+							pincode: l.pincode || '',
+							website: l.website || '',
+							phone: l.phone || '',
+							category: l.category || '',
+						},
 					});
 				}
 			});
