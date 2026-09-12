@@ -68,6 +68,9 @@ const LifeCompanionPage = lazy(() => import('./pages/life_companion/LifeCompanio
 const TradingWorkspacePage = lazy(() => import('./pages/trading/TradingWorkspacePage').then(m => ({ default: m.TradingWorkspacePage })))
 const FreelancerPage = lazy(() => import('./pages/freelancer/FreelancerPage').then(m => ({ default: m.FreelancerPage })))
 const YouTubeAgentPage = lazy(() => import('./pages/youtube/YouTubeAgentPage').then(m => ({ default: m.YouTubeAgentPage })))
+const AIWorkersPage = lazy(() => import('./pages/agents/AIWorkersPage').then(m => ({ default: m.AIWorkersPage })))
+const AgentStudioPage = lazy(() => import('./pages/agents/AgentStudioPage').then(m => ({ default: m.AgentStudioPage })))
+const CustomConnectorsPage = lazy(() => import('./pages/connectors/CustomConnectorsPage').then(m => ({ default: m.CustomConnectorsPage })))
 
 function GmailCallbackRedirect() {
   const location = useLocation();
@@ -336,6 +339,36 @@ function AppRoutes() {
         <ProtectedRoute>
           <AppProvider>
             <YouTubeAgentPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+
+      {/* AI Workforce Marketplace & Management */}
+      <Route path="/agents" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <AIWorkersPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+
+      {/* Drag-and-Drop Flow Studio */}
+      <Route path="/studio" element={
+        <ProtectedRoute>
+          <AgentStudioPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/studio/:id" element={
+        <ProtectedRoute>
+          <AgentStudioPage />
+        </ProtectedRoute>
+      } />
+
+      {/* Custom Connectors & In-House AI Hub */}
+      <Route path="/connectors" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <CustomConnectorsPage />
           </AppProvider>
         </ProtectedRoute>
       } />

@@ -334,6 +334,26 @@ export const API_ENDPOINTS = {
     botPending:  `${API_BASE_URL}/api/freelancer/bot/pending`,
     botHistory:  `${API_BASE_URL}/api/freelancer/bot/history`,
   },
+  agents: {
+    list: `${API_BASE_URL}/api/agents`,
+    create: `${API_BASE_URL}/api/agents`,
+    templates: `${API_BASE_URL}/api/agents/templates`,
+    hireTemplate: `${API_BASE_URL}/api/agents/templates/hire`,
+    get: (id: string) => `${API_BASE_URL}/api/agents/${id}`,
+    update: (id: string) => `${API_BASE_URL}/api/agents/${id}`,
+    delete: (id: string) => `${API_BASE_URL}/api/agents/${id}`,
+    test: (id: string) => `${API_BASE_URL}/api/agents/${id}/test`,
+    executions: (id: string) => `${API_BASE_URL}/api/agents/${id}/executions`,
+  },
+  connectors: {
+    list: `${API_BASE_URL}/api/connectors`,
+    create: `${API_BASE_URL}/api/connectors`,
+    parseCurl: `${API_BASE_URL}/api/connectors/parse-curl`,
+    get: (id: string) => `${API_BASE_URL}/api/connectors/${id}`,
+    update: (id: string) => `${API_BASE_URL}/api/connectors/${id}`,
+    delete: (id: string) => `${API_BASE_URL}/api/connectors/${id}`,
+    test: (id: string) => `${API_BASE_URL}/api/connectors/${id}/test`,
+  },
 };
 
 /**
