@@ -20,12 +20,287 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
+const DEFAULT_TEMPLATES: AIAgent[] = [
+  {
+    id: 'tpl-nexa-wa',
+    name: 'Nexa — 24/7 WhatsApp AI Customer Specialist',
+    slug: 'nexa-whatsapp-bot',
+    role: 'WhatsApp Autonomous Specialist',
+    department: 'support',
+    description: 'Handles incoming WhatsApp inquiries 24/7, answers FAQs from your knowledge base, captures customer phone & intent, sends product catalogs, and triggers human-agent escalation when requested.',
+    avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['whatsapp'],
+    templateCategory: 'WhatsApp Bots',
+    metrics: { totalRuns: 42100, successfulRuns: 41850, failedRuns: 250, avgResponseTimeMs: 620 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-webby-chat',
+    name: 'Webby — Intelligent Website Concierge & Lead Bot',
+    slug: 'webby-website-chatbot',
+    role: 'Website Lead Conversion Specialist',
+    department: 'marketing',
+    description: 'Embeds into any website, instantly indexes your product pages, answers visitor questions with sub-second latency, captures leads with phone/email validation, and routes high-value prospects to your team.',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['chatbot'],
+    templateCategory: 'Website Chatbots',
+    metrics: { totalRuns: 38500, successfulRuns: 38190, failedRuns: 310, avgResponseTimeMs: 480 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-maya-sales',
+    name: 'Maya — Sales Closer & Lead Qualifier',
+    slug: 'maya-sales-closer',
+    role: 'Autonomous Sales Executive',
+    department: 'sales',
+    description: 'Engages inbound leads via WhatsApp & Website Chatbot, discovers budget and pain points, handles objections, and automatically books demo meetings on your calendar.',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['whatsapp', 'chatbot', 'calendar'],
+    templateCategory: 'Sales & Growth',
+    metrics: { totalRuns: 12450, successfulRuns: 12320, failedRuns: 130, avgResponseTimeMs: 1420 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-alex-support',
+    name: 'Alex — 24/7 Tier-1 Support Engineer',
+    slug: 'alex-support-engineer',
+    role: 'Senior Support Specialist',
+    department: 'support',
+    description: 'Resolves customer technical queries, troubleshoots errors using your knowledge base or in-house AI, and creates support tickets or escalates when human intervention is needed.',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['chatbot', 'whatsapp', 'email'],
+    templateCategory: 'Customer Support',
+    metrics: { totalRuns: 28900, successfulRuns: 28650, failedRuns: 250, avgResponseTimeMs: 850 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-liam-ecom',
+    name: 'Liam — E-Commerce Orders & Logistics Assistant',
+    slug: 'liam-ecommerce-orders',
+    role: 'Logistics & Order Specialist',
+    department: 'support',
+    description: 'Connects to your Shopify, WooCommerce, or warehouse APIs via custom cURL connectors to track packages, handle return requests, and answer sizing queries 24/7 on WhatsApp.',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['whatsapp', 'chatbot', 'email'],
+    templateCategory: 'E-Commerce & Orders',
+    metrics: { totalRuns: 34100, successfulRuns: 33890, failedRuns: 210, avgResponseTimeMs: 740 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-sarah-legal',
+    name: 'Sarah — Legal & Compliance Analyst',
+    slug: 'sarah-legal-compliance',
+    role: 'Legal Operations Specialist',
+    department: 'legal',
+    description: 'Connects to your custom In-House Legal AI or internal models to analyze contracts, verify compliance clauses, detect regulatory risks, and output formatted summaries.',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['chatbot', 'email', 'webhook'],
+    templateCategory: 'Legal & Compliance',
+    metrics: { totalRuns: 4320, successfulRuns: 4290, failedRuns: 30, avgResponseTimeMs: 2100 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-rachel-re',
+    name: 'Rachel — Real Estate Tour & Property Qualifier',
+    slug: 'rachel-real-estate',
+    role: 'Property Concierge Agent',
+    department: 'sales',
+    description: 'Captures property seeker preferences (budget, bedrooms, neighborhood), sends matching listings with photos, and schedules private property showings directly onto your calendar.',
+    avatar: 'https://images.unsplash.com/photo-1548142813-c348350df52b?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['whatsapp', 'chatbot', 'calendar'],
+    templateCategory: 'Real Estate & Housing',
+    metrics: { totalRuns: 8750, successfulRuns: 8690, failedRuns: 60, avgResponseTimeMs: 1100 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-mailo-email',
+    name: 'Mailo — Cold Email & Sequence Strategist',
+    slug: 'mailo-email-specialist',
+    role: 'Autonomous Outreach Specialist',
+    department: 'marketing',
+    description: 'Generates high-converting cold email sequences, monitors open & reply signals, automatically handles out-of-office vs objection replies, and schedules follow-ups with zero spam trigger risk.',
+    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['email'],
+    templateCategory: 'Email & Outreach',
+    metrics: { totalRuns: 19300, successfulRuns: 19100, failedRuns: 200, avgResponseTimeMs: 1200 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-schedula-cal',
+    name: 'Schedula — AI Meeting & Calendar Concierge',
+    slug: 'schedula-calendar-bot',
+    role: 'Autonomous Meeting Coordinator',
+    department: 'operations',
+    description: 'Syncs directly with Google Meet and Nexbotix Calendar to coordinate multi-participant meetings, send WhatsApp and email reminders, and handle instant reschedules.',
+    avatar: 'https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['calendar', 'whatsapp', 'email'],
+    templateCategory: 'Executive & Admin',
+    metrics: { totalRuns: 11400, successfulRuns: 11350, failedRuns: 50, avgResponseTimeMs: 780 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-scrappy-leads',
+    name: 'Scrappy — Local Maps & B2B Lead Finder',
+    slug: 'scrappy-lead-intelligence',
+    role: 'B2B Lead Intelligence Agent',
+    department: 'marketing',
+    description: 'Extracts local business listings from Google Maps by niche and geography, verifies email addresses and WhatsApp availability, and automatically enrolls them into targeted drip campaigns.',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['webhook', 'email'],
+    templateCategory: 'Lead Generation',
+    metrics: { totalRuns: 16200, successfulRuns: 16020, failedRuns: 180, avgResponseTimeMs: 1450 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-seona-seo',
+    name: 'Seona — Autonomous SEO Growth & Ranking Engine',
+    slug: 'seona-seo-specialist',
+    role: 'SEO & Content Architect',
+    department: 'marketing',
+    description: 'Monitors search queries, identifies keyword gaps, writes SEO-optimized long-form articles, and tracks Core Web Vitals to boost organic search rankings.',
+    avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['chatbot', 'webhook'],
+    templateCategory: 'SEO & Content',
+    metrics: { totalRuns: 14700, successfulRuns: 14550, failedRuns: 150, avgResponseTimeMs: 1800 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-victor-fin',
+    name: 'Victor — Billing & Invoicing Specialist',
+    slug: 'victor-finance-billing',
+    role: 'Finance Operations Specialist',
+    department: 'operations',
+    description: 'Answers payment disputes, checks subscription receipts, generates payment links via Stripe/Razorpay, and reconciles overdue balances over WhatsApp and email.',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['email', 'whatsapp', 'webhook'],
+    templateCategory: 'Finance & Invoicing',
+    metrics: { totalRuns: 15200, successfulRuns: 15080, failedRuns: 120, avgResponseTimeMs: 1350 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-zoe-soc',
+    name: 'Zoe — Social Media Engagement & Community Lead',
+    slug: 'zoe-social-community',
+    role: 'Community & Social Media Manager',
+    department: 'marketing',
+    description: 'Monitors comments across Facebook, LinkedIn & Web channels, replies to community feedback with brand voice, flags negative sentiment, and routes hot leads into your CRM.',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['chatbot', 'email', 'webhook'],
+    templateCategory: 'Social & Community',
+    metrics: { totalRuns: 21600, successfulRuns: 21450, failedRuns: 150, avgResponseTimeMs: 820 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-dhana-trade',
+    name: 'Dhana — Algorithmic Quant & Strategy Bot',
+    slug: 'dhana-trading-bot',
+    role: 'Quantitative Strategy Agent',
+    department: 'operations',
+    description: 'Connects to Dhan broker webhooks to backtest technical indicators, execute automated risk management stop-loss rules, and deliver daily P&L digests on WhatsApp.',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['webhook'],
+    templateCategory: 'Trading & Quant',
+    metrics: { totalRuns: 51200, successfulRuns: 50990, failedRuns: 210, avgResponseTimeMs: 310 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-tuber-yt',
+    name: 'Tuber — YouTube SEO & Shorts Scriptwriter',
+    slug: 'tuber-youtube-growth',
+    role: 'YouTube Content Architect',
+    department: 'marketing',
+    description: 'Analyzes trending video topics, writes engaging YouTube Shorts and long-form scripts with high-retention hooks, generates click-worthy titles, and suggests tags & descriptions.',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['chatbot', 'webhook'],
+    templateCategory: 'Social & Media',
+    metrics: { totalRuns: 17800, successfulRuns: 17650, failedRuns: 150, avgResponseTimeMs: 1100 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-bidder-fr',
+    name: 'Bidder — Freelancer.com AI Bid Automator',
+    slug: 'bidder-freelancer-bot',
+    role: 'Freelance Proposal Closer',
+    department: 'sales',
+    description: 'Monitors Freelancer.com project feeds in real-time, extracts technical requirements, drafts personalized bids tailored to client briefs, and notifies you when shortlisted.',
+    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['webhook', 'email'],
+    templateCategory: 'Sales & Proposals',
+    metrics: { totalRuns: 13900, successfulRuns: 13780, failedRuns: 120, avgResponseTimeMs: 950 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl-mitra-life',
+    name: 'Mitra — AI Empathy & Habit Companion',
+    slug: 'mitra-life-companion',
+    role: 'Wellness & Habit Coach',
+    department: 'support',
+    description: 'Provides thoughtful 24/7 conversation, daily mindfulness reflections, mood tracking, habit accountability check-ins, and actionable growth roadmaps over WhatsApp and web chat.',
+    avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=150&auto=format&fit=crop&q=80',
+    status: 'active',
+    channels: ['chatbot', 'whatsapp'],
+    templateCategory: 'Mindset & Wellness',
+    metrics: { totalRuns: 26400, successfulRuns: 26280, failedRuns: 120, avgResponseTimeMs: 710 },
+    graph: { nodes: [], edges: [] },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
 export function AIWorkersPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'marketplace' | 'my-workforce'>('marketplace');
   const [selectedDept, setSelectedDept] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [templates, setTemplates] = useState<AIAgent[]>([]);
+  const [templates, setTemplates] = useState<AIAgent[]>(DEFAULT_TEMPLATES);
   const [myAgents, setMyAgents] = useState<AIAgent[]>([]);
 
   // Hire Modal state
@@ -113,20 +388,40 @@ export function AIWorkersPage() {
   };
 
   const departments = [
-    { id: 'all', label: 'All Departments' },
-    { id: 'sales', label: 'Sales & Growth' },
-    { id: 'support', label: 'Customer Support' },
-    { id: 'legal', label: 'Legal & Compliance' },
-    { id: 'operations', label: 'Executive & Admin' },
-    { id: 'marketing', label: 'Outbound Marketing' },
+    { id: 'all', label: 'All AI Specialists' },
+    { id: 'whatsapp', label: '🟢 WhatsApp Bots' },
+    { id: 'chatbot', label: '🌐 Website Chatbots' },
+    { id: 'sales', label: '💼 Sales & Growth' },
+    { id: 'support', label: '🎧 Customer Support' },
+    { id: 'marketing', label: '🚀 Marketing & Outreach' },
+    { id: 'operations', label: '⚡ Ops & Finance' },
+    { id: 'legal', label: '⚖️ Legal & Risk' },
   ];
 
   const filteredTemplates = templates.filter(t => {
-    const matchesDept = selectedDept === 'all' || t.department.toLowerCase() === selectedDept.toLowerCase();
+    let matchesDept = selectedDept === 'all';
+    if (!matchesDept) {
+      if (selectedDept === 'whatsapp') {
+        matchesDept = Boolean(
+          t.channels?.includes('whatsapp') ||
+          t.templateCategory?.toLowerCase().includes('whatsapp') ||
+          t.name.toLowerCase().includes('whatsapp')
+        );
+      } else if (selectedDept === 'chatbot') {
+        matchesDept = Boolean(
+          t.channels?.includes('chatbot') ||
+          t.templateCategory?.toLowerCase().includes('chatbot') ||
+          t.name.toLowerCase().includes('chatbot')
+        );
+      } else {
+        matchesDept = t.department.toLowerCase() === selectedDept.toLowerCase();
+      }
+    }
     const matchesSearch =
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.role.toLowerCase().includes(searchQuery.toLowerCase());
+      t.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t.templateCategory && t.templateCategory.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesDept && matchesSearch;
   });
 
