@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Code2, Sparkles } from 'lucide-react';
+import { Globe, LogOut, Shield, Crown, ChevronRight, User, Lock, Bot, Code2, Sparkles, Users, Workflow, Network, ArrowRight, Zap } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 
 export function DashboardPage() {
@@ -29,6 +29,18 @@ export function DashboardPage() {
   };
 
   const services = [
+    {
+      id: 'agents',
+      title: 'AI Workforce Marketplace',
+      description: 'Hire ready-to-work AI Digital Employees (Maya, Alex, Sarah, David, Elena) starting at $5/mo with 1,000 calls.',
+      iconPath: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-200',
+      hoverBorder: 'hover:border-emerald-400',
+      iconBg: 'bg-emerald-100',
+      path: '/agents',
+      dbId: 'agents',
+    },
     {
       id: 'whatsapp',
       title: 'Nexa - WhatsApp AI Employee',
@@ -220,9 +232,67 @@ export function DashboardPage() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-12">
-        <div className="mb-10 text-center sm:text-left">
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-3">Welcome back, {user?.name?.split(' ')[0]} 👋</h2>
-          <p className="text-gray-500 text-lg max-w-2xl">Select a service below to start managing your communications, running campaigns, and capturing leads.</p>
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Welcome back, {user?.name?.split(' ')[0]} 👋</h2>
+            <p className="text-gray-500 text-base max-w-2xl">Manage your autonomous AI digital workforce, communication channels, and automations.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/agents')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition-colors"
+            >
+              <Users size={16} /> Hire AI Workers
+            </button>
+            <button
+              onClick={() => navigate('/studio')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm transition-colors"
+            >
+              <Workflow size={16} /> Visual Studio
+            </button>
+          </div>
+        </div>
+
+        {/* Featured AI Employee Workforce Banner */}
+        <div className="mb-10 relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-700 to-indigo-800 text-white p-7 sm:p-8 shadow-lg">
+          <div className="relative z-10 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-4 border border-white/20">
+              <Zap size={14} className="text-amber-300" /> Autonomous AI Employee Workforce • Starting $5/mo
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-snug mb-3">
+              Deploy Ready-Made AI Workers or Build Custom Drag-and-Drop Automations
+            </h3>
+            <p className="text-emerald-100 text-sm sm:text-base leading-relaxed mb-6">
+              Hire pre-trained specialists for Sales, Support, E-Commerce, Legal, Real Estate and Finance with 1,000 monthly calls per worker, or build custom visual flows connected to your APIs and In-House AI models.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => navigate('/agents')}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 text-sm font-bold shadow-md transition-all group"
+              >
+                <Users size={16} className="text-emerald-600" />
+                Explore AI Workers Marketplace
+                <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+              </button>
+              <button
+                onClick={() => navigate('/studio')}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold border border-white/25 backdrop-blur-sm transition-colors"
+              >
+                <Workflow size={16} />
+                Open Flow Studio
+              </button>
+              <button
+                onClick={() => navigate('/connectors')}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold border border-white/25 backdrop-blur-sm transition-colors"
+              >
+                <Network size={16} />
+                Custom Connectors
+              </button>
+            </div>
+          </div>
+          {/* Decorative background blurs */}
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 -mb-16 w-60 h-60 rounded-full bg-emerald-400/20 blur-2xl pointer-events-none" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
