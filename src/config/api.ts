@@ -219,6 +219,7 @@ export const API_ENDPOINTS = {
     chat: `${API_BASE_URL}/api/website-chatbot/chat`,
     leads: `${API_BASE_URL}/api/website-chatbot/leads`,
     submitLead: `${API_BASE_URL}/api/website-chatbot/leads/submit`,
+    testCustomAi: `${API_BASE_URL}/api/website-chatbot/test-custom-ai`,
   },
   // ── Leads Manager ──────────────────────────────────────────────────────────
 	leads: {

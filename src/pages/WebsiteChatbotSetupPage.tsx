@@ -1,8 +1,121 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch, API_ENDPOINTS, WIDGET_BASE_URL } from '@/config/api';
-import { Globe, Loader2, Save, RefreshCw, Copy, Check, Users, ArrowLeft, Bot, MessageSquare, ShieldCheck, Mail, Palette, Layout, MessageCircle, Info } from 'lucide-react';
+import { Globe, Loader2, Save, RefreshCw, Copy, Check, Users, ArrowLeft, Bot, MessageSquare, ShieldCheck, Mail, Palette, Layout, MessageCircle, Info, Cpu, Play, Plus, Trash2, Code, Terminal, Lock, Sparkles, CheckCircle2 } from 'lucide-react';
 import { WebsiteChatbotLeadsPage } from './WebsiteChatbotLeadsPage';
+
+export interface ParsedCurl {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: string;
+  suggestedResponsePath?: string;
+}
+
+export function parseCurlCommand(rawCurl: string): ParsedCurl {
+  // Normalize line continuations
+  const cmd = rawCurl.replace(/\\\r?\n/g, ' ').trim();
+  
+  let method = 'POST';
+  let url = '';
+  const headers: Record<string, string> = {};
+  let body = '';
+
+  // Match method if explicitly specified
+  const methodMatch = cmd.match(/(?:-X|--request)\s+['"]?([A-Z]+)['"]?/i);
+  if (methodMatch) {
+    method = methodMatch[1].toUpperCase();
+  }
+
+  // Match URL: Look for --url <url> or first standalone http(s):// url
+  const urlMatch = cmd.match(/(?:--url\s+['"]?([^\s'"]+)['"]?)|['"]?(https?:\/\/[^\s'"]+)['"]?/i);
+  if (urlMatch) {
+    url = urlMatch[1] || urlMatch[2] || '';
+  }
+
+  // Match headers: -H "Key: Value" or -H 'Key: Value' or --header "..."
+  const headerRegex = /(?:-H|--header)\s+(?:'([^']*)'|"([^"]*)"|([^\s]+))/g;
+  let hMatch;
+  while ((hMatch = headerRegex.exec(cmd)) !== null) {
+    const headerStr = hMatch[1] ?? hMatch[2] ?? hMatch[3] ?? '';
+    const colonIdx = headerStr.indexOf(':');
+    if (colonIdx > 0) {
+      const k = headerStr.substring(0, colonIdx).trim();
+      const v = headerStr.substring(colonIdx + 1).trim();
+      if (k) headers[k] = v;
+    }
+  }
+
+  // Match body: -d, --data, --data-raw, --data-binary, --json
+  const dataRegex = /(?:-d|--data|--data-raw|--data-binary|--json)\s+(?:'([\s\S]*?)'(?=\s+-[a-zA-Z]|\s*$)|"([\s\S]*?)"(?=\s+-[a-zA-Z]|\s*$)|\$?'([\s\S]*?)'(?=\s+-[a-zA-Z]|\s*$))/;
+  const dataMatch = cmd.match(dataRegex);
+  if (dataMatch) {
+    body = (dataMatch[1] ?? dataMatch[2] ?? dataMatch[3] ?? '').trim();
+  } else {
+    // Fallback for non-space body
+    const fallbackMatch = cmd.match(/(?:-d|--data|--data-raw|--data-binary|--json)\s+([^\s].*?)(?=(?:\s+-[a-zA-Z]|\s*$))/);
+    if (fallbackMatch) {
+      body = fallbackMatch[1].trim().replace(/^['"]|['"]$/g, '');
+    }
+  }
+
+  // If method was not specified and body exists, default to POST
+  if (!methodMatch && body) {
+    method = 'POST';
+  } else if (!methodMatch && !body) {
+    method = 'GET';
+  }
+
+  let templatedBody = body;
+  let suggestedResponsePath = 'reply';
+
+  if (body) {
+    try {
+      const parsed = JSON.parse(body);
+      let replaced = false;
+
+      // Check for OpenAI messages structure
+      if (Array.isArray(parsed.messages)) {
+        for (const msg of parsed.messages) {
+          if (msg.role === 'user') {
+            msg.content = '{{message}}';
+            replaced = true;
+          }
+        }
+        suggestedResponsePath = 'choices[0].message.content';
+      }
+
+      // Check common query / prompt keys
+      if (!replaced && typeof parsed === 'object' && parsed !== null) {
+        const queryKeys = ['prompt', 'query', 'question', 'message', 'legalQuery', 'text', 'input', 'user_input', 'content'];
+        for (const key of Object.keys(parsed)) {
+          if (queryKeys.includes(key) && typeof parsed[key] === 'string') {
+            parsed[key] = '{{message}}';
+            replaced = true;
+            if (key === 'legalQuery' || key === 'query') {
+              suggestedResponsePath = 'data.answer';
+            } else if (key === 'question' || key === 'prompt') {
+              suggestedResponsePath = 'answer';
+            }
+            break;
+          }
+        }
+      }
+
+      templatedBody = JSON.stringify(parsed, null, 2);
+    } catch {
+      // Not JSON or has syntax idiosyncrasies
+    }
+  }
+
+  return {
+    url,
+    method,
+    headers,
+    body: templatedBody,
+    suggestedResponsePath,
+  };
+}
 
 interface ChatbotConfig {
   id?: string;
@@ -21,6 +134,14 @@ interface ChatbotConfig {
   leadWhatsAppTo: string;
   leadWebhookURL: string;
   customSystemPrompt: string;
+  customAiEnabled: boolean;
+  customAiEndpoint: string;
+  customAiMethod: string;
+  customAiHeaders?: Record<string, string>;
+  customAiPayloadTemplate: string;
+  customAiResponsePath: string;
+  customAiFallbackToDefault: boolean;
+  customAiTimeoutSeconds: number;
   isEnabled: boolean;
   isPublished: boolean;
 }
@@ -30,7 +151,17 @@ const DEFAULT: ChatbotConfig = {
   primaryColor: '#16a34a', iconColor: '#ffffff', position: 'bottom-right',
   widgetSize: 'medium', welcomeMessage: 'Hi! How can I help you today?',
   whitelistedDomains: [], enableLeadCapture: true, leadEmailTo: '',
-  leadWhatsAppTo: '', leadWebhookURL: '', customSystemPrompt: '', isEnabled: true, isPublished: false,
+  leadWhatsAppTo: '', leadWebhookURL: '', customSystemPrompt: '',
+  customAiEnabled: false,
+  customAiEndpoint: '',
+  customAiMethod: 'POST',
+  customAiHeaders: {},
+  customAiPayloadTemplate: '',
+  customAiResponsePath: '',
+  customAiFallbackToDefault: true,
+  customAiTimeoutSeconds: 15,
+  isEnabled: true,
+  isPublished: false,
 };
 
 export function WebsiteChatbotSetupPage() {
@@ -46,6 +177,18 @@ export function WebsiteChatbotSetupPage() {
   const [serviceInput, setServiceInput] = useState('');
   const [activeTab, setActiveTab] = useState<'setup' | 'customize' | 'leads' | 'embed'>('setup');
   const [embedPlatform, setEmbedPlatform] = useState<'html' | 'react' | 'agent'>('html');
+
+  // In-House Custom AI State
+  const [curlInput, setCurlInput] = useState('');
+  const [curlImportSuccess, setCurlImportSuccess] = useState<string | null>(null);
+  const [curlImportError, setCurlImportError] = useState<string | null>(null);
+  const [headerKeyInput, setHeaderKeyInput] = useState('');
+  const [headerValInput, setHeaderValInput] = useState('');
+  const [testQuery, setTestQuery] = useState('What are the legal compliance steps for our new contract?');
+  const [testingCustomAi, setTestingCustomAi] = useState(false);
+  const [customAiTestResult, setCustomAiTestResult] = useState<any>(null);
+  const [showPayloadDetails, setShowPayloadDetails] = useState(false);
+
   const BASE = WIDGET_BASE_URL;
   useEffect(() => {
     (async () => {
@@ -122,6 +265,147 @@ export function WebsiteChatbotSetupPage() {
     const s = serviceInput.trim();
     if (s && !config.services.includes(s)) setConfig(p => ({ ...p, services: [...p.services, s] }));
     setServiceInput('');
+  };
+
+  const addHeader = () => {
+    const k = headerKeyInput.trim();
+    const v = headerValInput.trim();
+    if (k) {
+      setConfig(p => ({
+        ...p,
+        customAiHeaders: { ...(p.customAiHeaders || {}), [k]: v },
+      }));
+      setHeaderKeyInput('');
+      setHeaderValInput('');
+    }
+  };
+
+  const removeHeader = (keyToRemove: string) => {
+    setConfig(p => {
+      const headers = { ...(p.customAiHeaders || {}) };
+      delete headers[keyToRemove];
+      return { ...p, customAiHeaders: headers };
+    });
+  };
+
+  const applyPayloadPreset = (preset: 'standard' | 'openai' | 'simple' | 'legal') => {
+    if (preset === 'standard') {
+      setConfig(p => ({
+        ...p,
+        customAiPayloadTemplate: JSON.stringify({
+          message: "{{message}}",
+          sessionId: "{{sessionId}}",
+          chatHistory: "{{chatHistory}}",
+          businessName: "{{businessName}}"
+        }, null, 2),
+        customAiResponsePath: 'reply',
+      }));
+    } else if (preset === 'openai') {
+      setConfig(p => ({
+        ...p,
+        customAiPayloadTemplate: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: "You are a specialized legal assistant." },
+            { role: "user", content: "{{message}}" }
+          ],
+          temperature: 0.7
+        }, null, 2),
+        customAiResponsePath: 'choices[0].message.content',
+      }));
+    } else if (preset === 'simple') {
+      setConfig(p => ({
+        ...p,
+        customAiPayloadTemplate: JSON.stringify({
+          query: "{{message}}"
+        }, null, 2),
+        customAiResponsePath: 'answer',
+      }));
+    } else if (preset === 'legal') {
+      setConfig(p => ({
+        ...p,
+        customAiPayloadTemplate: JSON.stringify({
+          legalQuery: "{{message}}",
+          sessionId: "{{sessionId}}",
+          context: "Website Legal Consultation Bot",
+          history: "{{chatHistory}}"
+        }, null, 2),
+        customAiResponsePath: 'data.answer',
+      }));
+    }
+  };
+
+  const handleParseAndImportCurl = (rawCurl: string) => {
+    if (!rawCurl.trim()) {
+      setCurlImportError('Please paste a valid cURL command.');
+      return;
+    }
+    try {
+      const parsed = parseCurlCommand(rawCurl);
+      if (!parsed.url) {
+        setCurlImportError('Could not detect a valid URL in the cURL command. Make sure it contains an http:// or https:// address.');
+        return;
+      }
+
+      const headerCount = Object.keys(parsed.headers).length;
+
+      setConfig(prev => ({
+        ...prev,
+        customAiEndpoint: parsed.url,
+        customAiMethod: parsed.method,
+        customAiHeaders: {
+          ...(prev.customAiHeaders || {}),
+          ...parsed.headers,
+        },
+        customAiPayloadTemplate: parsed.body || prev.customAiPayloadTemplate,
+        customAiResponsePath: parsed.suggestedResponsePath || prev.customAiResponsePath || 'reply',
+      }));
+
+      setCurlImportError(null);
+      setCurlImportSuccess(
+        `Auto-detected ${parsed.method} ${parsed.url} with ${headerCount} header${headerCount === 1 ? '' : 's'}${parsed.body ? ' and payload template' : ''}.`
+      );
+    } catch (err: any) {
+      setCurlImportError(`Failed to parse cURL command: ${err?.message || 'Invalid syntax'}`);
+    }
+  };
+
+  const testInHouseAi = async () => {
+    if (!config.customAiEndpoint) {
+      alert('Please enter your in-house AI endpoint URL first.');
+      return;
+    }
+    setTestingCustomAi(true);
+    setCustomAiTestResult(null);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.websiteChatbot.testCustomAi, {
+        method: 'POST',
+        body: JSON.stringify({
+          customAiEndpoint: config.customAiEndpoint,
+          customAiMethod: config.customAiMethod || 'POST',
+          customAiHeaders: config.customAiHeaders || {},
+          customAiPayloadTemplate: config.customAiPayloadTemplate,
+          customAiResponsePath: config.customAiResponsePath,
+          testMessage: testQuery,
+        }),
+      });
+      const d = await res.json();
+      if (d.success && d.data) {
+        setCustomAiTestResult(d.data);
+      } else {
+        setCustomAiTestResult({
+          success: false,
+          error: d.error || 'Failed to connect to in-house AI',
+        });
+      }
+    } catch (err: any) {
+      setCustomAiTestResult({
+        success: false,
+        error: err?.message || 'Network error while contacting test endpoint',
+      });
+    } finally {
+      setTestingCustomAi(false);
+    }
   };
 
   if (loading) return (
@@ -311,6 +595,403 @@ export function WebsiteChatbotSetupPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none transition-shadow bg-gray-50 focus:bg-white" />
                 </div>
               </div>
+            </div>
+
+            {/* In-House AI / Custom AI Integration */}
+            <div className={`bg-white rounded-xl border overflow-hidden shadow-sm transition-all ${config.customAiEnabled ? 'border-purple-300 ring-1 ring-purple-100' : 'border-gray-200'}`}>
+              <div className={`border-b px-6 py-4 flex items-center justify-between transition-colors ${config.customAiEnabled ? 'bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200' : 'bg-gray-50 border-gray-200'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${config.customAiEnabled ? 'bg-purple-600 text-white shadow-sm' : 'bg-gray-200 text-gray-500'}`}>
+                    <Cpu size={18} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-semibold text-gray-900">In-House AI / Custom AI Integration</h2>
+                      {config.customAiEnabled && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700 rounded-full border border-purple-200">Active</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500">Route visitor questions to your proprietary AI model (e.g. Legal AI, Medical AI, RAG API) &amp; customize request/response payloads</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" checked={config.customAiEnabled} onChange={e => setConfig(p => ({ ...p, customAiEnabled: e.target.checked }))} />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              {config.customAiEnabled && (
+                <div className="p-6 space-y-6 animate-in slide-in-from-top-2 fade-in duration-200">
+                  <div className="bg-purple-50/70 border border-purple-100 rounded-xl p-4 text-xs text-purple-900 leading-relaxed flex items-start gap-2.5">
+                    <Info size={16} className="text-purple-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong>How it works:</strong> When website visitors ask questions in your chat widget, NexBotix forwards the question to your in-house AI endpoint using your specified payload template. Once your AI returns its answer, NexBotix extracts the response using your specified response field and delivers it seamlessly to the visitor.
+                    </div>
+                  </div>
+
+                  {/* cURL Auto-Detector / One-Click Import */}
+                  <div className="bg-gradient-to-br from-gray-900 to-indigo-950 text-white rounded-xl p-5 border border-purple-500/30 shadow-md space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center font-mono text-xs font-bold">
+                          <Terminal size={15} />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                            One-Click Setup: Paste cURL Command
+                            <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-purple-500/30 text-purple-300 rounded border border-purple-400/30 uppercase tracking-wide">Auto-Detect</span>
+                          </h4>
+                          <p className="text-[11px] text-gray-400">Paste your raw cURL request and we'll auto-detect endpoint URL, HTTP method, auth tokens, and payload template</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2.5 py-1 rounded-md shrink-0">
+                        <Lock size={12} className="shrink-0" />
+                        <span>Tokens encrypted with AES-256-GCM</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <textarea
+                        value={curlInput}
+                        onChange={e => {
+                          setCurlInput(e.target.value);
+                          setCurlImportSuccess(null);
+                          setCurlImportError(null);
+                        }}
+                        placeholder={`curl -X POST https://api.yourdomain.com/v1/legal-ai \\\n  -H "Authorization: Bearer sk-your-token" \\\n  -H "Content-Type: application/json" \\\n  -d '{"legalQuery": "my question", "sessionId": "123"}'`}
+                        rows={3}
+                        className="w-full bg-black/50 border border-gray-700 focus:border-purple-500 rounded-lg p-3 text-xs font-mono text-purple-200 placeholder-gray-500 outline-none resize-y transition-all"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-400">
+                        <span>Sample cURL:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sample = `curl -X POST https://api.legalai.internal/v1/consultation \\\n  -H "Authorization: Bearer legal_sec_991823" \\\n  -H "X-Client-ID: my-firm-101" \\\n  -H "Content-Type: application/json" \\\n  -d '{"legalQuery": "What are the compliance steps for NDA?", "sessionId": "sess-456"}'`;
+                            setCurlInput(sample);
+                            handleParseAndImportCurl(sample);
+                          }}
+                          className="px-2 py-0.5 bg-gray-800 hover:bg-purple-900/50 text-gray-300 hover:text-purple-300 rounded border border-gray-700 text-[10px] transition-colors"
+                        >
+                          ⚖️ Legal AI
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sample = `curl https://api.openai.com/v1/chat/completions \\\n  -H "Authorization: Bearer sk-proj-1234567890abcdef" \\\n  -H "Content-Type: application/json" \\\n  -d '{"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Hello AI"}]}'`;
+                            setCurlInput(sample);
+                            handleParseAndImportCurl(sample);
+                          }}
+                          className="px-2 py-0.5 bg-gray-800 hover:bg-purple-900/50 text-gray-300 hover:text-purple-300 rounded border border-gray-700 text-[10px] transition-colors"
+                        >
+                          🤖 OpenAI API
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sample = `curl -X POST https://ai.mycompany.com/api/query \\\n  -H "X-API-Key: my_custom_api_key_8899" \\\n  -H "Content-Type: application/json" \\\n  -d '{"query": "Sample question", "context": "support"}'`;
+                            setCurlInput(sample);
+                            handleParseAndImportCurl(sample);
+                          }}
+                          className="px-2 py-0.5 bg-gray-800 hover:bg-purple-900/50 text-gray-300 hover:text-purple-300 rounded border border-gray-700 text-[10px] transition-colors"
+                        >
+                          ⚡ Custom API
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleParseAndImportCurl(curlInput)}
+                        disabled={!curlInput.trim()}
+                        className="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                      >
+                        <Sparkles size={14} /> Auto-Detect &amp; Import
+                      </button>
+                    </div>
+
+                    {curlImportSuccess && (
+                      <div className="bg-purple-900/40 border border-purple-500/40 rounded-lg p-3 text-xs text-purple-200 flex items-start gap-2 animate-in fade-in">
+                        <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="font-semibold text-white">{curlImportSuccess}</p>
+                          <p className="text-[11px] text-gray-300">
+                            The endpoint URL, method, headers/tokens, and payload template below have been auto-populated. Tokens will be encrypted securely when you save.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {curlImportError && (
+                      <div className="bg-red-900/40 border border-red-700/50 rounded-lg p-2.5 text-xs text-red-200 flex items-center gap-2">
+                        <Info size={14} className="text-red-400 shrink-0" />
+                        <span>{curlImportError}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Endpoint & Method */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">In-House AI Endpoint URL <span className="text-red-500">*</span></label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <select
+                        value={config.customAiMethod || 'POST'}
+                        onChange={e => setConfig(p => ({ ...p, customAiMethod: e.target.value }))}
+                        className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-purple-500 outline-none w-full sm:w-28"
+                      >
+                        <option value="POST">POST</option>
+                        <option value="GET">GET</option>
+                        <option value="PUT">PUT</option>
+                      </select>
+                      <input
+                        value={config.customAiEndpoint}
+                        onChange={e => setConfig(p => ({ ...p, customAiEndpoint: e.target.value }))}
+                        placeholder="https://api.yourdomain.com/v1/legal-ai or https://ai.mycompany.com/query"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-shadow"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Custom Headers */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Custom HTTP Headers</h4>
+                        <p className="text-[11px] text-gray-500">Include authentication tokens or custom headers (e.g. Bearer token, X-API-Key)</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        value={headerKeyInput}
+                        onChange={e => setHeaderKeyInput(e.target.value)}
+                        placeholder="Header Key (e.g. Authorization)"
+                        className="flex-1 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                      <input
+                        value={headerValInput}
+                        onChange={e => setHeaderValInput(e.target.value)}
+                        placeholder="Value (e.g. Bearer sk_live_...)"
+                        className="flex-1 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={addHeader}
+                        className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                      >
+                        <Plus size={14} /> Add
+                      </button>
+                    </div>
+
+                    {config.customAiHeaders && Object.keys(config.customAiHeaders).length > 0 ? (
+                      <div className="space-y-1.5 pt-1">
+                        {Object.entries(config.customAiHeaders).map(([k, v]) => (
+                          <div key={k} className="flex items-center justify-between bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-mono">
+                            <span className="text-purple-800 font-semibold">{k}: <span className="text-gray-600 font-normal">{v}</span></span>
+                            <button onClick={() => removeHeader(k)} className="text-gray-400 hover:text-red-600 transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-gray-400 italic">No custom headers added yet. Content-Type: application/json is sent by default.</p>
+                    )}
+                  </div>
+
+                  {/* Request Payload Template */}
+                  <div className="space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Request Payload Format / Template</label>
+                        <p className="text-xs text-gray-500">Configure the JSON structure sent to your in-house AI</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[11px] text-gray-400 mr-1">Presets:</span>
+                        <button type="button" onClick={() => applyPayloadPreset('standard')} className="px-2 py-1 text-[11px] font-medium bg-gray-100 hover:bg-purple-100 hover:text-purple-700 rounded transition-colors">Standard</button>
+                        <button type="button" onClick={() => applyPayloadPreset('legal')} className="px-2 py-1 text-[11px] font-medium bg-gray-100 hover:bg-purple-100 hover:text-purple-700 rounded transition-colors">⚖️ Legal AI</button>
+                        <button type="button" onClick={() => applyPayloadPreset('openai')} className="px-2 py-1 text-[11px] font-medium bg-gray-100 hover:bg-purple-100 hover:text-purple-700 rounded transition-colors">OpenAI/LLM</button>
+                        <button type="button" onClick={() => applyPayloadPreset('simple')} className="px-2 py-1 text-[11px] font-medium bg-gray-100 hover:bg-purple-100 hover:text-purple-700 rounded transition-colors">Simple Query</button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 py-1 text-[11px] text-gray-600">
+                      <span className="text-gray-400">Insert variable tags:</span>
+                      {['{{message}}', '{{sessionId}}', '{{chatHistory}}', '{{businessName}}'].map(tag => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            setConfig(p => ({
+                              ...p,
+                              customAiPayloadTemplate: (p.customAiPayloadTemplate || '') + tag,
+                            }));
+                          }}
+                          className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded font-mono hover:bg-purple-100 transition-colors"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+
+                    <textarea
+                      value={config.customAiPayloadTemplate}
+                      onChange={e => setConfig(p => ({ ...p, customAiPayloadTemplate: e.target.value }))}
+                      placeholder={`{\n  "message": "{{message}}",\n  "sessionId": "{{sessionId}}",\n  "chatHistory": "{{chatHistory}}"\n}`}
+                      rows={5}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-y transition-shadow bg-gray-50 focus:bg-white leading-relaxed"
+                    />
+                    <p className="text-[11px] text-gray-500">Leave empty to use the standard default payload: <code className="bg-gray-100 px-1 rounded">{`{"message":"...","sessionId":"...","chatHistory":[...]}`}</code></p>
+                  </div>
+
+                  {/* Response Format & Extraction Path */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Response Extraction Field / Path</label>
+                    <p className="text-xs text-gray-500">Field in your AI JSON response containing the text answer to show the visitor (supports dot-notation)</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        value={config.customAiResponsePath}
+                        onChange={e => setConfig(p => ({ ...p, customAiResponsePath: e.target.value }))}
+                        placeholder="e.g. answer, reply, data.output, choices[0].message.content"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-purple-500 outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px] text-gray-500">
+                      <span>Common formats:</span>
+                      {['reply', 'answer', 'response', 'data.answer', 'choices[0].message.content', 'output.text'].map(path => (
+                        <button
+                          key={path}
+                          type="button"
+                          onClick={() => setConfig(p => ({ ...p, customAiResponsePath: path }))}
+                          className="px-2 py-0.5 bg-gray-100 hover:bg-purple-100 hover:text-purple-700 text-gray-700 rounded font-mono transition-colors"
+                        >
+                          {path}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Reliability & Timeout */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                    <div className="flex items-start gap-2.5">
+                      <input
+                        type="checkbox"
+                        id="customAiFallback"
+                        checked={config.customAiFallbackToDefault}
+                        onChange={e => setConfig(p => ({ ...p, customAiFallbackToDefault: e.target.checked }))}
+                        className="mt-1 rounded text-purple-600 focus:ring-purple-500"
+                      />
+                      <label htmlFor="customAiFallback" className="text-xs text-gray-700 cursor-pointer">
+                        <strong className="block text-gray-900 font-semibold mb-0.5">Built-In AI Fallback</strong>
+                        Fallback to NexBotix default AI if your in-house AI server is down, times out, or errors.
+                      </label>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Request Timeout (seconds)</label>
+                      <input
+                        type="number"
+                        min={3}
+                        max={60}
+                        value={config.customAiTimeoutSeconds || 15}
+                        onChange={e => setConfig(p => ({ ...p, customAiTimeoutSeconds: parseInt(e.target.value) || 15 }))}
+                        className="w-full sm:w-32 px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Live Testing Tool */}
+                  <div className="mt-4 bg-gradient-to-br from-gray-900 to-gray-950 rounded-xl p-5 text-white space-y-4 shadow-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold">⚡</div>
+                        <h4 className="text-sm font-bold text-white">Test In-House AI Connection</h4>
+                      </div>
+                      <span className="text-[11px] text-gray-400">Live query sandbox</span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        value={testQuery}
+                        onChange={e => setTestQuery(e.target.value)}
+                        placeholder="Type a sample user question..."
+                        className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 text-gray-200 placeholder-gray-500 rounded-lg text-xs outline-none focus:border-purple-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={testInHouseAi}
+                        disabled={testingCustomAi}
+                        className="px-5 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 shadow-sm shadow-purple-900/50"
+                      >
+                        {testingCustomAi ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+                        {testingCustomAi ? 'Testing...' : 'Test Connection'}
+                      </button>
+                    </div>
+
+                    {customAiTestResult && (
+                      <div className={`rounded-lg border p-4 space-y-3 animate-in fade-in duration-200 ${customAiTestResult.success ? 'bg-purple-950/40 border-purple-700/50 text-purple-100' : 'bg-red-950/40 border-red-800/50 text-red-100'}`}>
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded font-bold uppercase tracking-wider text-[10px] ${customAiTestResult.success ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+                              {customAiTestResult.success ? '✓ Success' : '✕ Connection Error'}
+                            </span>
+                            {customAiTestResult.statusCode > 0 && (
+                              <span className="text-gray-400 font-mono text-[11px]">HTTP {customAiTestResult.statusCode}</span>
+                            )}
+                          </div>
+                          {customAiTestResult.latencyMs !== undefined && (
+                            <span className="text-gray-400 font-mono text-[11px]">⚡ {customAiTestResult.latencyMs} ms</span>
+                          )}
+                        </div>
+
+                        {customAiTestResult.extractedText ? (
+                          <div>
+                            <p className="text-[11px] font-semibold text-purple-300 uppercase tracking-wider mb-1">Extracted Widget Reply (Delivered to Visitor):</p>
+                            <div className="bg-gray-900/90 border border-purple-500/30 rounded-lg p-3 text-xs text-gray-100 font-sans leading-relaxed">
+                              {customAiTestResult.extractedText}
+                            </div>
+                          </div>
+                        ) : customAiTestResult.error ? (
+                          <div className="text-xs text-red-300 font-mono bg-red-900/30 p-2.5 rounded border border-red-800/40">
+                            {customAiTestResult.error}
+                          </div>
+                        ) : null}
+
+                        {/* Raw Debug Toggle */}
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setShowPayloadDetails(!showPayloadDetails)}
+                            className="text-[11px] text-gray-400 hover:text-white underline flex items-center gap-1"
+                          >
+                            <Code size={12} />
+                            {showPayloadDetails ? 'Hide Request / Raw Response details' : 'Show Request / Raw Response details'}
+                          </button>
+
+                          {showPayloadDetails && (
+                            <div className="mt-2 space-y-2 text-[11px] font-mono text-gray-300">
+                              {customAiTestResult.sentPayload && (
+                                <div>
+                                  <span className="text-gray-400">Sent Payload:</span>
+                                  <pre className="mt-1 bg-black/60 p-2 rounded text-[10px] overflow-x-auto text-green-300 whitespace-pre-wrap">{customAiTestResult.sentPayload}</pre>
+                                </div>
+                              )}
+                              {customAiTestResult.rawResponse && (
+                                <div>
+                                  <span className="text-gray-400">Raw AI Response:</span>
+                                  <pre className="mt-1 bg-black/60 p-2 rounded text-[10px] overflow-x-auto text-blue-300 whitespace-pre-wrap">{customAiTestResult.rawResponse}</pre>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Lead Capture */}
