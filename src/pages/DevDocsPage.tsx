@@ -21,100 +21,275 @@ import { useSEO } from '@/hooks/useSEO';
 // ─── Base URL ─────────────────────────────────────────────────────────────────
 const BASE = typeof window !== 'undefined' ? window.location.origin : 'https://nexbotix.online';
 
-// ─── AI Agent Prompt ───────────────────────────────────────────────────────────
-const AI_AGENT_PROMPT = `You are helping me integrate with the NexBotix API.
+// ─── Specialized AI Agent Prompts For Each Section ────────────────────────────
+
+const AI_PROMPTS = {
+  overview: `You are helping me integrate with the NexBotix full-stack API platform.
 
 ## Environment Setup (do this first)
 Add the following variable to your .env file:
-
   NEXBOTIX_API_KEY=bsk_your_key_here
 
-Then load it in your code:
-  - Node.js / Next.js:  process.env.NEXBOTIX_API_KEY
-  - Python:             os.environ["NEXBOTIX_API_KEY"]
-  - Go:                 os.Getenv("NEXBOTIX_API_KEY")
-  - PHP:                $_ENV["NEXBOTIX_API_KEY"]
-  - Ruby:               ENV["NEXBOTIX_API_KEY"]
+Load in code:
+  - Node.js: process.env.NEXBOTIX_API_KEY
+  - Python:  os.environ["NEXBOTIX_API_KEY"]
+  - Go:      os.Getenv("NEXBOTIX_API_KEY")
 
-Never hardcode the key in source code or commit it to a repository.
-Get your actual key from: Dashboard → Subscription → Developer API.
+Base URL: https://nexbotix.online
+Header:   X-API-Key: <value of NEXBOTIX_API_KEY> (keys start with bsk_)
+
+## Summary of Core APIs
+1. WhatsApp Messaging: POST /api/v1/send (Single, Bulk Personalised with {{name}}, Scheduled)
+2. Omnichannel Email: POST /api/v1/email/send (Transactional & Marketing HTML emails)
+3. Website Chatbot & In-House AI: POST /api/website-chatbot/chat & webhook routing
+4. MCP Server: POST /api/mcp (Streamable HTTP Model Context Protocol with 6 tools)
+5. Calendar Booking: POST /api/calendar/public/:user/:slug/book (Google Meet links)
+6. Marketing & SEO: POST /api/v1/quora/generate-answer, POST /api/v1/medium/generate-post, POST /api/seo/track
+
+Please help me build a complete, resilient client wrapper for these services in my codebase.`,
+
+  chatbot: `You are helping me integrate the NexBotix Website Chatbot and In-House Custom AI webhook into my application.
+
+## Environment Setup
+Add to your .env file:
+  NEXBOTIX_API_KEY=bsk_your_key_here
+  INHOUSE_AI_SECRET=Bearer your_secret_internal_token
+
+## 1. Client-Side Widget Embed
+Embed in your website before </body>:
+  <script src="https://nexbotix.online/api/website-chatbot/script?apikey=YOUR_API_KEY" async></script>
+
+Global JavaScript SDK API:
+  window.NexBotix.open();
+  window.NexBotix.close();
+  window.NexBotix.toggle();
+  window.NexBotix.setUser({ name: "Jane", email: "jane@example.com", phone: "+1234567890" });
+
+## 2. Public Chat API
+POST https://nexbotix.online/api/website-chatbot/chat
+Headers:
+  X-API-Key: <NEXBOTIX_API_KEY>
+  Content-Type: application/json
+Body:
+  {
+    "message": "User query here",
+    "sessionId": "session_user_123",
+    "chatHistory": [
+      { "role": "user", "content": "Hi" },
+      { "role": "model", "content": "Hello! How can I help you today?" }
+    ]
+  }
+
+## 3. Lead Capture API
+POST https://nexbotix.online/api/website-chatbot/leads/submit
+Headers:
+  X-API-Key: <NEXBOTIX_API_KEY>
+  Content-Type: application/json
+Body:
+  {
+    "name": "Sarah Jenkins",
+    "email": "sarah@example.com",
+    "phone": "+14155552671",
+    "message": "Interested in retainer package"
+  }
+
+## 4. In-House AI Webhook Protocol
+If I have my own proprietary AI (e.g. Legal AI, Medical AI, private RAG pipeline), NexBotix forwards visitor questions to my server.
+- Dynamic Variable Tags: {{message}}, {{sessionId}}, {{chatHistory}}, {{businessName}}
+- Response Extraction Path: dot-notation (e.g. "data.answer", "choices[0].message.content", "reply")
+- All tokens/headers are encrypted at rest with AES-256-GCM.
+- Automatic fallback to NexBotix built-in AI if in-house server times out.
+
+Please write clean, production-ready integration code in my target language for this chatbot & webhook server.`,
+
+  whatsapp: `You are helping me integrate with the NexBotix WhatsApp Messaging & Automated Scheduling API.
+
+## Environment Setup
+Add to your .env file:
+  NEXBOTIX_API_KEY=bsk_your_key_here
+
+## Authentication Header
+Every request requires:
+  X-API-Key: <value of NEXBOTIX_API_KEY>
+
+## 1. Send Single WhatsApp Message
+POST https://nexbotix.online/api/v1/send
+Content-Type: application/json
+{
+  "phone": "919876543210",
+  "message": { "text": "Hello! Your verification code is 49201" }
+}
+
+## 2. Bulk Personalised WhatsApp Broadcast (max 50 per call)
+POST https://nexbotix.online/api/v1/send
+Content-Type: application/json
+{
+  "contacts": [
+    { "phone": "919876543210", "name": "Rahul" },
+    { "phone": "919123456789", "name": "Priya" }
+  ],
+  "message": { "text": "Hi {{name}}, your order is confirmed!" }
+}
+
+## 3. Scheduled WhatsApp Messages (ISO 8601 UTC)
+POST https://nexbotix.online/api/v1/send
+Content-Type: application/json
+{
+  "phone": "919876543210",
+  "message": { "text": "Consultation reminder for tomorrow at 10 AM" },
+  "schedule_at": "2026-10-15T09:00:00Z"
+}
+Returns HTTP 202 Accepted with { "success": true, "scheduled": true, "job_id": "job_123" }
+
+## 4. Schedule Management
+- List schedules: GET https://nexbotix.online/api/v1/schedules
+- Cancel pending job: DELETE https://nexbotix.online/api/v1/schedules/:job_id
+
+Please help me build a resilient WhatsApp notification service with batching and error handling.`,
+
+  email: `You are helping me integrate with the NexBotix Omnichannel Email Sending API.
+
+## Environment Setup
+Add to your .env file:
+  NEXBOTIX_API_KEY=bsk_your_key_here
+
+## Authentication Header
+Every request requires:
+  X-API-Key: <value of NEXBOTIX_API_KEY>
+
+## Send Transactional & Marketing Email
+POST https://nexbotix.online/api/v1/email/send
+Content-Type: application/json
+{
+  "to": "client@example.com",
+  "subject": "Order Confirmation #1024",
+  "body": "<h1>Thank you for your order!</h1><p>Your items have been shipped.</p>",
+  "isHtml": true
+}
+
+Response (200 OK):
+{
+  "success": true,
+  "message": "Email queued / sent successfully"
+}
+
+Please help me create an email dispatch wrapper with HTML template rendering and error retry logic.`,
+
+  mcp: `You are helping me connect autonomous AI coding agents (Claude Desktop, Cursor, Windsurf) to the NexBotix Model Context Protocol (MCP) Server.
+
+## MCP Endpoint
+URL: https://nexbotix.online/api/mcp
+Transport: Streamable HTTP Transport (POST)
+Header: X-API-Key: bsk_your_key_here
+
+## Configuration Files
+
+### Claude Desktop (claude_desktop_config.json):
+{
+  "mcpServers": {
+    "nexbotix": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://nexbotix.online/api/mcp",
+        "--header",
+        "X-API-Key: bsk_your_key_here"
+      ]
+    }
+  }
+}
+
+### Cursor IDE (.cursor/mcp.json):
+{
+  "mcpServers": {
+    "nexbotix-agent": {
+      "url": "https://nexbotix.online/api/mcp",
+      "headers": {
+        "X-API-Key": "bsk_your_key_here"
+      }
+    }
+  }
+}
+
+## Exposed MCP Tools
+1. send_whatsapp_message(phone, message)
+2. schedule_whatsapp_message(phone, message, schedule_at)
+3. list_scheduled_messages()
+4. cancel_scheduled_message(job_id)
+5. send_email(to, subject, body, isHtml)
+6. get_bot_status()
+
+Please help me configure my MCP client and write autonomous multi-step workflows using these tools.`,
+
+  calendar: `You are helping me integrate with the NexBotix Calendar & Meeting Booking API.
 
 ## Base URL
 https://nexbotix.online
 
-## Authentication
-Every API request must include the header:
-  X-API-Key: <value of NEXBOTIX_API_KEY>   (keys start with bsk_)
+## 1. Book Consultation / Meeting
+POST https://nexbotix.online/api/calendar/public/:user/:slug/book
+Content-Type: application/json
+{
+  "clientName": "David Miller",
+  "clientEmail": "david@company.com",
+  "clientPhone": "+14159821039",
+  "startTime": "2026-10-18T14:30:00Z",
+  "notes": "Discussion regarding IP patent filing"
+}
 
----
+Response: Returns booking ID, Google Meet video link, and calendar invite confirmation.
 
-## 1. WhatsApp Messaging API
-- Single Message: POST /api/v1/send
-  { "phone": "919876543210", "message": { "text": "Hello!" } }
+## 2. Public Iframe Booking Embed
+<iframe
+  src="https://nexbotix.online/book/YOUR_USERNAME/YOUR_EVENT_SLUG"
+  style="width: 100%; height: 700px; border: none; border-radius: 12px;"
+></iframe>
 
-- Bulk Personalised (max 50 contacts per call): POST /api/v1/send
-  {
-    "contacts": [
-      { "phone": "919876543210", "name": "Rahul" },
-      { "phone": "919123456789", "name": "Priya" }
-    ],
-    "message": { "text": "Hi {{name}}, your appointment is confirmed!" }
-  }
+Please help me build an automated booking and scheduling flow that connects to this API.`,
 
-- Scheduled Messaging (ISO 8601 UTC):
-  Add "schedule_at": "2026-10-15T09:00:00Z" to POST /api/v1/send (returns HTTP 202 + job_id)
-  GET    /api/v1/schedules          — list last 50 scheduled jobs
-  DELETE /api/v1/schedules/:job_id  — cancel a pending job
+  marketing: `You are helping me integrate with the NexBotix Marketing, Quora, Medium & SEO Automation APIs.
 
----
+## Environment Setup
+Add to your .env file:
+  NEXBOTIX_API_KEY=bsk_your_key_here
 
-## 2. Omnichannel Email API
-- Send Transactional / Marketing Email: POST /api/v1/email/send
-  {
-    "to": "client@example.com",
-    "subject": "Order Confirmation #1024",
-    "body": "<h1>Thank you for your order!</h1><p>Your items have been shipped.</p>",
-    "isHtml": true
-  }
+## Authentication Header
+  X-API-Key: <value of NEXBOTIX_API_KEY>
 
----
+## 1. Quora AI Contextual Answer Generator
+POST https://nexbotix.online/api/v1/quora/generate-answer
+Content-Type: application/json
+{
+  "question": "What are the essential terms in a SaaS agreement?",
+  "productUrl": "https://mysite.com",
+  "productName": "MyProduct"
+}
 
-## 3. Website Chatbot & In-House AI Integration
-- Chat Query: POST /api/website-chatbot/chat
-  {
-    "message": "What is the penalty clause in section 4?",
-    "sessionId": "sid_user_1234",
-    "chatHistory": [
-      { "role": "user", "content": "Hi" },
-      { "role": "model", "content": "Hello! How can I help you?" }
-    ]
-  }
-  Header: X-API-Key: bsk_your_key_here
+## 2. Medium Long-Form SEO Article Generator
+POST https://nexbotix.online/api/v1/medium/generate-post
+Content-Type: application/json
+{
+  "topic": "Multi-Channel Communication for Businesses in 2026",
+  "keywords": ["AI Chatbots", "WhatsApp API", "Automation"]
+}
 
-- Submit Lead: POST /api/website-chatbot/leads/submit
-  { "name": "John Doe", "email": "john@example.com", "phone": "1234567890", "message": "Interested in quote" }
+## 3. SEO Core Web Vitals Telemetry Beacon
+POST https://nexbotix.online/api/seo/track
+Content-Type: application/json
+{
+  "url": "https://mysite.com",
+  "lcp": 1.2,
+  "fid": 12,
+  "cls": 0.02,
+  "ttfb": 180
+}
 
-- In-House AI / Webhook Integration:
-  You can connect any custom in-house AI (e.g. Legal AI, Medical AI, RAG API) in the Chatbot Setup Panel.
-  NexBotix forwards queries to your webhook, formats payload using templates ({{message}}, {{sessionId}}, {{chatHistory}}), extracts answers using dot-notation paths (e.g. "reply", "data.answer", "choices[0].message.content"), and gracefully falls back to built-in AI if configured.
+Please help me build a multi-channel content generation and analytics pipeline using these endpoints.`,
+};
 
----
+// ─── Code Snippets Data ───────────────────────────────────────────────────────
 
-## 4. MCP (Model Context Protocol) Server
-- Streamable HTTP MCP Endpoint: POST /api/mcp
-  Connect Cursor, Claude Desktop, or LangChain agents.
-  Header: X-API-Key: bsk_your_key_here
-  Tools: send_whatsapp_message, schedule_whatsapp_message, get_bot_status, send_email, list_schedules.
-
----
-
-## 5. SEO & Tracking API
-- Script: GET /api/seo/script?apikey=bsk_your_key_here
-- Performance Beacon: POST /api/seo/track
-
-Please help me integrate this API into my project.`;
-
-// ─── Comprehensive Code Snippets ───────────────────────────────────────────────
 const snippets: Record<string, Record<string, string>> = {
   // WhatsApp Single
   send_single: {
@@ -871,6 +1046,72 @@ function IC({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ─── Reusable AI Agent Prompt Card Component ──────────────────────────────────
+
+function AIAgentPromptCard({
+  title,
+  subtitle,
+  prompt,
+  badge = 'AI Agent Prompt',
+}: {
+  title: string;
+  subtitle: string;
+  prompt: string;
+  badge?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(prompt).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="border border-violet-200 rounded-2xl overflow-hidden bg-gradient-to-br from-violet-50 via-white to-indigo-50 shadow-sm mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-b border-violet-200 bg-white/70">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-violet-600 text-white flex items-center justify-center shadow-sm shrink-0">
+            <Bot className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-gray-900 text-sm sm:text-base">{title}</h2>
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-violet-100 text-violet-700 rounded-full border border-violet-200">
+                {badge}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500">{subtitle}</p>
+          </div>
+        </div>
+        <button
+          onClick={copy}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shrink-0 ${
+            copied
+              ? 'bg-green-600 text-white shadow-green-600/30'
+              : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-600/30'
+          }`}
+        >
+          {copied ? <Check size={16} /> : <Copy size={16} />}
+          {copied ? 'Copied Prompt!' : 'Copy AI Prompt'}
+        </button>
+      </div>
+
+      <div className="p-5 sm:p-6 space-y-3">
+        <pre className="p-4 bg-gray-950 text-gray-200 text-xs font-mono rounded-xl max-h-56 overflow-y-auto leading-relaxed border border-gray-800 whitespace-pre-wrap">
+          {prompt}
+        </pre>
+        <div className="flex items-center gap-2 text-xs text-violet-800 bg-violet-100/60 px-3 py-2 rounded-lg border border-violet-200">
+          <Sparkles size={14} className="shrink-0 text-violet-600" />
+          <span>
+            Paste this prompt into Cursor, Windsurf, Claude Desktop, or Copilot. Your AI agent will automatically scaffold environment variables, client SDKs, and endpoint handlers.
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main DevDocsPage Component ───────────────────────────────────────────────
 
 export function DevDocsPage() {
@@ -889,14 +1130,6 @@ export function DevDocsPage() {
     description:
       'Complete REST API and MCP documentation for NexBotix WhatsApp messaging, Website Chatbot widgets, In-House AI integration, Omnichannel Email, and Calendar booking.',
   });
-
-  const [copiedPrompt, setCopiedPrompt] = useState(false);
-  const copyPrompt = () => {
-    navigator.clipboard.writeText(AI_AGENT_PROMPT).then(() => {
-      setCopiedPrompt(true);
-      setTimeout(() => setCopiedPrompt(false), 2000);
-    });
-  };
 
   const navTabs = [
     { id: 'overview', label: 'Overview & AI Prompt', icon: Bot, badge: 'Quickstart' },
@@ -996,45 +1229,13 @@ export function DevDocsPage() {
            ========================================================================= */}
         {activeTab === 'overview' && (
           <div className="space-y-8 animate-in fade-in duration-200">
-            {/* AI Agent Integration Box */}
-            <div className="border border-violet-200 rounded-2xl overflow-hidden bg-gradient-to-br from-violet-50 via-white to-indigo-50 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-b border-violet-200 bg-white/70">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-violet-600 text-white flex items-center justify-center shadow-sm">
-                    <Bot className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-gray-900 text-base">One-Click AI Agent Prompt</h2>
-                    <p className="text-xs text-gray-500">
-                      Copy into Cursor, Windsurf, Claude Desktop, or Copilot for instant turnkey integration
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={copyPrompt}
-                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm ${
-                    copiedPrompt
-                      ? 'bg-green-600 text-white shadow-green-600/30'
-                      : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-600/30'
-                  }`}
-                >
-                  {copiedPrompt ? <Check size={16} /> : <Copy size={16} />}
-                  {copiedPrompt ? 'Copied Prompt!' : 'Copy Integration Prompt'}
-                </button>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <pre className="p-4 bg-gray-950 text-gray-200 text-xs font-mono rounded-xl max-h-72 overflow-y-auto leading-relaxed border border-gray-800">
-                  {AI_AGENT_PROMPT}
-                </pre>
-                <div className="flex items-center gap-2 text-xs text-violet-800 bg-violet-100/60 px-3 py-2 rounded-lg border border-violet-200">
-                  <Sparkles size={14} className="shrink-0 text-violet-600" />
-                  <span>
-                    When you paste this prompt into your AI coding agent, it will automatically set up environment variables, create client wrappers, and wire up endpoints across your project.
-                  </span>
-                </div>
-              </div>
-            </div>
+            {/* Dedicated AI Agent Prompt for Overview */}
+            <AIAgentPromptCard
+              title="Full Platform AI Agent Prompt"
+              subtitle="Copy into Cursor, Windsurf, Claude Desktop, or Copilot for turnkey integration of all NexBotix services"
+              prompt={AI_PROMPTS.overview}
+              badge="Universal Suite"
+            />
 
             {/* Authentication & Security */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-5">
@@ -1150,6 +1351,14 @@ export function DevDocsPage() {
                 </div>
               </div>
             </div>
+
+            {/* Dedicated AI Agent Prompt for Chatbot */}
+            <AIAgentPromptCard
+              title="Chatbot &amp; In-House AI Agent Prompt"
+              subtitle="Copy into Cursor or Claude to scaffold widget embeds, SDK calls, and In-House AI webhook servers"
+              prompt={AI_PROMPTS.chatbot}
+              badge="Chatbot & AI"
+            />
 
             {/* In-House AI Routing Protocol Deep Dive */}
             <div className="bg-white border border-purple-200 rounded-2xl p-6 shadow-sm space-y-5">
@@ -1317,6 +1526,14 @@ export function DevDocsPage() {
               </div>
             </div>
 
+            {/* Dedicated AI Agent Prompt for WhatsApp */}
+            <AIAgentPromptCard
+              title="WhatsApp Messaging AI Agent Prompt"
+              subtitle="Copy into Cursor or Claude to scaffold single messaging, bulk personalized broadcasts, and scheduled jobs"
+              prompt={AI_PROMPTS.whatsapp}
+              badge="WhatsApp API"
+            />
+
             {/* 1. Single Message Send */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-3">
@@ -1386,6 +1603,14 @@ export function DevDocsPage() {
                 </div>
               </div>
             </div>
+
+            {/* Dedicated AI Agent Prompt for Email */}
+            <AIAgentPromptCard
+              title="Email Sending AI Agent Prompt"
+              subtitle="Copy into Cursor or Claude to scaffold transactional email templates, bulk messaging, and SMTP handlers"
+              prompt={AI_PROMPTS.email}
+              badge="Email API"
+            />
 
             {/* Email Send Endpoint */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-5">
@@ -1462,6 +1687,14 @@ export function DevDocsPage() {
               </div>
             </div>
 
+            {/* Dedicated AI Agent Prompt for MCP */}
+            <AIAgentPromptCard
+              title="Model Context Protocol (MCP) Agent Prompt"
+              subtitle="Copy into Cursor or Claude Desktop to configure MCP JSON-RPC 2.0 streaming tools and server settings"
+              prompt={AI_PROMPTS.mcp}
+              badge="MCP Agent"
+            />
+
             {/* MCP Endpoint & IDE Configs */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-5">
               <div className="flex items-center gap-3">
@@ -1534,6 +1767,14 @@ export function DevDocsPage() {
               </div>
             </div>
 
+            {/* Dedicated AI Agent Prompt for Calendar */}
+            <AIAgentPromptCard
+              title="Calendar Booking AI Agent Prompt"
+              subtitle="Copy into Cursor or Claude to scaffold automated appointment booking and Google Meet scheduling flows"
+              prompt={AI_PROMPTS.calendar}
+              badge="Calendar API"
+            />
+
             {/* Public Booking Endpoint */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-5">
               <div className="flex items-center gap-3">
@@ -1576,6 +1817,14 @@ export function DevDocsPage() {
                 </div>
               </div>
             </div>
+
+            {/* Dedicated AI Agent Prompt for Marketing */}
+            <AIAgentPromptCard
+              title="Marketing &amp; SEO Automation AI Agent Prompt"
+              subtitle="Copy into Cursor or Claude to scaffold Quora authority answers, Medium article writers, and Core Web Vitals monitors"
+              prompt={AI_PROMPTS.marketing}
+              badge="Marketing & SEO"
+            />
 
             {/* Endpoints */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-5">
