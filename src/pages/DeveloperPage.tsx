@@ -176,7 +176,7 @@ export function DeveloperPage() {
 
   // ── code snippets ───────────────────────────────────────────────────────────
   const waSendCurl = `curl -X POST https://nexbotix.online/api/v1/send \\
-  -H "X-API-Key: bsk_your_key" \\
+  -H "X-API-Key: nex_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
     "phone": "919876543210",
@@ -186,7 +186,7 @@ export function DeveloperPage() {
   const waSendJs = `const res = await fetch('https://nexbotix.online/api/v1/send', {
   method: 'POST',
   headers: {
-    'X-API-Key': 'bsk_your_key',
+    'X-API-Key': 'nex_your_key',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
@@ -202,7 +202,7 @@ console.log(data);`;
 response = requests.post(
     'https://nexbotix.online/api/v1/send',
     headers={
-        'X-API-Key': 'bsk_your_key',
+        'X-API-Key': 'nex_your_key',
         'Content-Type': 'application/json'
     },
     json={
@@ -213,7 +213,7 @@ response = requests.post(
 print(response.json())`;
 
   const waBulkCurl = `curl -X POST https://nexbotix.online/api/v1/send \\
-  -H "X-API-Key: bsk_your_key" \\
+  -H "X-API-Key: nex_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
     "contacts": [
@@ -224,7 +224,7 @@ print(response.json())`;
   }'`;
 
   const emailSendCurl = `curl -X POST https://nexbotix.online/api/v1/email/send \\
-  -H "X-API-Key: bsk_your_key" \\
+  -H "X-API-Key: nex_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
     "email": "user@example.com",
@@ -238,7 +238,7 @@ print(response.json())`;
   const emailSendJs = `const res = await fetch('https://nexbotix.online/api/v1/email/send', {
   method: 'POST',
   headers: {
-    'X-API-Key': 'bsk_your_key',
+    'X-API-Key': 'nex_your_key',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
@@ -257,7 +257,7 @@ console.log(data);`;
 response = requests.post(
     'https://nexbotix.online/api/v1/email/send',
     headers={
-        'X-API-Key': 'bsk_your_key',
+        'X-API-Key': 'nex_your_key',
         'Content-Type': 'application/json'
     },
     json={
@@ -277,7 +277,7 @@ opencode mcp add nexbotix --url https://nexbotix.online/api/mcp
 opencode mcp auth nexbotix`;
 
   const mcpClaudeCodeCmd = `claude mcp add --transport http whatsapp https://nexbotix.online/api/mcp \\
-  -H "X-API-Key: your_bsk_key" \\
+  -H "X-API-Key: your_nex_key" \\
   -s user`;
 
   const mcpClaudeConfig = `{
@@ -285,7 +285,7 @@ opencode mcp auth nexbotix`;
     "whatsapp": {
       "url": "https://nexbotix.online/api/mcp",
       "headers": {
-        "X-API-Key": "bsk_your_key"
+        "X-API-Key": "nex_your_key"
       }
     }
   }
@@ -296,7 +296,7 @@ opencode mcp auth nexbotix`;
     "whatsapp": {
       "url": "https://nexbotix.online/api/mcp",
       "headers": {
-        "X-API-Key": "bsk_your_key"
+        "X-API-Key": "nex_your_key"
       }
     }
   }
@@ -304,19 +304,19 @@ opencode mcp auth nexbotix`;
 
   const mcpInitCurl = `# Step 1 — Initialize
 curl -X POST https://nexbotix.online/api/mcp \\
-  -H "X-API-Key: bsk_your_key" \\
+  -H "X-API-Key: nex_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}'
 
 # Step 2 — List tools
 curl -X POST https://nexbotix.online/api/mcp \\
-  -H "X-API-Key: bsk_your_key" \\
+  -H "X-API-Key: nex_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 
 # Step 3 — Send a WhatsApp message
 curl -X POST https://nexbotix.online/api/mcp \\
-  -H "X-API-Key: bsk_your_key" \\
+  -H "X-API-Key: nex_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"whatsapp_send_message","arguments":{"phone":"919876543210","message":"Hello from MCP!"}}}'`;
 
@@ -371,7 +371,7 @@ curl -X POST https://nexbotix.online/api/mcp \\
                 <Key size={14} className="text-violet-600" />
                 <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">API Key (recommended for server-to-server)</span>
               </div>
-              <code className="text-sm font-mono text-gray-800">X-API-Key: bsk_your_key</code>
+              <code className="text-sm font-mono text-gray-800">X-API-Key: nex_your_key</code>
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -569,7 +569,7 @@ curl -X POST https://nexbotix.online/api/mcp \\
           <EndpointHeader method="POST" path="/api/v1/send" description="Send to one contact or up to 50 contacts at once" />
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 text-xs font-mono text-gray-700 space-y-1">
             <p className="text-gray-400 font-sans text-xs uppercase tracking-wide font-semibold mb-2">Required headers</p>
-            <p><span className="text-blue-600">X-API-Key</span>: bsk_your_key</p>
+            <p><span className="text-blue-600">X-API-Key</span>: nex_your_key</p>
             <p><span className="text-blue-600">Content-Type</span>: application/json</p>
           </div>
 
@@ -615,13 +615,13 @@ curl -X POST https://nexbotix.online/api/mcp \\
         <div className="mb-8">
           <EndpointHeader method="GET" path="/api/v1/schedules" description="List all scheduled messages" />
           <CodeBlock id="wa-list-sched" language="bash" code={`curl https://nexbotix.online/api/v1/schedules \\
-  -H "X-API-Key: bsk_your_key"`} />
+  -H "X-API-Key: nex_your_key"`} />
         </div>
 
         <div className="mb-4">
           <EndpointHeader method="DELETE" path="/api/v1/schedules/{id}" description="Cancel a pending scheduled message" />
           <CodeBlock id="wa-cancel-sched" language="bash" code={`curl -X DELETE https://nexbotix.online/api/v1/schedules/JOB_ID \\
-  -H "X-API-Key: bsk_your_key"`} />
+  -H "X-API-Key: nex_your_key"`} />
         </div>
       </div>
     );
@@ -641,7 +641,7 @@ curl -X POST https://nexbotix.online/api/mcp \\
           <EndpointHeader method="POST" path="/api/v1/email/send" description="Send to one or up to 50 email recipients" />
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 text-xs font-mono text-gray-700 space-y-1">
             <p className="text-gray-400 font-sans text-xs uppercase tracking-wide font-semibold mb-2">Required headers</p>
-            <p><span className="text-blue-600">X-API-Key</span>: bsk_your_key</p>
+            <p><span className="text-blue-600">X-API-Key</span>: nex_your_key</p>
             <p><span className="text-blue-600">Content-Type</span>: application/json</p>
           </div>
 
@@ -690,7 +690,7 @@ curl -X POST https://nexbotix.online/api/mcp \\
       generic: `URL: https://nexbotix.online/api/mcp
 Transport: Streamable HTTP
 Protocol Version: 2024-11-05
-Auth Header: X-API-Key: bsk_your_key`,
+Auth Header: X-API-Key: nex_your_key`,
     };
     const mcpConfigPaths: Record<typeof mcpClient, string> = {
       opencode: 'Run in your terminal (`~/.config/opencode/opencode.jsonc`)',

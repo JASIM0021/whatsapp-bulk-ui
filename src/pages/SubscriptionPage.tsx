@@ -214,14 +214,14 @@ const CODE_TABS = [
 
 const CODE_SNIPPETS: Record<string, string> = {
   curl: `curl -X POST ${BASE}/api/v1/send \\
-  -H "X-API-Key: bsk_your_key_here" \\
+  -H "X-API-Key: nex_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{"phone":"919876543210","message":{"text":"Hello! Your OTP is 1234"}}'`,
 
   'node-fetch': `const res = await fetch('${BASE}/api/v1/send', {
   method: 'POST',
   headers: {
-    'X-API-Key': 'bsk_your_key_here',
+    'X-API-Key': 'nex_your_key_here',
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
@@ -238,7 +238,7 @@ const { data } = await axios.post('${BASE}/api/v1/send', {
   phone: '919876543210',
   message: { text: 'Hello! Your OTP is 1234' },
 }, {
-  headers: { 'X-API-Key': 'bsk_your_key_here' },
+  headers: { 'X-API-Key': 'nex_your_key_here' },
 });
 console.log(data);`,
 
@@ -246,7 +246,7 @@ console.log(data);`,
 
 response = requests.post(
     '${BASE}/api/v1/send',
-    headers={'X-API-Key': 'bsk_your_key_here'},
+    headers={'X-API-Key': 'nex_your_key_here'},
     json={
         'phone': '919876543210',
         'message': {'text': 'Hello! Your OTP is 1234'},
@@ -260,7 +260,7 @@ curl_setopt_array($ch, [
     CURLOPT_POST           => true,
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER     => [
-        'X-API-Key: bsk_your_key_here',
+        'X-API-Key: nex_your_key_here',
         'Content-Type: application/json',
     ],
     CURLOPT_POSTFIELDS => json_encode([
@@ -285,7 +285,7 @@ func main() {
         "message": map[string]string{"text": "Hello! Your OTP is 1234"},
     })
     req, _ := http.NewRequest("POST", "${BASE}/api/v1/send", bytes.NewBuffer(body))
-    req.Header.Set("X-API-Key", "bsk_your_key_here")
+    req.Header.Set("X-API-Key", "nex_your_key_here")
     req.Header.Set("Content-Type", "application/json")
     resp, _ := http.DefaultClient.Do(req)
     defer resp.Body.Close()
@@ -301,7 +301,7 @@ http = Net::HTTP.new(uri.host, uri.port)
 http.use_ssl = uri.scheme == 'https'
 
 req = Net::HTTP::Post.new(uri)
-req['X-API-Key']    = 'bsk_your_key_here'
+req['X-API-Key']    = 'nex_your_key_here'
 req['Content-Type'] = 'application/json'
 req.body = { phone: '919876543210', message: { text: 'Hello! Your OTP is 1234' } }.to_json
 

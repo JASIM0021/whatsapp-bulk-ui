@@ -28,7 +28,7 @@ const AI_PROMPTS = {
 
 ## Environment Setup (do this first)
 Add the following variable to your .env file:
-  NEXBOTIX_API_KEY=bsk_your_key_here
+  NEXBOTIX_API_KEY=nex_your_key_here
 
 Load in code:
   - Node.js: process.env.NEXBOTIX_API_KEY
@@ -36,7 +36,7 @@ Load in code:
   - Go:      os.Getenv("NEXBOTIX_API_KEY")
 
 Base URL: https://nexbotix.online
-Header:   X-API-Key: <value of NEXBOTIX_API_KEY> (keys start with bsk_)
+Header:   X-API-Key: <value of NEXBOTIX_API_KEY> (keys start with nex_)
 
 ## Summary of Core APIs
 1. WhatsApp Messaging: POST /api/v1/send (Single, Bulk Personalised with {{name}}, Scheduled)
@@ -52,7 +52,7 @@ Please help me build a complete, resilient client wrapper for these services in 
 
 ## Environment Setup
 Add to your .env file:
-  NEXBOTIX_API_KEY=bsk_your_key_here
+  NEXBOTIX_API_KEY=nex_your_key_here
   INHOUSE_AI_SECRET=Bearer your_secret_internal_token
 
 ## 1. Client-Side Widget Embed
@@ -106,7 +106,7 @@ Please write clean, production-ready integration code in my target language for 
 
 ## Environment Setup
 Add to your .env file:
-  NEXBOTIX_API_KEY=bsk_your_key_here
+  NEXBOTIX_API_KEY=nex_your_key_here
 
 ## Authentication Header
 Every request requires:
@@ -151,7 +151,7 @@ Please help me build a resilient WhatsApp notification service with batching and
 
 ## Environment Setup
 Add to your .env file:
-  NEXBOTIX_API_KEY=bsk_your_key_here
+  NEXBOTIX_API_KEY=nex_your_key_here
 
 ## Authentication Header
 Every request requires:
@@ -180,7 +180,7 @@ Please help me create an email dispatch wrapper with HTML template rendering and
 ## MCP Endpoint
 URL: https://nexbotix.online/api/mcp
 Transport: Streamable HTTP Transport (POST)
-Header: X-API-Key: bsk_your_key_here
+Header: X-API-Key: nex_your_key_here
 
 ## Configuration Files
 
@@ -194,7 +194,7 @@ Header: X-API-Key: bsk_your_key_here
         "mcp-remote",
         "https://nexbotix.online/api/mcp",
         "--header",
-        "X-API-Key: bsk_your_key_here"
+        "X-API-Key: nex_your_key_here"
       ]
     }
   }
@@ -206,7 +206,7 @@ Header: X-API-Key: bsk_your_key_here
     "nexbotix-agent": {
       "url": "https://nexbotix.online/api/mcp",
       "headers": {
-        "X-API-Key": "bsk_your_key_here"
+        "X-API-Key": "nex_your_key_here"
       }
     }
   }
@@ -252,7 +252,7 @@ Please help me build an automated booking and scheduling flow that connects to t
 
 ## Environment Setup
 Add to your .env file:
-  NEXBOTIX_API_KEY=bsk_your_key_here
+  NEXBOTIX_API_KEY=nex_your_key_here
 
 ## Authentication Header
   X-API-Key: <value of NEXBOTIX_API_KEY>
@@ -294,7 +294,7 @@ const snippets: Record<string, Record<string, string>> = {
   // WhatsApp Single
   send_single: {
     curl: `curl -X POST ${BASE}/api/v1/send \\
-  -H "X-API-Key: bsk_your_key_here" \\
+  -H "X-API-Key: nex_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{"phone":"919876543210","message":{"text":"Hello! Your verification code is 49201"}}'`,
 
@@ -352,7 +352,7 @@ func main() {
   // WhatsApp Bulk
   send_bulk: {
     curl: `curl -X POST ${BASE}/api/v1/send \\
-  -H "X-API-Key: bsk_your_key_here" \\
+  -H "X-API-Key: nex_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
     "contacts": [
@@ -437,7 +437,7 @@ func main() {
   // WhatsApp Schedule
   schedule_send: {
     curl: `curl -X POST ${BASE}/api/v1/send \\
-  -H "X-API-Key: bsk_your_key_here" \\
+  -H "X-API-Key: nex_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
     "phone": "919876543210",
@@ -490,11 +490,11 @@ defer resp.Body.Close()`,
   schedule_mgmt: {
     curl: `# 1. List scheduled jobs
 curl -X GET ${BASE}/api/v1/schedules \\
-  -H "X-API-Key: bsk_your_key_here"
+  -H "X-API-Key: nex_your_key_here"
 
 # 2. Cancel a pending job
 curl -X DELETE ${BASE}/api/v1/schedules/job_6739ac9210 \\
-  -H "X-API-Key: bsk_your_key_here"`,
+  -H "X-API-Key: nex_your_key_here"`,
 
     'node-fetch': `// 1. List all active schedules
 const listRes = await fetch('${BASE}/api/v1/schedules', {
@@ -534,7 +534,7 @@ defer resp.Body.Close()`,
   // Email Send
   email_send: {
     curl: `curl -X POST ${BASE}/api/v1/email/send \\
-  -H "X-API-Key: bsk_your_key_here" \\
+  -H "X-API-Key: nex_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
     "to": "client@example.com",
@@ -590,7 +590,7 @@ defer resp.Body.Close()`,
   // Website Chatbot Chat API
   chatbot_chat: {
     curl: `curl -X POST ${BASE}/api/website-chatbot/chat \\
-  -H "X-API-Key: bsk_your_key_here" \\
+  -H "X-API-Key: nex_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
     "message": "What are your services and consultation pricing?",
@@ -646,7 +646,7 @@ defer resp.Body.Close()`,
   // Website Chatbot Leads Submit
   chatbot_leads: {
     curl: `curl -X POST ${BASE}/api/website-chatbot/leads/submit \\
-  -H "X-API-Key: bsk_your_key_here" \\
+  -H "X-API-Key: nex_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "Sarah Jenkins",
@@ -815,7 +815,7 @@ func main() {
         "mcp-remote",
         "${BASE}/api/mcp",
         "--header",
-        "X-API-Key: bsk_your_key_here"
+        "X-API-Key: nex_your_key_here"
       ]
     }
   }
@@ -827,7 +827,7 @@ func main() {
     "nexbotix-agent": {
       "url": "${BASE}/api/mcp",
       "headers": {
-        "X-API-Key": "bsk_your_key_here"
+        "X-API-Key": "nex_your_key_here"
       }
     }
   }
@@ -840,7 +840,7 @@ import json
 response = requests.post(
     "${BASE}/api/mcp",
     headers={
-        "X-API-Key": "bsk_your_key_here",
+        "X-API-Key": "nex_your_key_here",
         "Content-Type": "application/json"
     },
     json={
@@ -922,7 +922,7 @@ defer resp.Body.Close()`,
   marketing_ai: {
     curl: `# 1. Quora Contextual Answer Generator
 curl -X POST ${BASE}/api/v1/quora/generate-answer \\
-  -H "X-API-Key: bsk_your_key_here" \\
+  -H "X-API-Key: nex_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
     "question": "What are the essential terms in a software SaaS contract?",
@@ -932,7 +932,7 @@ curl -X POST ${BASE}/api/v1/quora/generate-answer \\
 
 # 2. Medium SEO Article Generator
 curl -X POST ${BASE}/api/v1/medium/generate-post \\
-  -H "X-API-Key: bsk_your_key_here" \\
+  -H "X-API-Key: nex_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
     "topic": "Automating Multi-Channel Client Communication in 2026",
@@ -1175,7 +1175,7 @@ export function DevDocsPage() {
             </div>
             <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3">
               <p className="text-[11px] text-gray-400 uppercase font-semibold">Auth Header</p>
-              <p className="text-xs font-mono font-bold text-purple-300 truncate mt-0.5">X-API-Key: bsk_...</p>
+              <p className="text-xs font-mono font-bold text-purple-300 truncate mt-0.5">X-API-Key: nex_...</p>
             </div>
             <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3">
               <p className="text-[11px] text-gray-400 uppercase font-semibold">Security</p>
@@ -1250,12 +1250,12 @@ export function DevDocsPage() {
               </div>
 
               <p className="text-sm text-gray-600 leading-relaxed">
-                All requests to NexBotix API endpoints must include your API Key in the <IC>X-API-Key</IC> HTTP header. Keys always begin with the <IC>bsk_</IC> prefix and can be generated from the dashboard.
+                All requests to NexBotix API endpoints must include your API Key in the <IC>X-API-Key</IC> HTTP header. Keys always begin with the <IC>nex_</IC> prefix and can be generated from the dashboard.
               </p>
 
               <div className="bg-gray-900 text-gray-200 rounded-xl p-4 font-mono text-xs space-y-2 border border-gray-800">
                 <p className="text-gray-400"># Required HTTP Header in all requests</p>
-                <p className="text-green-400 font-bold">X-API-Key: bsk_live_991823019283019238</p>
+                <p className="text-green-400 font-bold">X-API-Key: nex_live_991823019283019238</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
@@ -1313,7 +1313,7 @@ export function DevDocsPage() {
                     <tr>
                       <td className="px-4 py-3 font-mono font-bold text-red-600">401 Unauthorized</td>
                       <td className="px-4 py-3">Missing or invalid API key</td>
-                      <td className="px-4 py-3 text-gray-500">Ensure <IC>X-API-Key</IC> header starts with <IC>bsk_</IC>.</td>
+                      <td className="px-4 py-3 text-gray-500">Ensure <IC>X-API-Key</IC> header starts with <IC>nex_</IC>.</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-3 font-mono font-bold text-red-600">403 Forbidden</td>

@@ -495,7 +495,7 @@ function MCPSection() {
     "whatsapp": {
       "url": "https://nexbotix.online/api/mcp",
       "headers": {
-        "X-API-Key": "bsk_your_api_key"
+        "X-API-Key": "nex_your_api_key"
       }
     }
   }
