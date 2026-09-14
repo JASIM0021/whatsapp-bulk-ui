@@ -92,9 +92,13 @@ export function UpgradedBacktestSandbox({
   const [tradeSizeMode, setTradeSizeMode] = useState<'fixed_capital' | 'pct_capital' | 'risk_pct' | 'fixed_qty'>('fixed_capital');
   const [tradeSizeValue, setTradeSizeValue] = useState<number>(100);
   
-  const [startDate, setStartDate] = useState('2024-01-01');
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().split('T')[0];
+  });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [interval, setInterval] = useState(strategy.timeframe || '1d');
+  const [interval, setInterval] = useState(strategy.timeframe || '1h');
   const [intrabarModel, setIntrabarModel] = useState(strategy.intrabar_model || 'conservative');
 
   // Sync state when strategy changes
@@ -131,14 +135,12 @@ export function UpgradedBacktestSandbox({
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   // Quick Preset Handlers
-  const applyPresetDate = (type: '2024' | '2y' | '1y' | '6m' | 'ytd') => {
+  const applyPresetDate = (type: '2y' | '1y' | '6m' | '3m' | 'ytd') => {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     setEndDate(todayStr);
 
-    if (type === '2024') {
-      setStartDate('2024-01-01');
-    } else if (type === '2y') {
+    if (type === '2y') {
       const past = new Date();
       past.setFullYear(today.getFullYear() - 2);
       setStartDate(past.toISOString().split('T')[0]);
@@ -149,6 +151,10 @@ export function UpgradedBacktestSandbox({
     } else if (type === '6m') {
       const past = new Date();
       past.setMonth(today.getMonth() - 6);
+      setStartDate(past.toISOString().split('T')[0]);
+    } else if (type === '3m') {
+      const past = new Date();
+      past.setMonth(today.getMonth() - 3);
       setStartDate(past.toISOString().split('T')[0]);
     } else if (type === 'ytd') {
       setStartDate(`${today.getFullYear()}-01-01`);
@@ -763,7 +769,7 @@ export function UpgradedBacktestSandbox({
               Backtest Execution Sandbox & Live Replay Engine
             </h3>
             <p className="text-xs text-gray-400">
-              Configure initial capital (e.g. 1000 USDT), custom sizing per trade, and test dates from 2024 to present.
+              Configure initial capital (e.g. 1000 USDT), custom trade sizing, and test over your selected date range.
             </p>
           </div>
 
@@ -779,54 +785,52 @@ export function UpgradedBacktestSandbox({
           <span className="text-gray-500 text-[10px] uppercase font-bold mr-1">Date Presets:</span>
           <button
             type="button"
-            onClick={() => applyPresetDate('2024')}
-            className={`px-2.5 py-1 rounded-lg border text-[11px] transition-all ${
-              startDate === '2024-01-01' ? 'bg-emerald-600 text-white border-emerald-500 font-bold' : 'bg-gray-900 border-gray-800 text-gray-300 hover:bg-gray-800'
-            }`}
-          >
-            From 2024 (Multi-Year)
-          </button>
-          <button
-            type="button"
             onClick={() => applyPresetDate('2y')}
-            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-[11px]"
+            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white text-[11px] transition-all"
           >
             Last 2 Years
           </button>
           <button
             type="button"
             onClick={() => applyPresetDate('1y')}
-            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-[11px]"
+            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white text-[11px] transition-all"
           >
             Last 1 Year
           </button>
           <button
             type="button"
             onClick={() => applyPresetDate('6m')}
-            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-[11px]"
+            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white text-[11px] transition-all"
           >
             Last 6 Months
           </button>
           <button
             type="button"
+            onClick={() => applyPresetDate('3m')}
+            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white text-[11px] transition-all"
+          >
+            Last 3 Months
+          </button>
+          <button
+            type="button"
             onClick={() => applyPresetDate('ytd')}
-            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-[11px]"
+            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white text-[11px] transition-all"
           >
             YTD
           </button>
         </div>
 
         {/* Form Inputs Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 font-mono text-xs items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 font-mono text-xs items-end">
           {/* Strategy */}
-          <div>
+          <div className="lg:col-span-2">
             <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
               Select Strategy
             </label>
             <select
               value={selectedStrategyId}
               onChange={(e) => onSelectStrategyId(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none"
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none truncate"
             >
               {strategies.map((s) => (
                 <option key={s._id} value={s._id}>{s.name}</option>
@@ -843,9 +847,28 @@ export function UpgradedBacktestSandbox({
               type="text"
               value={symbol}
               onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              placeholder="e.g. XAUUSD, BTCUSD"
+              placeholder="e.g. XAUUSD"
               className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-white font-bold focus:outline-none"
             />
+          </div>
+
+          {/* Timeframe */}
+          <div>
+            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
+              Timeframe
+            </label>
+            <select
+              value={interval}
+              onChange={(e) => setInterval(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-amber-400 font-bold focus:outline-none"
+            >
+              <option value="1h">1 Hour (1h)</option>
+              <option value="1d">Daily (1d)</option>
+              <option value="15m">15 Min (15m)</option>
+              <option value="5m">5 Min (5m)</option>
+              <option value="1m">1 Min (1m)</option>
+              <option value="1wk">Weekly (1wk)</option>
+            </select>
           </div>
 
           {/* Capital & Currency */}
@@ -1171,7 +1194,7 @@ export function UpgradedBacktestSandbox({
               <Sparkles size={18} className="text-purple-400 animate-pulse" />
               <div>
                 <strong className="text-white text-xs font-bold font-mono">Ask Dhana AI About This Backtest:</strong>
-                <p className="text-[11px] text-gray-400">Deep mathematical analysis of actual backtest trade results from 2024 to present.</p>
+                <p className="text-[11px] text-gray-400">Deep mathematical analysis of actual backtest trade results across the selected date range.</p>
               </div>
             </div>
 
