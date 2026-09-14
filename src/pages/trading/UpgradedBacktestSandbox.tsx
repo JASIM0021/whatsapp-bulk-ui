@@ -431,6 +431,8 @@ export function UpgradedBacktestSandbox({
     const getX = (idx: number) => paddingLeft + (idx / Math.max(1, displayCandles.length - 1)) * chartWidth;
     const getY = (price: number) => paddingTop + chartHeight - ((price - minPrice) / priceDiff) * chartHeight;
 
+    const isOrderBlockStrategy = (strategy?.indicators || []).some((ind: any) => ind.type === 'order_block') || (strategy?.name || '').toLowerCase().includes('order block');
+
     const activeHoverCandle = hoverIndex !== null && displayCandles[hoverIndex] ? displayCandles[hoverIndex] : null;
 
     // Active trades index map
@@ -554,8 +556,8 @@ export function UpgradedBacktestSandbox({
               );
             })}
 
-            {/* ORDER BLOCK RECTANGULAR ZONES */}
-            {displayCandles.map((candle, idx) => {
+            {/* ORDER BLOCK RECTANGULAR ZONES (Only rendered for Order Block / SMC strategies) */}
+            {isOrderBlockStrategy && displayCandles.map((candle, idx) => {
               if (!candle.active_order_blocks || candle.active_order_blocks.length === 0) return null;
               return candle.active_order_blocks.map((ob, obIdx) => {
                 const xStart = getX(Math.max(0, ob.start_idx));
@@ -571,9 +573,9 @@ export function UpgradedBacktestSandbox({
                     width={Math.max(4, xEnd - xStart)}
                     height={Math.max(2, Math.abs(yBottom - yTop))}
                     fill={isBear ? '#ef4444' : '#10b981'}
-                    opacity="0.08"
+                    opacity="0.12"
                     stroke={isBear ? '#ef4444' : '#10b981'}
-                    strokeWidth="0.5"
+                    strokeWidth="0.8"
                     strokeDasharray="2 2"
                   />
                 );
@@ -609,7 +611,7 @@ export function UpgradedBacktestSandbox({
                     fill={color}
                   />
 
-                  {/* Entry Signal Marker */}
+                  {/* PROMINENT ENTRY SIGNAL MARKER */}
                   {entryTrade && (
                     <g 
                       className="cursor-pointer group"
@@ -617,42 +619,41 @@ export function UpgradedBacktestSandbox({
                     >
                       {entryTrade.side === 'SELL' ? (
                         <>
-                          <circle cx={x} cy={yHigh - 16} r="8" fill="#7f1d1d" stroke="#ef4444" strokeWidth="1.5" className="animate-pulse" />
-                          <text x={x} y={yHigh - 13} fill="#ef4444" fontSize="9" fontWeight="bold" textAnchor="middle">▼</text>
+                          {/* Stem line */}
+                          <line x1={x} y1={yHigh} x2={x} y2={yHigh - 10} stroke="#ef4444" strokeWidth="1.5" strokeDasharray="1 1" />
+                          {/* Badge pill */}
+                          <rect x={x - 18} y={yHigh - 26} width="36" height="15" rx="4" fill="#7f1d1d" stroke="#ef4444" strokeWidth="1.5" className="filter drop-shadow-md" />
+                          <text x={x} y={yHigh - 15} fill="#ffffff" fontSize="8" fontWeight="900" textAnchor="middle" className="font-mono">▼ SELL</text>
                         </>
                       ) : (
                         <>
-                          <circle cx={x} cy={yLow + 16} r="8" fill="#064e3b" stroke="#10b981" strokeWidth="1.5" className="animate-pulse" />
-                          <text x={x} y={yLow + 19} fill="#10b981" fontSize="9" fontWeight="bold" textAnchor="middle">▲</text>
+                          {/* Stem line */}
+                          <line x1={x} y1={yLow} x2={x} y2={yLow + 10} stroke="#10b981" strokeWidth="1.5" strokeDasharray="1 1" />
+                          {/* Badge pill */}
+                          <rect x={x - 16} y={yLow + 11} width="32" height="15" rx="4" fill="#064e3b" stroke="#10b981" strokeWidth="1.5" className="filter drop-shadow-md" />
+                          <text x={x} y={yLow + 22} fill="#ffffff" fontSize="8" fontWeight="900" textAnchor="middle" className="font-mono">▲ BUY</text>
                         </>
                       )}
                     </g>
                   )}
 
-                  {/* Exit Signal Marker */}
+                  {/* PROMINENT EXIT SIGNAL MARKER */}
                   {exitTrade && (
                     <g 
                       className="cursor-pointer"
                       onClick={() => setSelectedTrade(exitTrade)}
                     >
-                      <circle 
-                        cx={x} 
-                        cy={exitTrade.side === 'BUY' ? yHigh - 12 : yLow + 12} 
-                        r="6" 
-                        fill={exitTrade.realized_pnl >= 0 ? '#065f46' : '#991b1b'} 
-                        stroke={exitTrade.realized_pnl >= 0 ? '#34d399' : '#f87171'} 
-                        strokeWidth="1.2" 
-                      />
-                      <text 
-                        x={x} 
-                        y={exitTrade.side === 'BUY' ? yHigh - 9 : yLow + 15} 
-                        fill="#ffffff" 
-                        fontSize="7" 
-                        fontWeight="bold" 
-                        textAnchor="middle"
-                      >
-                        {exitTrade.realized_pnl >= 0 ? '✓' : '✗'}
-                      </text>
+                      {exitTrade.realized_pnl >= 0 ? (
+                        <>
+                          <circle cx={x} cy={exitTrade.side === 'BUY' ? yHigh - 14 : yLow + 14} r="8" fill="#065f46" stroke="#34d399" strokeWidth="1.5" />
+                          <text x={x} y={exitTrade.side === 'BUY' ? yHigh - 10 : yLow + 18} fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle">✓</text>
+                        </>
+                      ) : (
+                        <>
+                          <circle cx={x} cy={exitTrade.side === 'BUY' ? yHigh - 14 : yLow + 14} r="8" fill="#991b1b" stroke="#f87171" strokeWidth="1.5" />
+                          <text x={x} y={exitTrade.side === 'BUY' ? yHigh - 10 : yLow + 18} fill="#ffffff" fontSize="8" fontWeight="bold" textAnchor="middle">✕</text>
+                        </>
+                      )}
                     </g>
                   )}
                 </g>
@@ -669,7 +670,7 @@ export function UpgradedBacktestSandbox({
                   x2={getX(displayCandles.length - 1)}
                   y2={getY(activeTrade.entry_price)}
                   stroke="#38bdf8"
-                  strokeWidth="1.2"
+                  strokeWidth="1.5"
                   strokeDasharray="4 4"
                 />
                 <text
