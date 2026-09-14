@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { StrategyDefinition } from './strategyDsl';
 import { 
-  Play, RefreshCw, 
-  Sparkles, CheckCircle2
+  Play, Pause, FastForward, RotateCcw, RefreshCw, 
+  Sparkles, CheckCircle2, Zap,
+  ChevronLeft, ChevronRight, Sliders
 } from 'lucide-react';
 
 interface BacktestTrade {
@@ -25,6 +26,7 @@ interface BacktestTrade {
     price: number;
     hit: boolean;
     hit_time: string | null;
+    hit_idx?: number | null;
   }>;
   timeline_events: Array<{
     event: string;
@@ -40,10 +42,9 @@ interface BacktestTrade {
   realized_pnl: number;
   realized_r: number;
   status: string;
-  // Compatibility fields
-  type: string;
-  price: number;
-  time: string;
+  type?: string;
+  price?: number;
+  time?: string;
   profit_loss?: number;
 }
 
@@ -86,9 +87,13 @@ export function UpgradedBacktestSandbox({
   onSelectStrategyId,
 }: Props) {
   const [symbol, setSymbol] = useState(strategy.asset_symbol || 'XAUUSD');
-  const [startDate, setStartDate] = useState('2026-06-01');
-  const [endDate, setEndDate] = useState('2026-08-28');
-  const [capital] = useState(100000);
+  const [currency, setCurrency] = useState<'USDT' | 'USD' | 'INR'>('USDT');
+  const [capital, setCapital] = useState<number>(1000);
+  const [tradeSizeMode, setTradeSizeMode] = useState<'fixed_capital' | 'pct_capital' | 'risk_pct' | 'fixed_qty'>('fixed_capital');
+  const [tradeSizeValue, setTradeSizeValue] = useState<number>(100);
+  
+  const [startDate, setStartDate] = useState('2024-01-01');
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [interval, setInterval] = useState(strategy.timeframe || '1d');
   const [intrabarModel, setIntrabarModel] = useState(strategy.intrabar_model || 'conservative');
 
@@ -103,8 +108,17 @@ export function UpgradedBacktestSandbox({
   const [backtestResult, setBacktestResult] = useState<any | null>(null);
   const [candles, setCandles] = useState<Candle[]>([]);
   const [trades, setTrades] = useState<BacktestTrade[]>([]);
-  const [equityCurve, setEquityCurve] = useState<number[]>([]);
-  
+
+  // --- Live Playback / Candle Replay Engine State ---
+  const [isLiveReplayActive, setIsLiveReplayActive] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackIndex, setPlaybackIndex] = useState<number>(0);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(5); // 1x, 2x, 5x, 10x, 25x, 50x, 100x
+  const [chartViewMode, setChartViewMode] = useState<'replay' | 'full'>('replay');
+  const [liveFlashEvent, setLiveFlashEvent] = useState<{ text: string; type: 'entry' | 'exit' | 'tp' | 'sl'; id: number } | null>(null);
+
+  const playbackTimerRef = useRef<number | null>(null);
+
   // Trade Inspector Modal
   const [selectedTrade, setSelectedTrade] = useState<BacktestTrade | null>(null);
 
@@ -113,8 +127,33 @@ export function UpgradedBacktestSandbox({
   const [aiAnalysisText, setAiAnalysisText] = useState('');
   const [aiAnalystLoading, setAiAnalystLoading] = useState(false);
 
-  // Chart Hover
+  // Chart Hover Crosshair
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
+  // Quick Preset Handlers
+  const applyPresetDate = (type: '2024' | '2y' | '1y' | '6m' | 'ytd') => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    setEndDate(todayStr);
+
+    if (type === '2024') {
+      setStartDate('2024-01-01');
+    } else if (type === '2y') {
+      const past = new Date();
+      past.setFullYear(today.getFullYear() - 2);
+      setStartDate(past.toISOString().split('T')[0]);
+    } else if (type === '1y') {
+      const past = new Date();
+      past.setFullYear(today.getFullYear() - 1);
+      setStartDate(past.toISOString().split('T')[0]);
+    } else if (type === '6m') {
+      const past = new Date();
+      past.setMonth(today.getMonth() - 6);
+      setStartDate(past.toISOString().split('T')[0]);
+    } else if (type === 'ytd') {
+      setStartDate(`${today.getFullYear()}-01-01`);
+    }
+  };
 
   // Run Backtest
   const handleRunBacktest = async () => {
@@ -123,6 +162,9 @@ export function UpgradedBacktestSandbox({
     setCandles([]);
     setTrades([]);
     setSelectedTrade(null);
+    setIsPlaying(false);
+    setIsLiveReplayActive(false);
+
     try {
       const res = await apiFetch(API_ENDPOINTS.trading.backtest, {
         method: 'POST',
@@ -136,14 +178,23 @@ export function UpgradedBacktestSandbox({
           initial_capital: capital,
           interval,
           intrabar_model: intrabarModel,
+          trade_size_method: tradeSizeMode,
+          trade_size_value: tradeSizeValue,
         }),
       });
       const data = await res.json();
       if (data.success) {
         setBacktestResult(data.backtest || data.metrics);
-        if (data.candles) setCandles(data.candles);
-        if (data.trades) setTrades(data.trades);
-        if (data.equity_curve) setEquityCurve(data.equity_curve);
+        const candleList = data.candles || [];
+        setCandles(candleList);
+        setTrades(data.trades || []);
+
+        if (candleList.length > 0) {
+          const initialIdx = Math.min(20, candleList.length - 1);
+          setPlaybackIndex(initialIdx);
+          setIsLiveReplayActive(true);
+          setIsPlaying(true);
+        }
       } else {
         alert(data.detail || 'Backtest failed');
       }
@@ -152,6 +203,171 @@ export function UpgradedBacktestSandbox({
     } finally {
       setLoading(false);
     }
+  };
+
+  // --- Candle Replay Interval Loop ---
+  useEffect(() => {
+    if (playbackTimerRef.current !== null) {
+      window.clearInterval(playbackTimerRef.current);
+      playbackTimerRef.current = null;
+    }
+
+    if (!isPlaying || candles.length === 0) return;
+
+    // Calculate delay in ms based on speed
+    // 0.5x = 800ms, 1x = 400ms, 2x = 200ms, 5x = 80ms, 10x = 40ms, 25x = 16ms, 50x = 8ms, 100x = 3ms
+    const speedMap: Record<number, number> = {
+      0.5: 800,
+      1: 400,
+      2: 200,
+      5: 80,
+      10: 40,
+      25: 16,
+      50: 8,
+      100: 3,
+    };
+    const delay = speedMap[playbackSpeed] || 50;
+
+    playbackTimerRef.current = window.setInterval(() => {
+      setPlaybackIndex((prev) => {
+        if (prev >= candles.length - 1) {
+          setIsPlaying(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, delay);
+
+    return () => {
+      if (playbackTimerRef.current !== null) {
+        window.clearInterval(playbackTimerRef.current);
+      }
+    };
+  }, [isPlaying, playbackSpeed, candles.length]);
+
+  // Flash Notifications on Entry / Exit Events as index changes
+  useEffect(() => {
+    if (!isLiveReplayActive || candles.length === 0) return;
+
+    // Check if a trade entered at this exact candle index
+    const enteringTrade = trades.find((t) => t.entry_idx === playbackIndex);
+    if (enteringTrade) {
+      setLiveFlashEvent({
+        text: `🟢 ${enteringTrade.side} SIGNAL ENTRY @ ${currency === 'INR' ? '₹' : '$'}${enteringTrade.entry_price.toFixed(2)} (Allocated: ${currency === 'INR' ? '₹' : '$'}${enteringTrade.capital_allocated})`,
+        type: 'entry',
+        id: Date.now(),
+      });
+      return;
+    }
+
+    // Check if a trade exited at this exact candle index
+    const exitingTrade = trades.find((t) => t.exit_idx === playbackIndex);
+    if (exitingTrade) {
+      const isWin = exitingTrade.realized_pnl >= 0;
+      setLiveFlashEvent({
+        text: `${isWin ? '🎯' : '🛑'} TRADE #${exitingTrade.trade_id} ${isWin ? 'TAKE PROFIT / CLOSED' : 'STOPPED OUT'} (${isWin ? '+' : ''}${currency === 'INR' ? '₹' : '$'}${exitingTrade.realized_pnl.toFixed(2)} | ${exitingTrade.realized_r}R)`,
+        type: isWin ? 'tp' : 'sl',
+        id: Date.now(),
+      });
+    }
+  }, [playbackIndex, trades, isLiveReplayActive, currency, candles.length]);
+
+  // Derived Real-Time Statistics up to playbackIndex
+  const liveStats = useMemo(() => {
+    if (candles.length === 0) {
+      return {
+        currentCandle: null,
+        visibleCandles: [],
+        closedTrades: [],
+        activeTrade: null,
+        liveBalance: capital,
+        unrealizedPnl: 0,
+        realizedPnl: 0,
+        winRate: 0,
+        totalClosed: 0,
+        winCount: 0,
+        lossCount: 0,
+      };
+    }
+
+    const currentCandle = candles[playbackIndex] || candles[candles.length - 1];
+    const visibleCandles = chartViewMode === 'full' ? candles : candles.slice(0, playbackIndex + 1);
+
+    // Filter trades that have exited on or before playbackIndex
+    const closedTrades = trades.filter((t) => t.exit_idx !== undefined && t.exit_idx <= playbackIndex);
+
+    // Find if there is an active trade open right now at playbackIndex
+    const activeTrade = trades.find(
+      (t) => t.entry_idx <= playbackIndex && (t.exit_idx === undefined || t.exit_idx > playbackIndex)
+    ) || null;
+
+    let realizedPnl = 0;
+    let winCount = 0;
+    let lossCount = 0;
+
+    closedTrades.forEach((t) => {
+      realizedPnl += t.realized_pnl;
+      if (t.realized_pnl >= 0) winCount++;
+      else lossCount++;
+    });
+
+    let unrealizedPnl = 0;
+    if (activeTrade && currentCandle) {
+      const currentPrice = currentCandle.close;
+      if (activeTrade.side === 'BUY') {
+        unrealizedPnl = (currentPrice - activeTrade.entry_price) * activeTrade.quantity;
+      } else {
+        unrealizedPnl = (activeTrade.entry_price - currentPrice) * activeTrade.quantity;
+      }
+    }
+
+    const liveBalance = capital + realizedPnl + unrealizedPnl;
+    const totalClosed = closedTrades.length;
+    const winRate = totalClosed > 0 ? (winCount / totalClosed) * 100 : 0;
+
+    return {
+      currentCandle,
+      visibleCandles,
+      closedTrades,
+      activeTrade,
+      liveBalance,
+      unrealizedPnl,
+      realizedPnl,
+      winRate,
+      totalClosed,
+      winCount,
+      lossCount,
+    };
+  }, [candles, trades, playbackIndex, capital, chartViewMode]);
+
+  // Jump handlers
+  const jumpToNextTrade = () => {
+    const nextTrade = trades.find((t) => t.entry_idx > playbackIndex);
+    if (nextTrade) {
+      setPlaybackIndex(nextTrade.entry_idx);
+    } else {
+      setPlaybackIndex(candles.length - 1);
+    }
+  };
+
+  const jumpToPrevTrade = () => {
+    const prevTrades = trades.filter((t) => t.entry_idx < playbackIndex);
+    if (prevTrades.length > 0) {
+      const last = prevTrades[prevTrades.length - 1];
+      setPlaybackIndex(last.entry_idx);
+    } else {
+      setPlaybackIndex(0);
+    }
+  };
+
+  const resetReplay = () => {
+    setIsPlaying(false);
+    setPlaybackIndex(Math.min(20, candles.length - 1));
+  };
+
+  const finishReplay = () => {
+    setIsPlaying(false);
+    setPlaybackIndex(candles.length - 1);
   };
 
   // Ask AI Analyst
@@ -183,63 +399,88 @@ export function UpgradedBacktestSandbox({
     }
   };
 
-  // Render High-Resolution Interactive Candlestick Chart with Order Blocks & TP Ladder
+  // Render High-Resolution Interactive Candlestick Chart with Live Playback
   const renderChart = () => {
     if (candles.length === 0) return null;
 
+    const displayCandles = liveStats.visibleCandles;
+    if (displayCandles.length === 0) return null;
+
     const width = 950;
     const height = 440;
-    const paddingLeft = 65;
-    const paddingRight = 65;
+    const paddingLeft = 70;
+    const paddingRight = 75;
     const paddingTop = 35;
     const paddingBottom = 40;
 
     const chartWidth = width - paddingLeft - paddingRight;
     const chartHeight = height - paddingTop - paddingBottom;
 
-    const prices = candles.flatMap(c => [c.open, c.high, c.low, c.close]);
-    const maxPrice = Math.max(...prices) * 1.01;
-    const minPrice = Math.min(...prices) * 0.99;
+    // Compute dynamic min/max prices of the visible window
+    const prices = displayCandles.flatMap((c) => [c.open, c.high, c.low, c.close]);
+    const maxPrice = Math.max(...prices) * 1.008;
+    const minPrice = Math.min(...prices) * 0.992;
     const priceDiff = maxPrice - minPrice || 1;
 
-    const getX = (idx: number) => paddingLeft + (idx / (candles.length - 1)) * chartWidth;
+    const getX = (idx: number) => paddingLeft + (idx / Math.max(1, displayCandles.length - 1)) * chartWidth;
     const getY = (price: number) => paddingTop + chartHeight - ((price - minPrice) / priceDiff) * chartHeight;
 
-    const tradesByDate: Record<string, BacktestTrade> = {};
-    trades.forEach(t => {
-      const d = t.entry_time.split(' ')[0];
-      tradesByDate[d] = t;
+    const activeHoverCandle = hoverIndex !== null && displayCandles[hoverIndex] ? displayCandles[hoverIndex] : null;
+
+    // Active trades index map
+    const entryTradesMap: Record<number, BacktestTrade> = {};
+    const exitTradesMap: Record<number, BacktestTrade> = {};
+
+    trades.forEach((t) => {
+      if (t.entry_idx < displayCandles.length) {
+        entryTradesMap[t.entry_idx] = t;
+      }
+      if (t.exit_idx !== undefined && t.exit_idx < displayCandles.length) {
+        exitTradesMap[t.exit_idx] = t;
+      }
     });
 
-    const activeHoverCandle = hoverIndex !== null ? candles[hoverIndex] : null;
-    const activeHoverTrade = hoverIndex !== null ? tradesByDate[candles[hoverIndex].time.split(' ')[0]] : null;
-    const activeHoverEquity = hoverIndex !== null && equityCurve.length > hoverIndex ? equityCurve[hoverIndex] : null;
+    const activeTrade = liveStats.activeTrade;
 
     return (
       <div className="relative bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-2xl space-y-4">
-        
-        {/* Top Status & Legend Bar */}
+        {/* Flash Event Banner */}
+        {liveFlashEvent && (
+          <div className="animate-bounce bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center justify-between shadow-lg">
+            <span className="flex items-center gap-2">
+              <Zap size={14} className="text-amber-400 animate-pulse" />
+              {liveFlashEvent.text}
+            </span>
+            <span className="text-[10px] text-gray-400">Live Simulation</span>
+          </div>
+        )}
+
+        {/* Top Status & Live Legend Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-950 p-4 rounded-xl border border-gray-800 text-xs font-mono">
           <div>
             <span className="text-gray-500 uppercase">Symbol / Timeframe:</span>
             <strong className="text-white block mt-0.5">{symbol} ({interval})</strong>
           </div>
           <div>
-            <span className="text-gray-500 uppercase">Price Range:</span>
-            <strong className="text-white block mt-0.5">₹{minPrice.toFixed(2)} - ₹{maxPrice.toFixed(2)}</strong>
+            <span className="text-gray-500 uppercase">Visible Range:</span>
+            <strong className="text-white block mt-0.5">
+              {currency === 'INR' ? '₹' : '$'}{minPrice.toFixed(2)} - {currency === 'INR' ? '₹' : '$'}{maxPrice.toFixed(2)}
+            </strong>
           </div>
           <div>
-            <span className="text-gray-500 uppercase">Execution Model:</span>
-            <strong className="text-emerald-400 block mt-0.5 uppercase">{intrabarModel} (Anti-Lookahead)</strong>
+            <span className="text-gray-500 uppercase">Replay Progress:</span>
+            <strong className="text-emerald-400 block mt-0.5">
+              Bar {playbackIndex + 1} of {candles.length} ({(((playbackIndex + 1) / candles.length) * 100).toFixed(0)}%)
+            </strong>
           </div>
           <div className="flex flex-wrap gap-3 items-center">
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 bg-rose-500/40 border border-rose-500 rounded" />
-              <span className="text-gray-400 text-[10px]">Bearish OB</span>
+              <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
+              <span className="text-gray-400 text-[10px]">Buy Entry</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 bg-emerald-500/40 border border-emerald-500 rounded" />
-              <span className="text-gray-400 text-[10px]">Bullish OB</span>
+              <span className="w-2.5 h-2.5 bg-rose-500 rounded-full" />
+              <span className="text-gray-400 text-[10px]">Sell Entry</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="w-2.5 h-2.5 bg-blue-500 rounded" />
@@ -253,25 +494,24 @@ export function UpgradedBacktestSandbox({
           {activeHoverCandle ? (
             <div className="flex flex-wrap gap-x-6 gap-y-1 w-full justify-between items-center">
               <span>Date: <strong className="text-white">{activeHoverCandle.time.split(' ')[0]}</strong></span>
-              <span>Open: <strong className="text-white">₹{activeHoverCandle.open.toFixed(2)}</strong></span>
-              <span>High: <strong className="text-emerald-400">₹{activeHoverCandle.high.toFixed(2)}</strong></span>
-              <span>Low: <strong className="text-rose-400">₹{activeHoverCandle.low.toFixed(2)}</strong></span>
-              <span>Close: <strong className="text-white">₹{activeHoverCandle.close.toFixed(2)}</strong></span>
-              {activeHoverEquity && (
-                <span>Equity: <strong className="text-blue-400">₹{activeHoverEquity.toLocaleString()}</strong></span>
-              )}
-              {activeHoverTrade && (
+              <span>Open: <strong className="text-white">{currency === 'INR' ? '₹' : '$'}{activeHoverCandle.open.toFixed(2)}</strong></span>
+              <span>High: <strong className="text-emerald-400">{currency === 'INR' ? '₹' : '$'}{activeHoverCandle.high.toFixed(2)}</strong></span>
+              <span>Low: <strong className="text-rose-400">{currency === 'INR' ? '₹' : '$'}{activeHoverCandle.low.toFixed(2)}</strong></span>
+              <span>Close: <strong className="text-white">{currency === 'INR' ? '₹' : '$'}{activeHoverCandle.close.toFixed(2)}</strong></span>
+              {hoverIndex !== null && entryTradesMap[hoverIndex] && (
                 <span className={`px-2 py-0.5 rounded font-bold uppercase text-[9px] ${
-                  activeHoverTrade.side === 'BUY' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/20' : 'bg-rose-950 text-rose-400 border border-rose-500/20'
+                  entryTradesMap[hoverIndex].side === 'BUY'
+                    ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/20'
+                    : 'bg-rose-950 text-rose-400 border border-rose-500/20'
                 }`}>
-                  Trade #{activeHoverTrade.trade_id} ({activeHoverTrade.side} @ ₹{activeHoverTrade.entry_price})
+                  Entry Trade #{entryTradesMap[hoverIndex].trade_id} ({entryTradesMap[hoverIndex].side} @ {currency === 'INR' ? '₹' : '$'}{entryTradesMap[hoverIndex].entry_price})
                 </span>
               )}
             </div>
           ) : (
             <span className="text-gray-500 italic flex items-center gap-1.5">
               <Sparkles size={12} className="text-emerald-400" />
-              Hover cursor over candles to inspect Order Blocks, Entry signals, SL/TP ladder and equity
+              Hover cursor over candles to inspect real-time Order Blocks, entry signals, and SL/TP triggers
             </span>
           )}
         </div>
@@ -287,9 +527,9 @@ export function UpgradedBacktestSandbox({
               const chartW = rect.width - paddingLeft - paddingRight;
               const relativeX = xMouse - paddingLeft;
               const pct = relativeX / chartW;
-              let idx = Math.round(pct * (candles.length - 1));
+              let idx = Math.round(pct * (displayCandles.length - 1));
               if (idx < 0) idx = 0;
-              if (idx >= candles.length) idx = candles.length - 1;
+              if (idx >= displayCandles.length) idx = displayCandles.length - 1;
               setHoverIndex(idx);
             }}
             onMouseLeave={() => setHoverIndex(null)}
@@ -302,14 +542,14 @@ export function UpgradedBacktestSandbox({
                 <g key={`grid-price-${i}`}>
                   <line x1={paddingLeft} y1={y} x2={width - paddingRight} y2={y} stroke="#1f2937" strokeDasharray="3 3" />
                   <text x={paddingLeft - 10} y={y + 4} fill="#9ca3af" fontSize="9" textAnchor="end" className="font-mono">
-                    ₹{p.toFixed(1)}
+                    {currency === 'INR' ? '₹' : '$'}{p.toFixed(1)}
                   </text>
                 </g>
               );
             })}
 
             {/* ORDER BLOCK RECTANGULAR ZONES */}
-            {candles.map((candle, idx) => {
+            {displayCandles.map((candle, idx) => {
               if (!candle.active_order_blocks || candle.active_order_blocks.length === 0) return null;
               return candle.active_order_blocks.map((ob, obIdx) => {
                 const xStart = getX(Math.max(0, ob.start_idx));
@@ -335,7 +575,7 @@ export function UpgradedBacktestSandbox({
             })}
 
             {/* CANDLESTICKS */}
-            {candles.map((candle, idx) => {
+            {displayCandles.map((candle, idx) => {
               const x = getX(idx);
               const yOpen = getY(candle.open);
               const yClose = getY(candle.close);
@@ -344,14 +584,16 @@ export function UpgradedBacktestSandbox({
 
               const isGreen = candle.close >= candle.open;
               const color = isGreen ? '#10b981' : '#ef4444';
-              const candleWidth = Math.max(2.5, (chartWidth / candles.length) * 0.7);
-              const tradeSignal = tradesByDate[candle.time.split(' ')[0]];
+              const candleWidth = Math.max(2.5, (chartWidth / displayCandles.length) * 0.7);
+
+              const entryTrade = entryTradesMap[idx];
+              const exitTrade = exitTradesMap[idx];
 
               return (
                 <g key={`candle-${idx}`}>
                   {/* High/Low Wick */}
                   <line x1={x} y1={yHigh} x2={x} y2={yLow} stroke={color} strokeWidth="1.5" />
-                  
+
                   {/* Body */}
                   <rect
                     x={x - candleWidth / 2}
@@ -361,48 +603,142 @@ export function UpgradedBacktestSandbox({
                     fill={color}
                   />
 
-                  {/* Trade Signal Arrow & SL/TP Ladder Markers */}
-                  {tradeSignal && (
+                  {/* Entry Signal Marker */}
+                  {entryTrade && (
                     <g 
                       className="cursor-pointer group"
-                      onClick={() => setSelectedTrade(tradeSignal)}
+                      onClick={() => setSelectedTrade(entryTrade)}
                     >
-                      {tradeSignal.side === 'SELL' ? (
+                      {entryTrade.side === 'SELL' ? (
                         <>
-                          <circle cx={x} cy={yHigh - 16} r="8" fill="#7f1d1d" stroke="#ef4444" strokeWidth="1.5" />
+                          <circle cx={x} cy={yHigh - 16} r="8" fill="#7f1d1d" stroke="#ef4444" strokeWidth="1.5" className="animate-pulse" />
                           <text x={x} y={yHigh - 13} fill="#ef4444" fontSize="9" fontWeight="bold" textAnchor="middle">▼</text>
-                          <line x1={x} y1={getY(tradeSignal.initial_sl)} x2={x + 35} y2={getY(tradeSignal.initial_sl)} stroke="#ef4444" strokeWidth="1" strokeDasharray="2 2" />
-                          <text x={x + 38} y={getY(tradeSignal.initial_sl) + 3} fill="#ef4444" fontSize="8" className="font-mono">SL</text>
                         </>
                       ) : (
                         <>
-                          <circle cx={x} cy={yLow + 16} r="8" fill="#064e3b" stroke="#10b981" strokeWidth="1.5" />
+                          <circle cx={x} cy={yLow + 16} r="8" fill="#064e3b" stroke="#10b981" strokeWidth="1.5" className="animate-pulse" />
                           <text x={x} y={yLow + 19} fill="#10b981" fontSize="9" fontWeight="bold" textAnchor="middle">▲</text>
-                          <line x1={x} y1={getY(tradeSignal.initial_sl)} x2={x + 35} y2={getY(tradeSignal.initial_sl)} stroke="#ef4444" strokeWidth="1" strokeDasharray="2 2" />
-                          <text x={x + 38} y={getY(tradeSignal.initial_sl) + 3} fill="#ef4444" fontSize="8" className="font-mono">SL</text>
                         </>
                       )}
+                    </g>
+                  )}
+
+                  {/* Exit Signal Marker */}
+                  {exitTrade && (
+                    <g 
+                      className="cursor-pointer"
+                      onClick={() => setSelectedTrade(exitTrade)}
+                    >
+                      <circle 
+                        cx={x} 
+                        cy={exitTrade.side === 'BUY' ? yHigh - 12 : yLow + 12} 
+                        r="6" 
+                        fill={exitTrade.realized_pnl >= 0 ? '#065f46' : '#991b1b'} 
+                        stroke={exitTrade.realized_pnl >= 0 ? '#34d399' : '#f87171'} 
+                        strokeWidth="1.2" 
+                      />
+                      <text 
+                        x={x} 
+                        y={exitTrade.side === 'BUY' ? yHigh - 9 : yLow + 15} 
+                        fill="#ffffff" 
+                        fontSize="7" 
+                        fontWeight="bold" 
+                        textAnchor="middle"
+                      >
+                        {exitTrade.realized_pnl >= 0 ? '✓' : '✗'}
+                      </text>
                     </g>
                   )}
                 </g>
               );
             })}
 
+            {/* ACTIVE TRADE LIVE PROJECTION LINES (SL & TP TARGETS EXTENDING TO CURRENT BAR) */}
+            {activeTrade && (
+              <g key="active-trade-projections">
+                {/* Projected Entry Line */}
+                <line
+                  x1={getX(activeTrade.entry_idx)}
+                  y1={getY(activeTrade.entry_price)}
+                  x2={getX(displayCandles.length - 1)}
+                  y2={getY(activeTrade.entry_price)}
+                  stroke="#38bdf8"
+                  strokeWidth="1.2"
+                  strokeDasharray="4 4"
+                />
+                <text
+                  x={getX(displayCandles.length - 1) + 6}
+                  y={getY(activeTrade.entry_price) + 3}
+                  fill="#38bdf8"
+                  fontSize="9"
+                  className="font-mono font-bold"
+                >
+                  ENTRY @ {activeTrade.entry_price.toFixed(2)}
+                </text>
+
+                {/* Projected Current Stop Loss Line */}
+                <line
+                  x1={getX(activeTrade.entry_idx)}
+                  y1={getY(activeTrade.current_sl)}
+                  x2={getX(displayCandles.length - 1)}
+                  y2={getY(activeTrade.current_sl)}
+                  stroke="#ef4444"
+                  strokeWidth="1.5"
+                  strokeDasharray="2 2"
+                />
+                <text
+                  x={getX(displayCandles.length - 1) + 6}
+                  y={getY(activeTrade.current_sl) + 3}
+                  fill="#ef4444"
+                  fontSize="9"
+                  className="font-mono font-bold"
+                >
+                  SL @ {activeTrade.current_sl.toFixed(2)}
+                </text>
+
+                {/* Projected Take Profit Targets */}
+                {activeTrade.targets.map((tgt, tIdx) => (
+                  <g key={`active-tp-${tIdx}`}>
+                    <line
+                      x1={getX(activeTrade.entry_idx)}
+                      y1={getY(tgt.price)}
+                      x2={getX(displayCandles.length - 1)}
+                      y2={getY(tgt.price)}
+                      stroke={tgt.hit ? '#10b981' : '#60a5fa'}
+                      strokeWidth={tgt.hit ? '1' : '1.2'}
+                      strokeDasharray="3 3"
+                    />
+                    <text
+                      x={getX(displayCandles.length - 1) + 6}
+                      y={getY(tgt.price) + 3}
+                      fill={tgt.hit ? '#10b981' : '#60a5fa'}
+                      fontSize="9"
+                      className="font-mono font-bold"
+                    >
+                      {tgt.name} ({tgt.rr_ratio}R) {tgt.hit ? '✓ HIT' : ''}
+                    </text>
+                  </g>
+                ))}
+              </g>
+            )}
+
             {/* Interactive Crosshair Tracking */}
-            {hoverIndex !== null && (
+            {hoverIndex !== null && displayCandles[hoverIndex] && (
               <>
                 <line x1={getX(hoverIndex)} y1={paddingTop} x2={getX(hoverIndex)} y2={paddingTop + chartHeight} stroke="#4b5563" strokeDasharray="2 2" strokeWidth="1.2" />
-                <line x1={paddingLeft} y1={getY(candles[hoverIndex].close)} x2={width - paddingRight} y2={getY(candles[hoverIndex].close)} stroke="#4b5563" strokeDasharray="2 2" strokeWidth="1.2" />
-                <circle cx={getX(hoverIndex)} cy={getY(candles[hoverIndex].close)} r="4" fill="#10b981" stroke="#ffffff" strokeWidth="1.5" />
+                <line x1={paddingLeft} y1={getY(displayCandles[hoverIndex].close)} x2={width - paddingRight} y2={getY(displayCandles[hoverIndex].close)} stroke="#4b5563" strokeDasharray="2 2" strokeWidth="1.2" />
+                <circle cx={getX(hoverIndex)} cy={getY(displayCandles[hoverIndex].close)} r="4" fill="#10b981" stroke="#ffffff" strokeWidth="1.5" />
               </>
             )}
 
             {/* X-axis date labels */}
-            {candles.filter((_, idx) => idx % Math.ceil(candles.length / 6) === 0).map((c, i) => {
-              const idx = candles.indexOf(c);
+            {displayCandles.map((c, idx) => {
+              if (idx % Math.max(1, Math.ceil(displayCandles.length / 6)) !== 0 && idx !== displayCandles.length - 1) {
+                return null;
+              }
               const x = getX(idx);
               return (
-                <g key={`x-lbl-${i}`}>
+                <g key={`x-lbl-${idx}`}>
                   <line x1={x} y1={paddingTop + chartHeight} x2={x} y2={paddingTop + chartHeight + 5} stroke="#374151" />
                   <text x={x} y={paddingTop + chartHeight + 16} fill="#9ca3af" fontSize="9" textAnchor="middle" className="font-mono">
                     {c.time.split(' ')[0]}
@@ -419,18 +755,70 @@ export function UpgradedBacktestSandbox({
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Parameter Selection Panel */}
-      <div className="bg-gray-950 p-6 rounded-2xl border border-gray-800 shadow-xl space-y-4">
-        <div className="border-b border-gray-800 pb-3 flex justify-between items-center">
+      <div className="bg-gray-950 p-6 rounded-2xl border border-gray-800 shadow-xl space-y-5">
+        <div className="border-b border-gray-800 pb-3 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
           <div>
-            <h3 className="font-bold text-white text-sm uppercase tracking-wider">Backtest Execution Sandbox</h3>
-            <p className="text-xs text-gray-400">Simulate exact Strategy Definition DSL against historical candle ticks.</p>
+            <h3 className="font-bold text-white text-sm uppercase tracking-wider flex items-center gap-2">
+              <Sliders size={16} className="text-emerald-400" />
+              Backtest Execution Sandbox & Live Replay Engine
+            </h3>
+            <p className="text-xs text-gray-400">
+              Configure initial capital (e.g. 1000 USDT), custom sizing per trade, and test dates from 2024 to present.
+            </p>
           </div>
-          <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-950/40 text-emerald-400 font-mono border border-emerald-500/30">
-            Anti-Lookahead Engine Active
-          </span>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-950/40 text-emerald-400 font-mono border border-emerald-500/30">
+              Anti-Lookahead Engine Active
+            </span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 font-mono text-xs items-end">
+        {/* Date Presets Quick Pills */}
+        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+          <span className="text-gray-500 text-[10px] uppercase font-bold mr-1">Date Presets:</span>
+          <button
+            type="button"
+            onClick={() => applyPresetDate('2024')}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] transition-all ${
+              startDate === '2024-01-01' ? 'bg-emerald-600 text-white border-emerald-500 font-bold' : 'bg-gray-900 border-gray-800 text-gray-300 hover:bg-gray-800'
+            }`}
+          >
+            From 2024 (Multi-Year)
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPresetDate('2y')}
+            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-[11px]"
+          >
+            Last 2 Years
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPresetDate('1y')}
+            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-[11px]"
+          >
+            Last 1 Year
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPresetDate('6m')}
+            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-[11px]"
+          >
+            Last 6 Months
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPresetDate('ytd')}
+            className="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-[11px]"
+          >
+            YTD
+          </button>
+        </div>
+
+        {/* Form Inputs Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 font-mono text-xs items-end">
+          {/* Strategy */}
           <div>
             <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
               Select Strategy
@@ -446,6 +834,7 @@ export function UpgradedBacktestSandbox({
             </select>
           </div>
 
+          {/* Symbol */}
           <div>
             <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
               Symbol
@@ -454,10 +843,64 @@ export function UpgradedBacktestSandbox({
               type="text"
               value={symbol}
               onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+              placeholder="e.g. XAUUSD, BTCUSD"
               className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-white font-bold focus:outline-none"
             />
           </div>
 
+          {/* Capital & Currency */}
+          <div>
+            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1 flex justify-between">
+              <span>Initial Capital</span>
+              <span className="text-emerald-400 font-bold">{currency}</span>
+            </label>
+            <div className="flex">
+              <input
+                type="number"
+                value={capital}
+                onChange={(e) => setCapital(parseFloat(e.target.value) || 0)}
+                placeholder="1000"
+                className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-l-xl text-emerald-400 font-bold focus:outline-none"
+              />
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as any)}
+                className="px-2 py-2 bg-gray-800 border border-gray-700 rounded-r-xl text-white text-[11px] focus:outline-none"
+              >
+                <option value="USDT">USDT</option>
+                <option value="USD">USD</option>
+                <option value="INR">INR</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Trade Size Mode & Value */}
+          <div>
+            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
+              Trade Sizing
+            </label>
+            <div className="flex">
+              <select
+                value={tradeSizeMode}
+                onChange={(e) => setTradeSizeMode(e.target.value as any)}
+                className="w-1/2 px-2 py-2 bg-gray-900 border border-gray-800 rounded-l-xl text-[10px] text-gray-300 focus:outline-none"
+              >
+                <option value="fixed_capital">Fixed Amount</option>
+                <option value="pct_capital">% Capital</option>
+                <option value="risk_pct">Risk % (SL)</option>
+                <option value="fixed_qty">Fixed Qty</option>
+              </select>
+              <input
+                type="number"
+                value={tradeSizeValue}
+                onChange={(e) => setTradeSizeValue(parseFloat(e.target.value) || 0)}
+                placeholder="100"
+                className="w-1/2 px-2 py-2 bg-gray-900 border border-gray-800 rounded-r-xl text-white font-bold text-center focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Start Date */}
           <div>
             <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
               Start Date
@@ -470,6 +913,7 @@ export function UpgradedBacktestSandbox({
             />
           </div>
 
+          {/* End Date */}
           <div>
             <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
               End Date
@@ -482,41 +926,7 @@ export function UpgradedBacktestSandbox({
             />
           </div>
 
-          <div>
-            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
-              Timeframe
-            </label>
-            <select
-              value={interval}
-              onChange={(e) => setInterval(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-emerald-400 font-bold focus:outline-none"
-            >
-              <option value="1m">1 min (1m)</option>
-              <option value="3m">3 min (3m)</option>
-              <option value="5m">5 min (5m)</option>
-              <option value="15m">15 min (15m)</option>
-              <option value="30m">30 min (30m)</option>
-              <option value="1h">1 hour (1h)</option>
-              <option value="4h">4 hours (4h)</option>
-              <option value="1d">Daily (1d)</option>
-              <option value="1w">Weekly (1w)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
-              Intrabar Model
-            </label>
-            <select
-              value={intrabarModel}
-              onChange={(e) => setIntrabarModel(e.target.value as any)}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none"
-            >
-              <option value="conservative">Conservative</option>
-              <option value="ohlc_deterministic">OHLC Deterministic</option>
-            </select>
-          </div>
-
+          {/* Run Button */}
           <button
             type="button"
             onClick={handleRunBacktest}
@@ -524,74 +934,253 @@ export function UpgradedBacktestSandbox({
             className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-800 text-white font-bold uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
           >
             {loading ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
-            Run Backtest
+            Run Strategy
           </button>
         </div>
       </div>
 
-      {/* Backtest Results Stats */}
-      {backtestResult && (
-        <div className="space-y-6 animate-fadeIn">
-          
-          {/* Key Metrics Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 font-mono text-xs">
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
-              <span className="text-[10px] text-gray-500 uppercase font-bold block">Total Trades</span>
-              <p className="text-lg font-bold text-white mt-1">{backtestResult.total_trades || trades.length}</p>
+      {/* Interactive Live Replay Simulation HUD & Control Toolbar */}
+      {candles.length > 0 && (
+        <div className="bg-gray-950 p-6 rounded-2xl border border-gray-800 shadow-2xl space-y-6 animate-fadeIn">
+          {/* Top Live Ticker HUD */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 font-mono text-xs">
+            {/* Live Portfolio Balance */}
+            <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
+              <span className="text-[10px] text-gray-500 uppercase font-bold block">Live Balance</span>
+              <p className={`text-lg font-bold mt-1 ${liveStats.liveBalance >= capital ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {currency === 'INR' ? '₹' : '$'}{liveStats.liveBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+              <span className="text-[10px] text-gray-400">
+                {liveStats.liveBalance >= capital ? '+' : ''}
+                {(((liveStats.liveBalance - capital) / (capital || 1)) * 100).toFixed(2)}% ROI
+              </span>
             </div>
-            
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
+
+            {/* Floating Unrealized PnL */}
+            <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
+              <span className="text-[10px] text-gray-500 uppercase font-bold block">Unrealized Floating</span>
+              <p className={`text-lg font-bold mt-1 ${liveStats.unrealizedPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {liveStats.unrealizedPnl >= 0 ? '+' : ''}{currency === 'INR' ? '₹' : '$'}{liveStats.unrealizedPnl.toFixed(2)}
+              </p>
+              <span className="text-[10px] text-gray-400">
+                {liveStats.activeTrade ? `Active in Trade #${liveStats.activeTrade.trade_id}` : 'Position Flat'}
+              </span>
+            </div>
+
+            {/* Realized Net PnL */}
+            <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
+              <span className="text-[10px] text-gray-500 uppercase font-bold block">Realized Net P&L</span>
+              <p className={`text-lg font-bold mt-1 ${liveStats.realizedPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {liveStats.realizedPnl >= 0 ? '+' : ''}{currency === 'INR' ? '₹' : '$'}{liveStats.realizedPnl.toFixed(2)}
+              </p>
+              <span className="text-[10px] text-gray-400">{liveStats.totalClosed} closed trades</span>
+            </div>
+
+            {/* Live Win Rate */}
+            <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
               <span className="text-[10px] text-gray-500 uppercase font-bold block">Win Rate</span>
               <p className="text-lg font-bold text-emerald-400 mt-1">
-                {(backtestResult.win_ratio || 0).toFixed(1)}%
+                {liveStats.winRate.toFixed(1)}%
               </p>
+              <span className="text-[10px] text-gray-400">
+                {liveStats.winCount}W / {liveStats.lossCount}L
+              </span>
             </div>
 
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
-              <span className="text-[10px] text-gray-500 uppercase font-bold block">Profit Factor</span>
-              <p className="text-lg font-bold text-white mt-1">
-                {(backtestResult.profit_factor || 1.73).toFixed(2)}
+            {/* Current Price & Date */}
+            <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
+              <span className="text-[10px] text-gray-500 uppercase font-bold block">Replay Date</span>
+              <p className="text-sm font-bold text-white mt-1">
+                {liveStats.currentCandle ? liveStats.currentCandle.time.split(' ')[0] : '-'}
               </p>
+              <span className="text-[10px] text-emerald-400">
+                Close: {currency === 'INR' ? '₹' : '$'}{liveStats.currentCandle ? liveStats.currentCandle.close.toFixed(2) : '-'}
+              </span>
             </div>
 
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
-              <span className="text-[10px] text-gray-500 uppercase font-bold block">Net Profit</span>
-              <p className={`text-lg font-bold mt-1 ${(backtestResult.net_profit || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                ₹{(backtestResult.net_profit || 0).toLocaleString()}
-              </p>
-            </div>
-
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
-              <span className="text-[10px] text-gray-500 uppercase font-bold block">Max Drawdown</span>
-              <p className="text-lg font-bold text-rose-400 mt-1">
-                {(backtestResult.max_drawdown_pct || 0).toFixed(1)}%
-              </p>
-            </div>
-
-            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
-              <span className="text-[10px] text-gray-500 uppercase font-bold block">Average R</span>
-              <p className="text-lg font-bold text-emerald-400 mt-1">
-                +{(backtestResult.average_r || 0.62).toFixed(2)}R
-              </p>
+            {/* Active Position Tracker */}
+            <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
+              <span className="text-[10px] text-gray-500 uppercase font-bold block">Position State</span>
+              {liveStats.activeTrade ? (
+                <div className="mt-1">
+                  <span className={`px-2 py-0.5 rounded font-bold uppercase text-[9px] border ${
+                    liveStats.activeTrade.side === 'BUY'
+                      ? 'bg-emerald-950 text-emerald-400 border-emerald-500/30'
+                      : 'bg-rose-950 text-rose-400 border-rose-500/30'
+                  }`}>
+                    {liveStats.activeTrade.side} {liveStats.activeTrade.quantity} @ {liveStats.activeTrade.entry_price}
+                  </span>
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    SL: {liveStats.activeTrade.current_sl.toFixed(2)}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs font-bold text-gray-400 mt-1">FLAT / WAITING</p>
+              )}
             </div>
           </div>
+
+          {/* Interactive Playback Controller Bar */}
+          <div className="p-4 bg-gray-900 rounded-2xl border border-gray-800 space-y-4">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              {/* Play / Pause / Step Controls */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className={`px-5 py-2.5 rounded-xl font-bold uppercase text-xs flex items-center gap-2 transition-all shadow-lg active:scale-95 ${
+                    isPlaying ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
+                >
+                  {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+                  {isPlaying ? 'Pause Simulation' : 'Live Play'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setPlaybackIndex((prev) => Math.max(0, prev - 1));
+                  }}
+                  title="Step Backward (1 Candle)"
+                  className="p-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setPlaybackIndex((prev) => Math.min(candles.length - 1, prev + 1));
+                  }}
+                  title="Step Forward (1 Candle)"
+                  className="p-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
+                >
+                  <ChevronRight size={16} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={jumpToPrevTrade}
+                  title="Jump to Previous Trade"
+                  className="px-2.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-[10px] font-mono"
+                >
+                  ⏮ Prev Trade
+                </button>
+
+                <button
+                  type="button"
+                  onClick={jumpToNextTrade}
+                  title="Jump to Next Trade"
+                  className="px-2.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-[10px] font-mono"
+                >
+                  ⏭ Next Trade
+                </button>
+
+                <button
+                  type="button"
+                  onClick={resetReplay}
+                  title="Reset to Beginning"
+                  className="p-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white"
+                >
+                  <RotateCcw size={14} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={finishReplay}
+                  title="Jump to Final Outcome"
+                  className="p-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white"
+                >
+                  <FastForward size={14} />
+                </button>
+              </div>
+
+              {/* Speed Multipliers */}
+              <div className="flex items-center gap-1.5 font-mono text-xs">
+                <span className="text-gray-500 text-[10px] uppercase font-bold mr-1">Speed:</span>
+                {[0.5, 1, 2, 5, 10, 25, 50, 100].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setPlaybackSpeed(s)}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                      playbackSpeed === s
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                    }`}
+                  >
+                    {s}x
+                  </button>
+                ))}
+              </div>
+
+              {/* Replay View Mode Toggle */}
+              <div className="flex items-center gap-1 bg-gray-800 p-1 rounded-xl font-mono text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => setChartViewMode('replay')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    chartViewMode === 'replay' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Streaming
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartViewMode('full')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    chartViewMode === 'full' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Full Overview
+                </button>
+              </div>
+            </div>
+
+            {/* Scrubbing Timeline Progress Slider */}
+            <div className="space-y-1">
+              <div className="flex justify-between items-center text-[10px] font-mono text-gray-400">
+                <span>{startDate} (Start)</span>
+                <span className="text-emerald-400 font-bold">
+                  {liveStats.currentCandle ? liveStats.currentCandle.time.split(' ')[0] : ''} (Bar {playbackIndex + 1}/{candles.length})
+                </span>
+                <span>{endDate} (End)</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max={Math.max(0, candles.length - 1)}
+                value={playbackIndex}
+                onChange={(e) => {
+                  setIsPlaying(false);
+                  setPlaybackIndex(parseInt(e.target.value, 10));
+                }}
+                className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              />
+            </div>
+          </div>
+
+          {/* Candlestick & Live Signals Chart */}
+          {renderChart()}
 
           {/* AI Backtest Analyst Quick Bar */}
           <div className="bg-purple-950/20 border border-purple-500/30 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
             <div className="flex items-center gap-2.5">
               <Sparkles size={18} className="text-purple-400 animate-pulse" />
               <div>
-                <strong className="text-white text-xs font-bold font-mono">Ask AI About This Backtest:</strong>
-                <p className="text-[11px] text-gray-400">Deep mathematical analysis of actual backtest trade results.</p>
+                <strong className="text-white text-xs font-bold font-mono">Ask Dhana AI About This Backtest:</strong>
+                <p className="text-[11px] text-gray-400">Deep mathematical analysis of actual backtest trade results from 2024 to present.</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
               {[
-                { label: 'Why did losses happen?', q: 'Why did losing trades happen?' },
-                { label: 'Compare 1R vs 2R vs 3R', q: 'Compare 1R, 2R and 3R targets' },
-                { label: 'Session optimization', q: 'Which trading session performs best?' },
-                { label: 'Tighten candle filter to 15 pts', q: 'What happens if candle range is tightened to 15 points?' },
+                { label: 'Why did losses happen?', q: 'Why did losing trades happen in this backtest period?' },
+                { label: 'Compare 1R vs 2R vs 3R', q: 'Compare 1R, 2R and 3R target efficiency' },
+                { label: 'Capital drawdown review', q: 'What was the maximum drawdown and how to reduce risk?' },
+                { label: 'Sizing optimization', q: 'How would varying trade size from 100 USDT affect the win rate and Sharpe ratio?' },
               ].map((btn, i) => (
                 <button
                   key={i}
@@ -605,14 +1194,16 @@ export function UpgradedBacktestSandbox({
             </div>
           </div>
 
-          {/* Candlestick & Order Block Chart */}
-          {renderChart()}
-
           {/* Trade History Ledger Table */}
           <div className="bg-gray-950 p-6 rounded-2xl border border-gray-800 shadow-xl space-y-4 font-mono text-xs">
             <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-              <h4 className="font-bold text-white uppercase tracking-wider">Executed Trades Ledger</h4>
-              <span className="text-[11px] text-gray-500">Click any trade row to open Trade Inspector</span>
+              <div>
+                <h4 className="font-bold text-white uppercase tracking-wider">Executed Trades Ledger</h4>
+                <p className="text-[11px] text-gray-400">
+                  Displaying {liveStats.closedTrades.length} completed trades up to current replay bar.
+                </p>
+              </div>
+              <span className="text-[11px] text-gray-500">Click any row to open Trade Inspector</span>
             </div>
 
             <div className="overflow-x-auto max-h-80 overflow-y-auto">
@@ -620,18 +1211,19 @@ export function UpgradedBacktestSandbox({
                 <thead>
                   <tr className="bg-gray-900 border-b border-gray-800 text-gray-500 uppercase text-[10px] font-bold">
                     <th className="p-3">Trade #</th>
-                    <th className="p-3">Execution Time</th>
+                    <th className="p-3">Entry Time</th>
                     <th className="p-3">Type</th>
                     <th className="p-3">Entry Price</th>
                     <th className="p-3">Initial SL</th>
-                    <th className="p-3">Initial Risk</th>
+                    <th className="p-3">Quantity</th>
+                    <th className="p-3">Allocated</th>
                     <th className="p-3">Exit Reason</th>
                     <th className="p-3">Realized P&L</th>
                     <th className="p-3">R-Multiple</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800/60">
-                  {trades.map((t, idx) => (
+                  {liveStats.closedTrades.map((t, idx) => (
                     <tr 
                       key={idx}
                       onClick={() => setSelectedTrade(t)}
@@ -648,12 +1240,13 @@ export function UpgradedBacktestSandbox({
                           {t.side}
                         </span>
                       </td>
-                      <td className="p-3 text-white font-semibold">₹{t.entry_price.toFixed(2)}</td>
-                      <td className="p-3 text-rose-400">₹{t.initial_sl.toFixed(2)}</td>
-                      <td className="p-3 text-amber-400">{t.initial_risk_points.toFixed(2)} pts</td>
+                      <td className="p-3 text-white font-semibold">{currency === 'INR' ? '₹' : '$'}{t.entry_price.toFixed(2)}</td>
+                      <td className="p-3 text-rose-400">{currency === 'INR' ? '₹' : '$'}{t.initial_sl.toFixed(2)}</td>
+                      <td className="p-3 text-gray-300">{t.quantity}</td>
+                      <td className="p-3 text-gray-300">{currency === 'INR' ? '₹' : '$'}{t.capital_allocated.toFixed(2)}</td>
                       <td className="p-3 text-gray-400 truncate max-w-xs">{t.exit_reason || 'CLOSED'}</td>
                       <td className={`p-3 font-bold ${t.realized_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {t.realized_pnl >= 0 ? '+' : ''}₹{t.realized_pnl.toFixed(2)}
+                        {t.realized_pnl >= 0 ? '+' : ''}{currency === 'INR' ? '₹' : '$'}{t.realized_pnl.toFixed(2)}
                       </td>
                       <td className={`p-3 font-bold ${t.realized_r >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {t.realized_r >= 0 ? '+' : ''}{t.realized_r.toFixed(2)}R
@@ -704,20 +1297,20 @@ export function UpgradedBacktestSandbox({
               <div className="grid grid-cols-2 gap-3 bg-gray-950 p-4 rounded-xl border border-gray-800">
                 <div>
                   <span className="text-gray-500 uppercase text-[10px]">Entry Price:</span>
-                  <p className="text-white font-bold mt-0.5">₹{selectedTrade.entry_price.toFixed(2)}</p>
+                  <p className="text-white font-bold mt-0.5">{currency === 'INR' ? '₹' : '$'}{selectedTrade.entry_price.toFixed(2)}</p>
                 </div>
                 <div>
                   <span className="text-gray-500 uppercase text-[10px]">Initial Stop Loss:</span>
-                  <p className="text-rose-400 font-bold mt-0.5">₹{selectedTrade.initial_sl.toFixed(2)}</p>
+                  <p className="text-rose-400 font-bold mt-0.5">{currency === 'INR' ? '₹' : '$'}{selectedTrade.initial_sl.toFixed(2)}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500 uppercase text-[10px]">Initial Risk (1R):</span>
-                  <p className="text-amber-400 font-bold mt-0.5">{selectedTrade.initial_risk_points.toFixed(2)} points</p>
+                  <span className="text-gray-500 uppercase text-[10px]">Capital Allocated:</span>
+                  <p className="text-amber-400 font-bold mt-0.5">{currency === 'INR' ? '₹' : '$'}{selectedTrade.capital_allocated.toFixed(2)}</p>
                 </div>
                 <div>
                   <span className="text-gray-500 uppercase text-[10px]">Realized Result:</span>
                   <p className={`font-bold mt-0.5 ${selectedTrade.realized_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {selectedTrade.realized_pnl >= 0 ? '+' : ''}₹{selectedTrade.realized_pnl.toFixed(2)} ({selectedTrade.realized_r}R)
+                    {selectedTrade.realized_pnl >= 0 ? '+' : ''}{currency === 'INR' ? '₹' : '$'}{selectedTrade.realized_pnl.toFixed(2)} ({selectedTrade.realized_r}R)
                   </p>
                 </div>
               </div>
