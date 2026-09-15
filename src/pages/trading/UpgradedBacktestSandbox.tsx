@@ -871,11 +871,11 @@ export function UpgradedBacktestSandbox({
               <option value="1wk">Weekly (1wk)</option>
             </select>
             <span className="text-[9px] font-mono text-gray-400 mt-1 block">
-              {interval === '1h' && '⚡ Intra-Week: 60-180 trades/yr'}
-              {interval === '15m' && '🔥 Day Trading: 200-600 trades/yr'}
-              {interval === '5m' && '🚀 Scalping: 500-1500 trades/yr'}
-              {interval === '1d' && '⚠️ Macro Swing: 3-8 trades/yr'}
-              {interval === '1m' && '⚡ High-Frequency 1-Min Flow'}
+              {interval === '1h' && '⚡ Intra-Week: 60-180 trades/yr (Full 2-Year Horizon)'}
+              {interval === '15m' && '🔥 Day Trading (Forex/Metals ~60d • Crypto Multi-Year)'}
+              {interval === '5m' && '🚀 Scalping (Forex/Metals ~60d • Crypto Multi-Year)'}
+              {interval === '1d' && '🏛️ Macro Swing: 3-8 trades/yr (Multi-Year Horizon)'}
+              {interval === '1m' && '⚡ Ultra-Fast Scalping (Max 7d Lookback)'}
             </span>
           </div>
 

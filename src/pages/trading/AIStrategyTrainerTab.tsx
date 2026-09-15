@@ -287,22 +287,22 @@ export function AIStrategyTrainerTab({
           <div className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-gray-900/80 border border-gray-800">
             {timeframe === '1h' && (
               <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                ⚡ Intra-Week: Expect 60–180 setups/year
+                ⚡ Intra-Week: Expect 60–180 setups/year (Full 2-Year Horizon)
               </span>
             )}
             {timeframe === '15m' && (
               <span className="text-purple-300 font-semibold flex items-center gap-1">
-                🔥 Day Trading: Expect 200–600 setups/year
+                🔥 Day Trading (Forex/Metals ~60d • Crypto Multi-Year)
               </span>
             )}
             {timeframe === '5m' && (
               <span className="text-cyan-300 font-semibold flex items-center gap-1">
-                🚀 Scalping: Expect 500–1,500+ setups/year
+                🚀 Scalping (Forex/Metals ~60d • Crypto Multi-Year)
               </span>
             )}
             {timeframe === '1d' && (
               <span className="text-amber-400 font-semibold flex items-center gap-1">
-                ⚠️ Macro Swing: Expect 3–8 setups/year (250 bars total)
+                🏛️ Macro Swing: Expect 3–8 setups/year (Multi-Year Horizon)
               </span>
             )}
           </div>
