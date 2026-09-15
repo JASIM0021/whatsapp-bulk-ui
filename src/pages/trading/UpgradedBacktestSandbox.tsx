@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { apiFetch, API_ENDPOINTS } from '@/config/api';
+import { apiFetch, API_ENDPOINTS, safeJsonResponse } from '@/config/api';
 import { StrategyDefinition } from './strategyDsl';
 import { TradingSymbolAutocomplete } from './TradingSymbolAutocomplete';
 import { 
@@ -192,7 +192,7 @@ export function UpgradedBacktestSandbox({
           trade_size_value: tradeSizeValue,
         }),
       });
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success) {
         setBacktestResult(data.backtest || data.metrics);
         const candleList = data.candles || [];
@@ -398,7 +398,7 @@ export function UpgradedBacktestSandbox({
           symbol,
         }),
       });
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success && data.analysis) {
         setAiAnalysisText(data.analysis);
       }

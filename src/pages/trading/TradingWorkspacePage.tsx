@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiFetch, API_ENDPOINTS } from '@/config/api';
+import { apiFetch, API_ENDPOINTS, safeJsonResponse } from '@/config/api';
 import { encryptToken, decryptToken } from './crypto';
 import { 
   StrategyDefinition, getDefaultOrderBlockStrategy 
@@ -77,7 +77,7 @@ export function TradingWorkspacePage() {
   const fetchBrokerStatus = async () => {
     try {
       const res = await apiFetch(API_ENDPOINTS.trading.status);
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success) {
         setIsConfigured(data.is_configured);
         setIsConnected(data.is_connected);
@@ -91,7 +91,7 @@ export function TradingWorkspacePage() {
   const fetchStrategies = async () => {
     try {
       const res = await apiFetch(API_ENDPOINTS.trading.strategies);
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success && data.strategies) {
         setStrategies(data.strategies);
         if (data.strategies.length > 0) {
@@ -134,7 +134,7 @@ export function TradingWorkspacePage() {
           changelog: currentStrategy.metadata?.changelog || 'Visual strategy configuration update',
         }),
       });
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success) {
         if (data.strategy_id && !selectedStrategyId) {
           setSelectedStrategyId(data.strategy_id);
@@ -267,7 +267,7 @@ export function TradingWorkspacePage() {
           iv: encryptedAccess.iv,
         }),
       });
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success) {
         setIsConfigured(true);
         setInputClientId('');
@@ -287,7 +287,7 @@ export function TradingWorkspacePage() {
     setConnectLoading(true);
     try {
       const resDetail = await apiFetch(`${API_ENDPOINTS.trading.status}/detail`);
-      const dataDetail = await resDetail.json();
+      const dataDetail = await safeJsonResponse(resDetail);
       if (!dataDetail.success) {
         throw new Error('No configured credentials found');
       }
@@ -307,7 +307,7 @@ export function TradingWorkspacePage() {
           decrypted_access_token: decryptedToken,
         }),
       });
-      const dataConnect = await resConnect.json();
+      const dataConnect = await safeJsonResponse(resConnect);
       if (dataConnect.success) {
         setIsConnected(true);
         const avlLimit = dataConnect.funds?.availabelLimit || dataConnect.funds?.availableLimit || 0;
@@ -338,7 +338,7 @@ export function TradingWorkspacePage() {
           decrypted_access_token: decryptedToken,
         }),
       });
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success) {
         setIsBotRunning(true);
         fetchBrokerStatus();
@@ -350,7 +350,7 @@ export function TradingWorkspacePage() {
     setBotLoading(true);
     try {
       const res = await apiFetch(API_ENDPOINTS.trading.botStop, { method: 'POST' });
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success) {
         setIsBotRunning(false);
         fetchBrokerStatus();
@@ -366,7 +366,7 @@ export function TradingWorkspacePage() {
     setBotLoading(true);
     try {
       const resDetail = await apiFetch(`${API_ENDPOINTS.trading.status}/detail`);
-      const dataDetail = await resDetail.json();
+      const dataDetail = await safeJsonResponse(resDetail);
       if (!dataDetail.success) {
         alert('Broker credentials are not configured! Connect your broker first.');
         setBotLoading(false);

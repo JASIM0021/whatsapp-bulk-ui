@@ -317,6 +317,7 @@ export const API_ENDPOINTS = {
     strategyAiModifyDSL: `${API_BASE_URL}/api/trading/strategy/ai-modify-dsl`,
     strategyPineScriptToDSL: `${API_BASE_URL}/api/trading/strategy/pinescript-to-dsl`,
     strategyVersions: (id: string) => `${API_BASE_URL}/api/trading/strategy/${id}/versions`,
+    aiTrainStrategy: `${API_BASE_URL}/api/trading/ai/train-strategy`,
     marketSearch: `${API_BASE_URL}/api/trading/market/search`,
     backtest: `${API_BASE_URL}/api/trading/backtest`,
     backtestAiAnalyze: `${API_BASE_URL}/api/trading/backtest/ai-analyze`,
@@ -359,6 +360,7 @@ export const API_ENDPOINTS = {
 /**
  * Fetch wrapper that automatically attaches the Authorization header
  * from localStorage. Does not force Content-Type on FormData requests.
+ * Automatically prepends API_BASE_URL when a relative path string is provided.
  */
 export const apiFetch = (url: string, options: RequestInit = {}): Promise<Response> => {
   const token = localStorage.getItem('auth_token');
@@ -373,5 +375,37 @@ export const apiFetch = (url: string, options: RequestInit = {}): Promise<Respon
     headers.set('Content-Type', 'application/json');
   }
 
-  return fetch(url, { ...options, headers });
+  let finalUrl = url;
+  if (API_BASE_URL && url.startsWith('/') && !url.startsWith('http')) {
+    finalUrl = `${API_BASE_URL}${url}`;
+  }
+
+  return fetch(finalUrl, { ...options, headers });
 };
+
+/**
+ * Safe JSON response parser that prevents raw JavaScript syntax errors
+ * when an API returns HTML (e.g. 502 Bad Gateway, 404 Not Found, or SPA fallback).
+ */
+export async function safeJsonResponse<T = any>(res: Response): Promise<T> {
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await res.text();
+    if (text.startsWith('<!DOCTYPE') || text.includes('<html') || text.includes('<body')) {
+      throw new Error(
+        `Backend service returned HTML (${res.status} ${res.statusText || 'Error'}). The API route may be unavailable or proxying incorrectly.`
+      );
+    }
+    if (!res.ok) {
+      throw new Error(text || `Request failed with status ${res.status}`);
+    }
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`Invalid response format from server (${res.status})`);
+    }
+  }
+
+  const json = await res.json();
+  return json;
+}

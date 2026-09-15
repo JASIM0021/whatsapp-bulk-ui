@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { apiFetch, API_ENDPOINTS } from '@/config/api';
+import { apiFetch, API_ENDPOINTS, safeJsonResponse } from '@/config/api';
 import { StrategyDefinition } from './strategyDsl';
 import { 
   Sparkles, GitBranch, RefreshCw, CheckCircle2, AlertTriangle, 
@@ -76,7 +76,7 @@ showBreakers = input.bool(true, "Show Breaker Blocks")
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: promptText, target_symbol: strategy.asset_symbol }),
       });
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success && data.strategy) {
         setAiResult({
           strategy: data.strategy,
@@ -104,7 +104,7 @@ showBreakers = input.bool(true, "Show Breaker Blocks")
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: modifyPrompt, current_strategy: strategy }),
       });
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success && data.modified_strategy) {
         setPreviousStrategy({ ...strategy });
         setModifyDiff({
@@ -133,7 +133,7 @@ showBreakers = input.bool(true, "Show Breaker Blocks")
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pinescript_code: pineScriptCode }),
       });
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success && data.strategy) {
         setPineResult({
           strategy: data.strategy,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiFetch, API_ENDPOINTS } from '@/config/api';
+import { apiFetch, API_ENDPOINTS, safeJsonResponse } from '@/config/api';
 import { StrategyDefinition } from './strategyDsl';
 import { History, RefreshCw, Undo2, CheckCircle2, X } from 'lucide-react';
 
@@ -41,7 +41,7 @@ export function VersionComparisonModal({
     setLoading(true);
     try {
       const res = await apiFetch(API_ENDPOINTS.trading.strategyVersions(strategyId));
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (data.success && data.versions) {
         setVersions(data.versions);
         if (data.versions.length > 0) {

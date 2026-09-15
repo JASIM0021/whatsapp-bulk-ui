@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { apiFetch } from '@/config/api';
+import { apiFetch, API_ENDPOINTS, safeJsonResponse } from '@/config/api';
 import { StrategyDefinition } from './strategyDsl';
 import { TradingSymbolAutocomplete } from './TradingSymbolAutocomplete';
 import {
@@ -153,7 +153,7 @@ export function AIStrategyTrainerTab({
     }, 1200);
 
     try {
-      const res = await apiFetch('/api/trading/ai/train-strategy', {
+      const res = await apiFetch(API_ENDPOINTS.trading.aiTrainStrategy, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -173,7 +173,7 @@ export function AIStrategyTrainerTab({
       clearInterval(progressInterval);
       setTrainingProgress(100);
 
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       if (!res.ok || !data.success) {
         throw new Error(data.detail || data.error || 'Failed to complete reinforcement training.');
       }
