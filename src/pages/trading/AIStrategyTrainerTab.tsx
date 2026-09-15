@@ -65,14 +65,32 @@ export function AIStrategyTrainerTab({
 }: AIStrategyTrainerTabProps) {
   // Input parameters
   const [symbol, setSymbol] = useState('XAUUSD');
-  const [timeframe, setTimeframe] = useState('1d');
+  const [timeframe, setTimeframe] = useState('1h'); // Default to 1h for active high-probability trade setups
   const [startDate, setStartDate] = useState('2025-01-01');
   const [endDate, setEndDate] = useState('2026-12-31');
-  const [initialCapital, setInitialCapital] = useState(10000);
-  const [tradeSizeValue, setTradeSizeValue] = useState(1000);
+  const [initialCapital, setInitialCapital] = useState(1000);
+  const [sizingMethod, setSizingMethod] = useState<'fixed_capital' | 'pct_capital'>('pct_capital');
+  const [tradeSizeValue, setTradeSizeValue] = useState(50); // 50% of capital or $500
   const [objective, setObjective] = useState<'balanced' | 'win_rate' | 'profit_factor' | 'low_drawdown' | 'max_profit'>('balanced');
   const [maxEpochs, setMaxEpochs] = useState(10);
   const populationSize = 14;
+
+  // Smart Capital Auto-Sync Handler
+  const handleCapitalChange = (newCap: number) => {
+    setInitialCapital(newCap);
+    if (sizingMethod === 'fixed_capital' && tradeSizeValue < newCap * 0.2) {
+      setTradeSizeValue(Math.round(newCap * 0.5));
+    }
+  };
+
+  // Quick Sizing Preset Handler
+  const handleSizingPreset = (pct: number) => {
+    if (sizingMethod === 'pct_capital') {
+      setTradeSizeValue(pct);
+    } else {
+      setTradeSizeValue(Math.round(initialCapital * (pct / 100)));
+    }
+  };
 
   // Training state & progress simulation
   const [isTraining, setIsTraining] = useState(false);
@@ -264,14 +282,37 @@ export function AIStrategyTrainerTab({
               <select
                 value={timeframe}
                 onChange={(e) => setTimeframe(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                className="w-full px-2.5 py-2 bg-gray-900 border border-gray-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
               >
-                <option value="1d">1 Day (1d)</option>
-                <option value="1h">1 Hour (1h)</option>
-                <option value="15m">15 Min (15m)</option>
-                <option value="5m">5 Min (5m)</option>
+                <option value="1h">1 Hour (1h) - Recommended</option>
+                <option value="15m">15 Min (15m) - Day Trading</option>
+                <option value="5m">5 Min (5m) - Scalping</option>
+                <option value="1d">1 Day (1d) - Macro Swing</option>
               </select>
             </div>
+          </div>
+          {/* Dynamic Timeframe Trade Frequency Expectation Badge */}
+          <div className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-gray-900/80 border border-gray-800">
+            {timeframe === '1h' && (
+              <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                ⚡ Intra-Week: Expect 60–180 setups/year
+              </span>
+            )}
+            {timeframe === '15m' && (
+              <span className="text-purple-300 font-semibold flex items-center gap-1">
+                🔥 Day Trading: Expect 200–600 setups/year
+              </span>
+            )}
+            {timeframe === '5m' && (
+              <span className="text-cyan-300 font-semibold flex items-center gap-1">
+                🚀 Scalping: Expect 500–1,500+ setups/year
+              </span>
+            )}
+            {timeframe === '1d' && (
+              <span className="text-amber-400 font-semibold flex items-center gap-1">
+                ⚠️ Macro Swing: Expect 3–8 setups/year (250 bars total)
+              </span>
+            )}
           </div>
         </div>
 
@@ -330,10 +371,35 @@ export function AIStrategyTrainerTab({
 
         {/* Capital & Sizing */}
         <div className="space-y-3">
-          <label className="text-[10px] font-mono uppercase text-gray-400 font-bold flex items-center gap-1.5">
-            <Target size={13} className="text-amber-400" />
-            3. Capital & Trade Sizing
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="text-[10px] font-mono uppercase text-gray-400 font-bold flex items-center gap-1.5">
+              <Target size={13} className="text-amber-400" />
+              3. Capital & Sizing
+            </label>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => handleSizingPreset(25)}
+                className="px-1.5 py-0.5 bg-gray-900 border border-gray-800 text-gray-400 text-[9px] font-mono rounded hover:bg-gray-800"
+              >
+                25%
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSizingPreset(50)}
+                className="px-1.5 py-0.5 bg-amber-950/40 border border-amber-500/30 text-amber-300 text-[9px] font-mono rounded hover:bg-amber-900/60"
+              >
+                50%
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSizingPreset(100)}
+                className="px-1.5 py-0.5 bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-[9px] font-mono rounded hover:bg-emerald-900/60"
+              >
+                100%
+              </button>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[9px] font-mono text-gray-500 block mb-1">Initial Capital ($)</label>
@@ -342,22 +408,45 @@ export function AIStrategyTrainerTab({
                 min={100}
                 step={500}
                 value={initialCapital}
-                onChange={(e) => setInitialCapital(Number(e.target.value))}
+                onChange={(e) => handleCapitalChange(Number(e.target.value))}
                 className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-xs font-mono font-bold text-amber-300 focus:outline-none focus:border-amber-500"
               />
             </div>
             <div>
-              <label className="text-[9px] font-mono text-gray-500 block mb-1">Trade Size ($)</label>
-              <input
-                type="number"
-                min={50}
-                step={100}
-                value={tradeSizeValue}
-                onChange={(e) => setTradeSizeValue(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-amber-500"
-              />
+              <label className="text-[9px] font-mono text-gray-500 block mb-1">
+                {sizingMethod === 'pct_capital' ? 'Trade Sizing (%)' : 'Trade Size ($)'}
+              </label>
+              <div className="flex">
+                <input
+                  type="number"
+                  min={sizingMethod === 'pct_capital' ? 5 : 50}
+                  step={sizingMethod === 'pct_capital' ? 10 : 100}
+                  value={tradeSizeValue}
+                  onChange={(e) => setTradeSizeValue(Number(e.target.value))}
+                  className="w-full px-2.5 py-2 bg-gray-900 border border-gray-800 rounded-l-xl text-xs font-mono text-white focus:outline-none focus:border-amber-500"
+                />
+                <select
+                  value={sizingMethod}
+                  onChange={(e) => {
+                    const newMode = e.target.value as any;
+                    setSizingMethod(newMode);
+                    if (newMode === 'pct_capital') {
+                      setTradeSizeValue(50);
+                    } else {
+                      setTradeSizeValue(Math.round(initialCapital * 0.5));
+                    }
+                  }}
+                  className="px-1.5 py-2 bg-gray-800 border border-gray-700 rounded-r-xl text-[10px] font-mono text-gray-300 focus:outline-none"
+                >
+                  <option value="pct_capital">% Cap</option>
+                  <option value="fixed_capital">Fixed $</option>
+                </select>
+              </div>
             </div>
           </div>
+          <p className="text-[9px] font-mono text-gray-400">
+            Allocation per trade: <strong className="text-white">${sizingMethod === 'pct_capital' ? Math.round(initialCapital * (tradeSizeValue / 100)) : tradeSizeValue}</strong> ({sizingMethod === 'pct_capital' ? `${tradeSizeValue}%` : `${Math.round((tradeSizeValue / (initialCapital || 1)) * 100)}%`} of ${initialCapital})
+          </p>
         </div>
 
         {/* Optimization Objective & Epochs */}

@@ -866,13 +866,20 @@ export function UpgradedBacktestSandbox({
               onChange={(e) => setInterval(e.target.value)}
               className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-amber-400 font-bold focus:outline-none"
             >
-              <option value="1h">1 Hour (1h)</option>
-              <option value="1d">Daily (1d)</option>
-              <option value="15m">15 Min (15m)</option>
-              <option value="5m">5 Min (5m)</option>
-              <option value="1m">1 Min (1m)</option>
+              <option value="1h">1 Hour (1h) - Recommended</option>
+              <option value="15m">15 Min (15m) - Day Trading</option>
+              <option value="5m">5 Min (5m) - Scalping</option>
+              <option value="1d">Daily (1d) - Macro Swing</option>
+              <option value="1m">1 Min (1m) - Ultra Fast</option>
               <option value="1wk">Weekly (1wk)</option>
             </select>
+            <span className="text-[9px] font-mono text-gray-400 mt-1 block">
+              {interval === '1h' && '⚡ Intra-Week: 60-180 trades/yr'}
+              {interval === '15m' && '🔥 Day Trading: 200-600 trades/yr'}
+              {interval === '5m' && '🚀 Scalping: 500-1500 trades/yr'}
+              {interval === '1d' && '⚠️ Macro Swing: 3-8 trades/yr'}
+              {interval === '1m' && '⚡ High-Frequency 1-Min Flow'}
+            </span>
           </div>
 
           {/* Capital & Currency */}
@@ -885,7 +892,13 @@ export function UpgradedBacktestSandbox({
               <input
                 type="number"
                 value={capital}
-                onChange={(e) => setCapital(parseFloat(e.target.value) || 0)}
+                onChange={(e) => {
+                  const newCap = parseFloat(e.target.value) || 0;
+                  setCapital(newCap);
+                  if (tradeSizeMode === 'fixed_capital' && tradeSizeValue < newCap * 0.2) {
+                    setTradeSizeValue(Math.round(newCap * 0.5));
+                  }
+                }}
                 placeholder="1000"
                 className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-l-xl text-emerald-400 font-bold focus:outline-none"
               />
@@ -903,17 +916,29 @@ export function UpgradedBacktestSandbox({
 
           {/* Trade Size Mode & Value */}
           <div>
-            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
-              Trade Sizing
+            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1 flex justify-between">
+              <span>Trade Sizing</span>
+              <span className="text-gray-400 text-[9px] font-mono">
+                {tradeSizeMode === 'pct_capital'
+                  ? `${tradeSizeValue}% ($${Math.round(capital * (tradeSizeValue / 100))})`
+                  : tradeSizeMode === 'fixed_capital'
+                  ? `${Math.round((tradeSizeValue / (capital || 1)) * 100)}% of cap`
+                  : ''}
+              </span>
             </label>
             <div className="flex">
               <select
                 value={tradeSizeMode}
-                onChange={(e) => setTradeSizeMode(e.target.value as any)}
+                onChange={(e) => {
+                  const newM = e.target.value as any;
+                  setTradeSizeMode(newM);
+                  if (newM === 'pct_capital') setTradeSizeValue(50);
+                  else if (newM === 'fixed_capital') setTradeSizeValue(Math.round(capital * 0.5));
+                }}
                 className="w-1/2 px-2 py-2 bg-gray-900 border border-gray-800 rounded-l-xl text-[10px] text-gray-300 focus:outline-none"
               >
-                <option value="fixed_capital">Fixed Amount</option>
-                <option value="pct_capital">% Capital</option>
+                <option value="fixed_capital">Fixed Amount ($)</option>
+                <option value="pct_capital">% of Capital</option>
                 <option value="risk_pct">Risk % (SL)</option>
                 <option value="fixed_qty">Fixed Qty</option>
               </select>
@@ -921,10 +946,15 @@ export function UpgradedBacktestSandbox({
                 type="number"
                 value={tradeSizeValue}
                 onChange={(e) => setTradeSizeValue(parseFloat(e.target.value) || 0)}
-                placeholder="100"
+                placeholder="500"
                 className="w-1/2 px-2 py-2 bg-gray-900 border border-gray-800 rounded-r-xl text-white font-bold text-center focus:outline-none"
               />
             </div>
+            {tradeSizeMode === 'fixed_capital' && tradeSizeValue < capital * 0.1 && (
+              <span className="text-[9px] font-mono text-amber-400 block mt-1">
+                ⚠️ Sizing is only ${tradeSizeValue} ({Math.round((tradeSizeValue / (capital || 1)) * 100)}%). {100 - Math.round((tradeSizeValue / (capital || 1)) * 100)}% capital is idle.
+              </span>
+            )}
           </div>
 
           {/* Start Date */}
