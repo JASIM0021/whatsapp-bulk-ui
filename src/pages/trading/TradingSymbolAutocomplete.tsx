@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, ChevronDown, Check, Sparkles, TrendingUp, DollarSign, Globe, Coins, ShieldCheck, X } from 'lucide-react';
+import { Search, ChevronDown, Check, Sparkles, X } from 'lucide-react';
 
 export interface MarketInstrument {
   symbol: string;
