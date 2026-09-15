@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { apiFetch } from '@/config/api';
 import { StrategyDefinition } from './strategyDsl';
+import { TradingSymbolAutocomplete } from './TradingSymbolAutocomplete';
 import {
   Sparkles, Play, CheckCircle2, AlertCircle,
   Layers, Zap, Sliders, Target, ShieldCheck,
@@ -261,21 +262,12 @@ export function AIStrategyTrainerTab({
           </label>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[9px] font-mono text-gray-500 block mb-1">Symbol</label>
-              <select
+              <TradingSymbolAutocomplete
+                label="Symbol"
                 value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-xs font-mono font-bold text-white focus:outline-none focus:border-emerald-500"
-              >
-                <option value="XAUUSD">XAUUSD (Gold)</option>
-                <option value="BTCUSDT">BTCUSDT (Crypto)</option>
-                <option value="ETHUSD">ETHUSD (Ethereum)</option>
-                <option value="NIFTY">NIFTY 50 (Index)</option>
-                <option value="BANKNIFTY">BANK NIFTY</option>
-                <option value="RELIANCE">RELIANCE.NS</option>
-                <option value="EURUSD">EURUSD (Forex)</option>
-                <option value="SILVER">SILVER (XAGUSD)</option>
-              </select>
+                onChange={setSymbol}
+                showQuickChips={false}
+              />
             </div>
             <div>
               <label className="text-[9px] font-mono text-gray-500 block mb-1">Timeframe</label>

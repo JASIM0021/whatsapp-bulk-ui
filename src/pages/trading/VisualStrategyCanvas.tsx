@@ -4,6 +4,7 @@ import {
   STRATEGY_BUILDER_PALETTE, PaletteItem, StopLossType, MoveSLAction, 
   TakeProfitTarget, OperatorType
 } from './strategyDsl';
+import { TradingSymbolAutocomplete } from './TradingSymbolAutocomplete';
 import { validateStrategyDSL, ValidationResult } from './strategyValidator';
 import { 
   Sliders, Plus, Trash2, 
@@ -177,7 +178,7 @@ export function VisualStrategyCanvas({
       {/* Strategy Properties & Timeframe Selector Toolbar */}
       <div className="bg-gray-950 p-4 rounded-2xl border border-gray-800 grid grid-cols-1 md:grid-cols-3 gap-4 items-center font-mono text-xs shadow-lg">
         {/* Strategy Name & Symbol */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="flex-1">
             <label className="block text-[9px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
               Strategy Name
@@ -189,15 +190,13 @@ export function VisualStrategyCanvas({
               className="w-full px-2.5 py-1.5 bg-gray-900 border border-gray-800 rounded-xl text-white font-bold focus:outline-none focus:border-emerald-500/50"
             />
           </div>
-          <div className="w-28">
-            <label className="block text-[9px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
-              Symbol
-            </label>
-            <input
-              type="text"
+          <div className="w-full sm:w-48">
+            <TradingSymbolAutocomplete
+              label="Symbol"
               value={strategy.asset_symbol}
-              onChange={(e) => onChange({ ...strategy, asset_symbol: e.target.value.toUpperCase() })}
-              className="w-full px-2.5 py-1.5 bg-gray-900 border border-gray-800 rounded-xl text-emerald-400 font-bold focus:outline-none focus:border-emerald-500/50 text-center"
+              onChange={(sym) => onChange({ ...strategy, asset_symbol: sym })}
+              showQuickChips={false}
+              size="sm"
             />
           </div>
         </div>

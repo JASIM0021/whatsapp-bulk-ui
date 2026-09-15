@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { StrategyDefinition } from './strategyDsl';
+import { TradingSymbolAutocomplete } from './TradingSymbolAutocomplete';
 import { 
   Play, Pause, FastForward, RotateCcw, RefreshCw, 
   Sparkles, CheckCircle2, Zap,
@@ -844,15 +845,11 @@ export function UpgradedBacktestSandbox({
 
           {/* Symbol */}
           <div>
-            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
-              Symbol
-            </label>
-            <input
-              type="text"
+            <TradingSymbolAutocomplete
+              label="Symbol"
               value={symbol}
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              placeholder="e.g. XAUUSD"
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl text-white font-bold focus:outline-none"
+              onChange={setSymbol}
+              showQuickChips={false}
             />
           </div>
 
@@ -1004,12 +1001,13 @@ export function UpgradedBacktestSandbox({
             {/* Live Portfolio Balance */}
             <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
               <span className="text-[10px] text-gray-500 uppercase font-bold block">Live Balance</span>
-              <p className={`text-lg font-bold mt-1 ${liveStats.liveBalance >= capital ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {currency === 'INR' ? '₹' : '$'}{liveStats.liveBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <p className={`text-lg font-bold mt-1 ${liveStats.liveBalance <= 0 ? 'text-rose-500 font-extrabold' : liveStats.liveBalance >= capital ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {currency === 'INR' ? '₹' : '$'}{Math.max(0, liveStats.liveBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
-              <span className="text-[10px] text-gray-400">
-                {liveStats.liveBalance >= capital ? '+' : ''}
-                {(((liveStats.liveBalance - capital) / (capital || 1)) * 100).toFixed(2)}% ROI
+              <span className={`text-[10px] ${liveStats.liveBalance <= 0 ? 'text-rose-400 font-semibold' : 'text-gray-400'}`}>
+                {liveStats.liveBalance <= 0
+                  ? 'LIQUIDATED (Margin Call)'
+                  : `${liveStats.liveBalance >= capital ? '+' : ''}${(((liveStats.liveBalance - capital) / (capital || 1)) * 100).toFixed(2)}% ROI`}
               </span>
             </div>
 
