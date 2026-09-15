@@ -8,10 +8,11 @@ import { VisualStrategyCanvas } from './VisualStrategyCanvas';
 import { AiAssistantDrawer } from './AiAssistantDrawer';
 import { UpgradedBacktestSandbox } from './UpgradedBacktestSandbox';
 import { VersionComparisonModal } from './VersionComparisonModal';
+import { AIStrategyTrainerTab } from './AIStrategyTrainerTab';
 import { 
   TrendingUp, Shield, Key, Bot, Play, Square, FileText, 
   Lock, RefreshCw, Code, ChevronRight,
-  X, History, Plus, Copy, Trash2
+  X, History, Plus, Copy, Trash2, Sparkles
 } from 'lucide-react';
 
 interface StrategyListItem {
@@ -27,7 +28,7 @@ interface StrategyListItem {
 
 export function TradingWorkspacePage() {
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<'strategy' | 'backtest' | 'bot'>('strategy');
+  const [activeTab, setActiveTab] = useState<'strategy' | 'backtest' | 'trainer' | 'bot'>('strategy');
   const [showBrokerDropdown, setShowBrokerDropdown] = useState(false);
   const [showAgentCoach, setShowAgentCoach] = useState(() => {
     return localStorage.getItem('dhan_agent_coach_dismissed') !== 'true';
@@ -147,6 +148,36 @@ export function TradingWorkspacePage() {
       alert(`Save error: ${err.message}`);
     } finally {
       setStratSavingLoading(false);
+    }
+  };
+
+  // Save Specific Strategy (e.g. from AI Reinforcement Trainer)
+  const handleSaveSpecificStrategy = async (strat: StrategyDefinition) => {
+    try {
+      const res = await apiFetch(API_ENDPOINTS.trading.strategies, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: strat.name,
+          description: strat.description,
+          asset_symbol: strat.asset_symbol,
+          timeframe: strat.timeframe,
+          code: '# Canonical Strategy DSL\n# Synthesized by AI Reinforcement Trainer',
+          strategy_dsl: strat,
+          version: strat.version || 1,
+          changelog: 'Synthesized and saved via AI Reinforcement Strategy Trainer.'
+        })
+      });
+      const data = await res.json();
+      if (data.success && (data.strategy || data.strategy_id)) {
+        await fetchStrategies();
+        if (data.strategy_id) setSelectedStrategyId(data.strategy_id);
+        else if (data.strategy?._id) setSelectedStrategyId(data.strategy._id);
+        setCurrentStrategy(strat);
+      }
+    } catch (err: any) {
+      console.error('Failed to save strategy:', err);
+      throw err;
     }
   };
 
@@ -585,6 +616,7 @@ export function TradingWorkspacePage() {
         <div className="lg:col-span-1 flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 h-fit mb-2 lg:mb-0">
           {[
             { id: 'strategy', label: 'Strategy Composer', icon: Code },
+            { id: 'trainer', label: 'AI Strategy Trainer', icon: Sparkles },
             { id: 'backtest', label: 'Backtest Sandbox', icon: FileText },
             { id: 'bot', label: 'Live Bot Control', icon: Bot },
           ].map((tab) => {
@@ -607,7 +639,7 @@ export function TradingWorkspacePage() {
         </div>
 
         {/* Content Workspace Panel */}
-        <div className="lg:col-span-3 bg-gray-900 rounded-3xl border border-gray-800 p-6 flex flex-col min-h-[600px] shadow-2xl">
+        <div className="lg:col-span-3 bg-gray-900 rounded-3xl border border-gray-800 p-4 sm:p-6 flex flex-col min-h-[600px] shadow-2xl overflow-hidden">
           
           {/* TAB 1: VISUAL STRATEGY BUILDER */}
           {activeTab === 'strategy' && (
@@ -628,7 +660,30 @@ export function TradingWorkspacePage() {
             />
           )}
 
-          {/* TAB 2: UPGRADED BACKTEST SANDBOX */}
+          {/* TAB 2: AI STRATEGY TRAINER & REINFORCEMENT LEARNING */}
+          {activeTab === 'trainer' && (
+            <AIStrategyTrainerTab
+              onLoadStrategyToBacktest={(strat, sym, _start, _end, cap) => {
+                const updated: StrategyDefinition = {
+                  ...strat,
+                  asset_symbol: sym,
+                  risk: {
+                    ...strat.risk,
+                    capital: cap
+                  }
+                };
+                setCurrentStrategy(updated);
+                setActiveTab('backtest');
+              }}
+              onLoadStrategyToComposer={(strat) => {
+                setCurrentStrategy(strat);
+                setActiveTab('strategy');
+              }}
+              onSaveStrategy={handleSaveSpecificStrategy}
+            />
+          )}
+
+          {/* TAB 3: UPGRADED BACKTEST SANDBOX */}
           {activeTab === 'backtest' && (
             <UpgradedBacktestSandbox
               strategy={currentStrategy}
@@ -638,7 +693,7 @@ export function TradingWorkspacePage() {
             />
           )}
 
-          {/* TAB 3: LIVE BOT CONTROLS */}
+          {/* TAB 4: LIVE BOT CONTROLS */}
           {activeTab === 'bot' && (
             <div className="space-y-6 animate-fadeIn">
               <div className="border-b border-gray-800 pb-4">

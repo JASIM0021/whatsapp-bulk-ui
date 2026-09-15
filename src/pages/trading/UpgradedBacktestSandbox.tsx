@@ -106,6 +106,9 @@ export function UpgradedBacktestSandbox({
     if (strategy.asset_symbol) setSymbol(strategy.asset_symbol);
     if (strategy.timeframe) setInterval(strategy.timeframe);
     if (strategy.intrabar_model) setIntrabarModel(strategy.intrabar_model);
+    if (strategy.risk?.capital) setCapital(strategy.risk.capital);
+    if (strategy.risk?.sizing_value) setTradeSizeValue(strategy.risk.sizing_value);
+    if (strategy.risk?.sizing_method) setTradeSizeMode(strategy.risk.sizing_method as any);
   }, [strategy]);
 
   const [loading, setLoading] = useState(false);
@@ -1046,9 +1049,9 @@ export function UpgradedBacktestSandbox({
 
           {/* Interactive Playback Controller Bar */}
           <div className="p-4 bg-gray-900 rounded-2xl border border-gray-800 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
               {/* Play / Pause / Step Controls */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsPlaying(!isPlaying)}
@@ -1122,7 +1125,7 @@ export function UpgradedBacktestSandbox({
               </div>
 
               {/* Speed Multipliers */}
-              <div className="flex items-center gap-1.5 font-mono text-xs">
+              <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs">
                 <span className="text-gray-500 text-[10px] uppercase font-bold mr-1">Speed:</span>
                 {[0.5, 1, 2, 5, 10, 25, 50, 100].map((s) => (
                   <button
