@@ -12,6 +12,7 @@ interface SubscriptionInfo {
   botRepliesUsed?: number;
   botRepliesLimit?: number;
   isBYOKActive?: boolean;
+  isEnterprise?: boolean;
   enabledServices?: string[];
 }
 
@@ -20,6 +21,7 @@ interface UserInfo {
   email: string;
   name: string;
   role: string;
+  isEnterprise?: boolean;
   subscription?: SubscriptionInfo;
 }
 

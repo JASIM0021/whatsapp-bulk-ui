@@ -84,6 +84,13 @@ export function BotSetupPage() {
 
   const isActive = user?.subscription?.isActive ?? false;
   const isFree = user?.subscription?.plan === 'free' || user?.subscription?.plan === 'trial';
+  const isEnterprise = Boolean(
+    user?.isEnterprise ||
+    user?.subscription?.isEnterprise ||
+    user?.role === 'admin' ||
+    user?.subscription?.plan?.toLowerCase().includes('enterprise') ||
+    user?.subscription?.plan?.toLowerCase().includes('ultimate')
+  );
 
   useEffect(() => {
     const load = async () => {
@@ -393,15 +400,15 @@ export function BotSetupPage() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         {/* Dynamic Quota & BYOK Status Banner */}
         {isActive && (
-          config.hasCustomApiKey || user?.subscription?.isBYOKActive ? (
+          isEnterprise && (config.hasCustomApiKey || user?.subscription?.isBYOKActive) ? (
             <div className="mb-5 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
                 <ShieldCheck size={18} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-emerald-900 text-sm">🟢 BYOK Active — Unlimited AI Auto-Replies</span>
-                  <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-200 text-emerald-800 rounded-full">No Quota Limits</span>
+                  <span className="font-bold text-emerald-900 text-sm">🟢 Enterprise BYOK Active — Unlimited AI Auto-Replies</span>
+                  <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-200 text-emerald-800 rounded-full">Enterprise BYOK</span>
                 </div>
                 <p className="text-xs text-emerald-700 mt-1">
                   Your WhatsApp bot is powered by your custom <strong>{config.aiProvider && config.aiProvider !== 'default' ? config.aiProvider.toUpperCase() : 'Custom LLM'}</strong> API key. Zero monthly message limits or platform quota deductions apply.
@@ -422,7 +429,7 @@ export function BotSetupPage() {
                     </span>
                   </div>
                   <p className="text-xs text-indigo-700 mt-0.5">
-                    Powered by high-speed Groq &amp; OpenAI failover. Need unlimited replies? Add your own API key below.
+                    Powered by high-speed Groq &amp; OpenAI failover with full business context awareness.
                   </p>
                 </div>
               </div>
@@ -643,175 +650,178 @@ export function BotSetupPage() {
             )}
           </div>
 
-          {/* AI Engine & Bring Your Own Key (BYOK) */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setAiProviderExpanded(!aiProviderExpanded)}
-              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-                  <Cpu size={18} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">AI Engine &amp; BYOK (Custom API Key)</span>
-                    {config.hasCustomApiKey ? (
-                      <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full">Custom Key Active</span>
-                    ) : (
-                      <span className="px-2 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded-full">Platform Managed</span>
-                    )}
+          {/* AI Engine & Bring Your Own Key (BYOK) - Enterprise Only */}
+          {isEnterprise && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setAiProviderExpanded(!aiProviderExpanded)}
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                    <Cpu size={18} />
                   </div>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Connect your own Groq, OpenAI, or Gemini key for unlimited free replies, or customize the AI model
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-900">AI Engine &amp; BYOK (Custom API Key)</span>
+                      {config.hasCustomApiKey ? (
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full">Custom Key Active</span>
+                      ) : (
+                        <span className="px-2 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded-full">Platform Managed</span>
+                      )}
+                      <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase bg-purple-100 text-purple-800 rounded-full">Enterprise</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Connect your own Groq, OpenAI, or Gemini key for unlimited free replies, or customize the AI model
+                    </p>
+                  </div>
                 </div>
-              </div>
-              {aiProviderExpanded ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
-            </button>
+                {aiProviderExpanded ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
+              </button>
 
-            {aiProviderExpanded && (
-              <div className="p-5 pt-0 border-t border-gray-100 space-y-5">
-                {/* Provider Selection */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                    AI Provider Mode
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {[
-                      { id: 'default', label: 'Platform Default', desc: 'Managed Quota' },
-                      { id: 'groq',    label: 'Groq (Ultra-Fast)', desc: 'BYOK Unlimited' },
-                      { id: 'openai',  label: 'OpenAI (GPT-4o)',   desc: 'BYOK Unlimited' },
-                      { id: 'gemini',  label: 'Google Gemini',     desc: 'BYOK Unlimited' },
-                    ].map(item => {
-                      const isSel = (config.aiProvider || 'default') === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            setConfig(prev => ({
-                              ...prev,
-                              aiProvider: item.id,
-                              aiModel: item.id === 'groq' ? 'llama-3.3-70b-versatile' : item.id === 'openai' ? 'gpt-4o-mini' : item.id === 'gemini' ? 'gemini-2.5-flash' : '',
-                            }));
+              {aiProviderExpanded && (
+                <div className="p-5 pt-0 border-t border-gray-100 space-y-5">
+                  {/* Provider Selection */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                      AI Provider Mode
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {[
+                        { id: 'default', label: 'Platform Default', desc: 'Managed Quota' },
+                        { id: 'groq',    label: 'Groq (Ultra-Fast)', desc: 'BYOK Unlimited' },
+                        { id: 'openai',  label: 'OpenAI (GPT-4o)',   desc: 'BYOK Unlimited' },
+                        { id: 'gemini',  label: 'Google Gemini',     desc: 'BYOK Unlimited' },
+                      ].map(item => {
+                        const isSel = (config.aiProvider || 'default') === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              setConfig(prev => ({
+                                ...prev,
+                                aiProvider: item.id,
+                                aiModel: item.id === 'groq' ? 'llama-3.3-70b-versatile' : item.id === 'openai' ? 'gpt-4o-mini' : item.id === 'gemini' ? 'gemini-2.5-flash' : '',
+                              }));
+                              setKeyTestStatus(null);
+                            }}
+                            className={`p-3 rounded-xl border-2 text-left transition-all ${
+                              isSel
+                                ? 'border-indigo-600 bg-indigo-50/50 shadow-sm'
+                                : 'border-gray-200 bg-white hover:border-gray-300'
+                            }`}
+                          >
+                            <p className={`text-xs font-bold ${isSel ? 'text-indigo-900' : 'text-gray-900'}`}>{item.label}</p>
+                            <p className="text-[10px] text-gray-500 mt-0.5">{item.desc}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Custom API Key Input for BYOK */}
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                        <Key size={14} className="text-indigo-600" />
+                        Custom API Key (BYOK)
+                      </label>
+                      {config.hasCustomApiKey && (
+                        <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                          <Check size={12} /> Key Encrypted &amp; Stored in Cloud
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type={showCustomKey ? 'text' : 'password'}
+                          value={customKeyDraft}
+                          onChange={e => {
+                            setCustomKeyDraft(e.target.value);
                             setKeyTestStatus(null);
                           }}
-                          className={`p-3 rounded-xl border-2 text-left transition-all ${
-                            isSel
-                              ? 'border-indigo-600 bg-indigo-50/50 shadow-sm'
-                              : 'border-gray-200 bg-white hover:border-gray-300'
-                          }`}
+                          placeholder={config.hasCustomApiKey ? '•••••••••••••••• (Enter new key to replace)' : 'Paste your API key (e.g. gsk_..., sk-..., AIza...)'}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomKey(!showCustomKey)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                         >
-                          <p className={`text-xs font-bold ${isSel ? 'text-indigo-900' : 'text-gray-900'}`}>{item.label}</p>
-                          <p className="text-[10px] text-gray-500 mt-0.5">{item.desc}</p>
+                          {showCustomKey ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                      </div>
 
-                {/* Custom API Key Input for BYOK */}
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-                      <Key size={14} className="text-indigo-600" />
-                      Custom API Key (BYOK)
+                      <button
+                        type="button"
+                        onClick={handleTestKey}
+                        disabled={isTestingKey || (!customKeyDraft.trim() && !config.hasCustomApiKey)}
+                        className="px-3 py-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-xs font-medium rounded-lg disabled:opacity-40 transition-colors shrink-0 flex items-center gap-1.5 shadow-sm"
+                      >
+                        {isTestingKey ? <Loader size={13} className="animate-spin" /> : <Zap size={13} className="text-amber-500" />}
+                        Test Key
+                      </button>
+
+                      {config.hasCustomApiKey && (
+                        <button
+                          type="button"
+                          onClick={handleClearCustomKey}
+                          className="px-3 py-2 bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 text-xs font-medium rounded-lg transition-colors shrink-0"
+                        >
+                          Remove Key
+                        </button>
+                      )}
+                    </div>
+
+                    {keyTestStatus && (
+                      <div className={`p-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 ${
+                        keyTestStatus.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
+                      }`}>
+                        {keyTestStatus.ok ? <Check size={13} /> : <AlertCircle size={13} />}
+                        {keyTestStatus.msg}
+                      </div>
+                    )}
+
+                    <p className="text-[11px] text-gray-500 leading-relaxed">
+                      💡 <strong>Bring Your Own Key benefit:</strong> When you provide your own API key, all bot replies are 100% free and exempt from monthly quota limits. Free API keys are available at <a href="https://console.groq.com" target="_blank" rel="noreferrer" className="text-indigo-600 underline">Groq Console</a> (Recommended for &lt;300ms speed) and <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-indigo-600 underline">Google AI Studio</a>.
+                    </p>
+                  </div>
+
+                  {/* Model Override */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                      AI Model Preset / Override
                     </label>
-                    {config.hasCustomApiKey && (
-                      <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
-                        <Check size={12} /> Key Encrypted &amp; Stored in Cloud
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        type={showCustomKey ? 'text' : 'password'}
-                        value={customKeyDraft}
-                        onChange={e => {
-                          setCustomKeyDraft(e.target.value);
-                          setKeyTestStatus(null);
-                        }}
-                        placeholder={config.hasCustomApiKey ? '•••••••••••••••• (Enter new key to replace)' : 'Paste your API key (e.g. gsk_..., sk-..., AIza...)'}
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCustomKey(!showCustomKey)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showCustomKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleTestKey}
-                      disabled={isTestingKey || (!customKeyDraft.trim() && !config.hasCustomApiKey)}
-                      className="px-3 py-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-xs font-medium rounded-lg disabled:opacity-40 transition-colors shrink-0 flex items-center gap-1.5 shadow-sm"
+                    <select
+                      value={config.aiModel || (config.aiProvider === 'openai' ? 'gpt-4o-mini' : config.aiProvider === 'gemini' ? 'gemini-2.5-flash' : 'llama-3.3-70b-versatile')}
+                      onChange={e => setConfig(prev => ({ ...prev, aiModel: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                     >
-                      {isTestingKey ? <Loader size={13} className="animate-spin" /> : <Zap size={13} className="text-amber-500" />}
-                      Test Key
-                    </button>
-
-                    {config.hasCustomApiKey && (
-                      <button
-                        type="button"
-                        onClick={handleClearCustomKey}
-                        className="px-3 py-2 bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 text-xs font-medium rounded-lg transition-colors shrink-0"
-                      >
-                        Remove Key
-                      </button>
-                    )}
+                      <optgroup label="Groq LPU (Ultra-Low Latency)">
+                        <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Recommended)</option>
+                        <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Fastest)</option>
+                        <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
+                        <option value="deepseek-r1-distill-llama-70b">deepseek-r1-distill-llama-70b</option>
+                      </optgroup>
+                      <optgroup label="Google Gemini">
+                        <option value="gemini-2.5-flash">gemini-2.5-flash (Standard 2026)</option>
+                        <option value="gemini-flash-latest">gemini-flash-latest</option>
+                        <option value="gemini-3.7-flash">gemini-3.7-flash (High Reasoning)</option>
+                      </optgroup>
+                      <optgroup label="OpenAI">
+                        <option value="gpt-4o-mini">gpt-4o-mini (Fast &amp; Cost Efficient)</option>
+                        <option value="gpt-4o">gpt-4o (Flagship Model)</option>
+                      </optgroup>
+                    </select>
                   </div>
-
-                  {keyTestStatus && (
-                    <div className={`p-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 ${
-                      keyTestStatus.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
-                    }`}>
-                      {keyTestStatus.ok ? <Check size={13} /> : <AlertCircle size={13} />}
-                      {keyTestStatus.msg}
-                    </div>
-                  )}
-
-                  <p className="text-[11px] text-gray-500 leading-relaxed">
-                    💡 <strong>Bring Your Own Key benefit:</strong> When you provide your own API key, all bot replies are 100% free and exempt from monthly quota limits. Free API keys are available at <a href="https://console.groq.com" target="_blank" rel="noreferrer" className="text-indigo-600 underline">Groq Console</a> (Recommended for &lt;300ms speed) and <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-indigo-600 underline">Google AI Studio</a>.
-                  </p>
                 </div>
-
-                {/* Model Override */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    AI Model Preset / Override
-                  </label>
-                  <select
-                    value={config.aiModel || (config.aiProvider === 'openai' ? 'gpt-4o-mini' : config.aiProvider === 'gemini' ? 'gemini-2.5-flash' : 'llama-3.3-70b-versatile')}
-                    onChange={e => setConfig(prev => ({ ...prev, aiModel: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                  >
-                    <optgroup label="Groq LPU (Ultra-Low Latency)">
-                      <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Recommended)</option>
-                      <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Fastest)</option>
-                      <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
-                      <option value="deepseek-r1-distill-llama-70b">deepseek-r1-distill-llama-70b</option>
-                    </optgroup>
-                    <optgroup label="Google Gemini">
-                      <option value="gemini-2.5-flash">gemini-2.5-flash (Standard 2026)</option>
-                      <option value="gemini-flash-latest">gemini-flash-latest</option>
-                      <option value="gemini-3.7-flash">gemini-3.7-flash (High Reasoning)</option>
-                    </optgroup>
-                    <optgroup label="OpenAI">
-                      <option value="gpt-4o-mini">gpt-4o-mini (Fast &amp; Cost Efficient)</option>
-                      <option value="gpt-4o">gpt-4o (Flagship Model)</option>
-                    </optgroup>
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Excluded Numbers */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
@@ -1049,11 +1059,19 @@ export function BotSetupPage() {
                 <div className="space-y-4 pt-4 border-t border-gray-100">
                   <div className="flex items-center justify-between">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Active Schedule Only</label>
-                      <p className="text-xs text-gray-500 mt-0.5">Restrict bot replies to specific hours of the day</p>
+                      <label className="text-sm font-medium text-gray-700">Operating Schedule Window</label>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {config.restrictedHoursEnabled ? 'Custom operating hours active (skips replies outside window)' : '24/7 Round-the-clock auto-replies active'}
+                      </p>
                     </div>
                     <button
-                      onClick={() => setConfig(prev => ({ ...prev, restrictedHoursEnabled: !prev.restrictedHoursEnabled }))}
+                      type="button"
+                      onClick={() => setConfig(prev => ({ 
+                        ...prev, 
+                        restrictedHoursEnabled: !prev.restrictedHoursEnabled,
+                        restrictedHoursStart: prev.restrictedHoursStart || '09:00',
+                        restrictedHoursEnd: prev.restrictedHoursEnd || '18:00',
+                      }))}
                       className={`relative w-11 h-6 rounded-full transition-colors ${config.restrictedHoursEnabled ? 'bg-indigo-600' : 'bg-gray-300'}`}
                     >
                       <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${config.restrictedHoursEnabled ? 'translate-x-5' : ''}`} />
@@ -1064,26 +1082,26 @@ export function BotSetupPage() {
                     <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Active Hours Start</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Active Hours Start (IST)</label>
                           <input
                             type="time"
-                            value={config.restrictedHoursStart || '00:00'}
+                            value={config.restrictedHoursStart || '09:00'}
                             onChange={e => setConfig(prev => ({ ...prev, restrictedHoursStart: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Active Hours End</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Active Hours End (IST)</label>
                           <input
                             type="time"
-                            value={config.restrictedHoursEnd || '06:00'}
+                            value={config.restrictedHoursEnd || '18:00'}
                             onChange={e => setConfig(prev => ({ ...prev, restrictedHoursEnd: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono"
                           />
                         </div>
                       </div>
                       <p className="text-[11px] text-gray-500">
-                        The bot will only operate and auto-reply during the selected time interval (e.g. 00:00 to 06:00). You can span this across midnight (e.g. 22:00 to 06:00).
+                        The bot will only operate and auto-reply during the selected time interval (e.g. 09:00 to 18:00). Outside this window, messages will not trigger an automated reply.
                       </p>
                     </div>
                   )}
