@@ -94,6 +94,9 @@ interface SubscriptionInfo {
   daysLeft: number;
   messagesUsed: number;
   messageLimit: number;
+  botRepliesUsed?: number;
+  botRepliesLimit?: number;
+  isBYOKActive?: boolean;
   enabledServices?: string[];
 }
 
@@ -821,9 +824,16 @@ export function SubscriptionPage() {
           <div className={`mb-8 p-4 sm:p-6 rounded-2xl border ${subscription.isActive ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-                  Current Plan: <span className="capitalize">{subscription.plan}</span>
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                    Current Plan: <span className="capitalize">{subscription.plan}</span>
+                  </h2>
+                  {subscription.isBYOKActive && (
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full border border-emerald-300">
+                      BYOK Active (Unlimited Replies)
+                    </span>
+                  )}
+                </div>
                 <p className={`text-sm mt-1 ${subscription.isActive ? 'text-green-700' : 'text-red-700'}`}>
                   {subscription.isActive
                     ? subscription.messageLimit > 0
@@ -833,6 +843,18 @@ export function SubscriptionPage() {
                       ? `Quota exhausted (${subscription.messagesUsed}/${subscription.messageLimit} used). Upgrade to continue.`
                       : `Expired — Please upgrade to continue using the app`}
                 </p>
+                {subscription.isActive && (
+                  <p className="text-xs text-gray-600 mt-1">
+                    🤖 <strong>WhatsApp AI Bot Replies:</strong>{' '}
+                    {subscription.isBYOKActive ? (
+                      <span className="text-emerald-700 font-semibold">Unlimited (Custom API Key)</span>
+                    ) : (
+                      <span>
+                        {Math.max(0, (subscription.botRepliesLimit ?? 500) - (subscription.botRepliesUsed ?? 0))} of {subscription.botRepliesLimit ?? 500} replies remaining this month
+                      </span>
+                    )}
+                  </p>
+                )}
               </div>
               <div className={`self-start sm:self-auto px-4 py-2 rounded-full text-sm font-medium shrink-0 ${subscription.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                 {subscription.isActive ? 'Active' : 'Expired'}
@@ -1290,6 +1312,59 @@ export function SubscriptionPage() {
               <MCPSetupCard apiKey={apiKeys[0]?.keyPreview ?? null} />
             </div>
           )}
+        </div>
+
+        {/* WhatsApp Bot AI Replies Add-on Packs */}
+        <div className="mt-12">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Bot className="w-5 h-5 text-emerald-600" />
+                WhatsApp Bot AI Reply Packs
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Top-up extra managed AI auto-replies or switch to BYOK anytime for unlimited free replies.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/bot')}
+              className="self-start sm:self-auto px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
+            >
+              Configure BYOK Key →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { id: 'addon_bot_replies_1', name: '1,000 AI Replies Pack', amount: 199, desc: '1,000 Managed ultra-fast auto-replies with Groq / OpenAI cascade.' },
+              { id: 'addon_bot_replies_2', name: '2,000 AI Replies Pack', amount: 349, desc: '2,000 Managed ultra-fast auto-replies with Groq / OpenAI cascade.' },
+              { id: 'addon_bot_replies_5', name: '5,000 AI Replies Pack', amount: 799, desc: '5,000 Managed ultra-fast auto-replies with Groq / OpenAI cascade.' },
+            ].map(pack => (
+              <div key={pack.id} className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col justify-between hover:border-emerald-300 hover:shadow-sm transition-all">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="font-bold text-gray-900 text-base">{pack.name}</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">Top-up</span>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed mb-4">{pack.desc}</p>
+                </div>
+                <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+                  <div>
+                    <span className="text-lg font-extrabold text-gray-900">{formatPrice(pack.amount)}</span>
+                    <span className="text-[11px] text-gray-400 ml-1">/ pack</span>
+                  </div>
+                  <button
+                    onClick={() => handleUpgrade(pack.id)}
+                    disabled={paying !== null}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all disabled:opacity-60 flex items-center gap-1.5 shadow-sm"
+                  >
+                    {paying === pack.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                    Purchase
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Payment History */}

@@ -9,6 +9,9 @@ interface SubscriptionInfo {
   daysLeft: number;
   messagesUsed: number;
   messageLimit: number;
+  botRepliesUsed?: number;
+  botRepliesLimit?: number;
+  isBYOKActive?: boolean;
   enabledServices?: string[];
 }
 

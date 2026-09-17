@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader, Ban, Sparkles, Code2, Shield, User, ChevronDown, ChevronUp, RefreshCw, Check } from 'lucide-react';
+import { Bot, Plus, Trash2, Save, ArrowLeft, Globe, BookOpen, ShoppingBag, Calendar, ToggleLeft, ToggleRight, Loader, Ban, Sparkles, Code2, Shield, User, ChevronDown, ChevronUp, RefreshCw, Check, Key, Eye, EyeOff, Zap, ShieldCheck, Cpu, AlertCircle } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -28,6 +28,11 @@ interface BotConfig {
   restrictedHoursEnabled?: boolean;
   restrictedHoursStart?: string;
   restrictedHoursEnd?: string;
+  // Enterprise Bring Your Own Key (BYOK)
+  aiProvider?: string;
+  aiModel?: string;
+  customApiKey?: string;
+  hasCustomApiKey?: boolean;
 }
 
 const EMPTY: BotConfig = {
@@ -50,6 +55,10 @@ const EMPTY: BotConfig = {
   restrictedHoursEnabled: false,
   restrictedHoursStart: '00:00',
   restrictedHoursEnd: '06:00',
+  aiProvider: 'default',
+  aiModel: '',
+  customApiKey: '',
+  hasCustomApiKey: false,
 };
 
 export function BotSetupPage() {
@@ -65,7 +74,12 @@ export function BotSetupPage() {
   const [aiDetectionExpanded, setAiDetectionExpanded] = useState(false);
   const [handoffExpanded, setHandoffExpanded] = useState(false);
   const [advancedSettingsExpanded, setAdvancedSettingsExpanded] = useState(false);
+  const [aiProviderExpanded, setAiProviderExpanded] = useState(true);
   const [maxMessagesDraft, setMaxMessagesDraft] = useState('30');
+  const [customKeyDraft, setCustomKeyDraft] = useState('');
+  const [showCustomKey, setShowCustomKey] = useState(false);
+  const [isTestingKey, setIsTestingKey] = useState(false);
+  const [keyTestStatus, setKeyTestStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
 
   const isActive = user?.subscription?.isActive ?? false;
@@ -99,6 +113,10 @@ export function BotSetupPage() {
             restrictedHoursEnabled: d.restrictedHoursEnabled ?? false,
             restrictedHoursStart: d.restrictedHoursStart || '00:00',
             restrictedHoursEnd: d.restrictedHoursEnd || '06:00',
+            aiProvider: d.aiProvider || 'default',
+            aiModel: d.aiModel || '',
+            customApiKey: '',
+            hasCustomApiKey: d.hasCustomApiKey ?? false,
           });
           // Sync draft states with loaded config
           setMaxMessagesDraft(String(d.maxMessagesPerHour ?? 30));
@@ -122,26 +140,29 @@ export function BotSetupPage() {
     const maxMsgParsed = parseInt(maxMessagesDraft);
     const maxMsgValidated = !isNaN(maxMsgParsed) ? Math.max(1, Math.min(100, maxMsgParsed)) : 30;
 
-    const finalConfig = {
+    const cleanServices = config.services.map(s => s.trim()).filter(Boolean);
+
+    const payload: any = {
       ...config,
       maxMessagesPerHour: maxMsgValidated,
+      services: cleanServices,
     };
+
+    if (customKeyDraft.trim() !== '') {
+      payload.customApiKey = customKeyDraft.trim();
+    }
 
     const hasCustomPrompt = config.customSystemPrompt.trim() !== '';
     if (!hasCustomPrompt && (!config.businessName.trim() || !config.description.trim())) {
       showToast('Business name and description are required (or enter a custom system prompt)', false);
       return;
     }
-    const cleanServices = config.services.map(s => s.trim()).filter(Boolean);
 
     setIsSaving(true);
     try {
       const res = await apiFetch(API_ENDPOINTS.bot.upsert, {
         method: 'POST',
-        body: JSON.stringify({
-          ...finalConfig,
-          services: cleanServices,
-        }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (json.success) {
@@ -151,7 +172,14 @@ export function BotSetupPage() {
           ...prev,
           maxMessagesPerHour: maxMsgValidated,
           services: json.data?.services?.length ? json.data.services : prev.services,
+          aiProvider: json.data?.aiProvider ?? prev.aiProvider,
+          aiModel: json.data?.aiModel ?? prev.aiModel,
+          hasCustomApiKey: json.data?.hasCustomApiKey ?? prev.hasCustomApiKey,
         }));
+        if (customKeyDraft.trim() !== '') {
+          setCustomKeyDraft('');
+          setConfig(prev => ({ ...prev, hasCustomApiKey: true }));
+        }
         setMaxMessagesDraft(String(maxMsgValidated));
       } else {
         showToast(json.error || 'Failed to save', false);
@@ -160,6 +188,66 @@ export function BotSetupPage() {
       showToast('Network error — could not save', false);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleClearCustomKey = async () => {
+    setCustomKeyDraft('');
+    setIsSaving(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.bot.upsert, {
+        method: 'POST',
+        body: JSON.stringify({
+          ...config,
+          customApiKey: '__CLEAR__',
+          aiProvider: 'default',
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setConfig(prev => ({ ...prev, customApiKey: '', hasCustomApiKey: false, aiProvider: 'default' }));
+        showToast('Custom API key removed. Reverted to Platform Managed AI.', true);
+      } else {
+        showToast('Failed to remove custom key', false);
+      }
+    } catch {
+      showToast('Network error — failed to remove key', false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleTestKey = async () => {
+    const keyToTest = customKeyDraft.trim();
+    if (!keyToTest) {
+      showToast('Please enter an API key to test', false);
+      return;
+    }
+    let prov = config.aiProvider === 'default' ? '' : (config.aiProvider || '');
+    if (!prov) {
+      if (keyToTest.startsWith('gsk_')) prov = 'groq';
+      else if (keyToTest.startsWith('sk-')) prov = 'openai';
+      else if (keyToTest.startsWith('AIza')) prov = 'gemini';
+      else prov = 'groq';
+    }
+
+    setIsTestingKey(true);
+    setKeyTestStatus(null);
+    try {
+      const res = await apiFetch('/api/admin/ai/config/test', {
+        method: 'POST',
+        body: JSON.stringify({ provider: prov, key: keyToTest }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setKeyTestStatus({ ok: true, msg: `Key valid! Successfully connected to ${prov.toUpperCase()}` });
+      } else {
+        setKeyTestStatus({ ok: false, msg: data.error || 'Connection failed — invalid API key' });
+      }
+    } catch {
+      setKeyTestStatus({ ok: false, msg: 'Network error while testing key' });
+    } finally {
+      setIsTestingKey(false);
     }
   };
 
@@ -303,29 +391,60 @@ export function BotSetupPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-        {/* Free-plan quota notice */}
-        {isActive && isFree && (
-          <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-            <div className="text-amber-500 shrink-0 mt-0.5 text-lg">⚡</div>
-            <div>
-              <p className="font-semibold text-amber-800 text-sm">Free Trial — Limited Replies</p>
-              <p className="text-sm text-amber-700 mt-0.5">
-                Bot replies count toward your message quota ({user?.subscription?.messagesUsed ?? 0}/{user?.subscription?.messageLimit ?? 0} used).
-                Upgrade for unlimited auto-replies.
-              </p>
-              <button
-                onClick={() => navigate('/subscription')}
-                className="mt-2 px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 transition-colors"
-              >
-                Upgrade Plan
-              </button>
+        {/* Dynamic Quota & BYOK Status Banner */}
+        {isActive && (
+          config.hasCustomApiKey || user?.subscription?.isBYOKActive ? (
+            <div className="mb-5 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                <ShieldCheck size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-emerald-900 text-sm">🟢 BYOK Active — Unlimited AI Auto-Replies</span>
+                  <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-200 text-emerald-800 rounded-full">No Quota Limits</span>
+                </div>
+                <p className="text-xs text-emerald-700 mt-1">
+                  Your WhatsApp bot is powered by your custom <strong>{config.aiProvider && config.aiProvider !== 'default' ? config.aiProvider.toUpperCase() : 'Custom LLM'}</strong> API key. Zero monthly message limits or platform quota deductions apply.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mb-5 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
+                  <Zap size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-indigo-900 text-sm">⚡ Platform Managed AI</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-indigo-200 text-indigo-800 rounded-full">
+                      {Math.max(0, (user?.subscription?.botRepliesLimit ?? 500) - (user?.subscription?.botRepliesUsed ?? 0))} of {user?.subscription?.botRepliesLimit ?? 500} replies left
+                    </span>
+                  </div>
+                  <p className="text-xs text-indigo-700 mt-0.5">
+                    Powered by high-speed Groq &amp; OpenAI failover. Need unlimited replies? Add your own API key below.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => navigate('/subscription')}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
+                >
+                  + Top-up 1k Replies
+                </button>
+              </div>
+            </div>
+          )
         )}
 
         {!isActive && (
-          <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-            Your subscription has expired. <button onClick={() => navigate('/subscription')} className="underline font-medium">Renew now</button> to use the bot.
+          <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-center justify-between">
+            <span>Your subscription has expired. Renew now to enable WhatsApp auto-replies.</span>
+            <button onClick={() => navigate('/subscription')} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">
+              Renew Plan
+            </button>
           </div>
         )}
 
@@ -521,6 +640,176 @@ export function BotSetupPage() {
               >
                 Clear — revert to auto-generated prompt
               </button>
+            )}
+          </div>
+
+          {/* AI Engine & Bring Your Own Key (BYOK) */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setAiProviderExpanded(!aiProviderExpanded)}
+              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                  <Cpu size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-900">AI Engine &amp; BYOK (Custom API Key)</span>
+                    {config.hasCustomApiKey ? (
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full">Custom Key Active</span>
+                    ) : (
+                      <span className="px-2 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded-full">Platform Managed</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Connect your own Groq, OpenAI, or Gemini key for unlimited free replies, or customize the AI model
+                  </p>
+                </div>
+              </div>
+              {aiProviderExpanded ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
+            </button>
+
+            {aiProviderExpanded && (
+              <div className="p-5 pt-0 border-t border-gray-100 space-y-5">
+                {/* Provider Selection */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    AI Provider Mode
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {[
+                      { id: 'default', label: 'Platform Default', desc: 'Managed Quota' },
+                      { id: 'groq',    label: 'Groq (Ultra-Fast)', desc: 'BYOK Unlimited' },
+                      { id: 'openai',  label: 'OpenAI (GPT-4o)',   desc: 'BYOK Unlimited' },
+                      { id: 'gemini',  label: 'Google Gemini',     desc: 'BYOK Unlimited' },
+                    ].map(item => {
+                      const isSel = (config.aiProvider || 'default') === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setConfig(prev => ({
+                              ...prev,
+                              aiProvider: item.id,
+                              aiModel: item.id === 'groq' ? 'llama-3.3-70b-versatile' : item.id === 'openai' ? 'gpt-4o-mini' : item.id === 'gemini' ? 'gemini-2.5-flash' : '',
+                            }));
+                            setKeyTestStatus(null);
+                          }}
+                          className={`p-3 rounded-xl border-2 text-left transition-all ${
+                            isSel
+                              ? 'border-indigo-600 bg-indigo-50/50 shadow-sm'
+                              : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                        >
+                          <p className={`text-xs font-bold ${isSel ? 'text-indigo-900' : 'text-gray-900'}`}>{item.label}</p>
+                          <p className="text-[10px] text-gray-500 mt-0.5">{item.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Custom API Key Input for BYOK */}
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                      <Key size={14} className="text-indigo-600" />
+                      Custom API Key (BYOK)
+                    </label>
+                    {config.hasCustomApiKey && (
+                      <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                        <Check size={12} /> Key Encrypted &amp; Stored in Cloud
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type={showCustomKey ? 'text' : 'password'}
+                        value={customKeyDraft}
+                        onChange={e => {
+                          setCustomKeyDraft(e.target.value);
+                          setKeyTestStatus(null);
+                        }}
+                        placeholder={config.hasCustomApiKey ? '•••••••••••••••• (Enter new key to replace)' : 'Paste your API key (e.g. gsk_..., sk-..., AIza...)'}
+                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomKey(!showCustomKey)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showCustomKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleTestKey}
+                      disabled={isTestingKey || (!customKeyDraft.trim() && !config.hasCustomApiKey)}
+                      className="px-3 py-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-xs font-medium rounded-lg disabled:opacity-40 transition-colors shrink-0 flex items-center gap-1.5 shadow-sm"
+                    >
+                      {isTestingKey ? <Loader size={13} className="animate-spin" /> : <Zap size={13} className="text-amber-500" />}
+                      Test Key
+                    </button>
+
+                    {config.hasCustomApiKey && (
+                      <button
+                        type="button"
+                        onClick={handleClearCustomKey}
+                        className="px-3 py-2 bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 text-xs font-medium rounded-lg transition-colors shrink-0"
+                      >
+                        Remove Key
+                      </button>
+                    )}
+                  </div>
+
+                  {keyTestStatus && (
+                    <div className={`p-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 ${
+                      keyTestStatus.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}>
+                      {keyTestStatus.ok ? <Check size={13} /> : <AlertCircle size={13} />}
+                      {keyTestStatus.msg}
+                    </div>
+                  )}
+
+                  <p className="text-[11px] text-gray-500 leading-relaxed">
+                    💡 <strong>Bring Your Own Key benefit:</strong> When you provide your own API key, all bot replies are 100% free and exempt from monthly quota limits. Free API keys are available at <a href="https://console.groq.com" target="_blank" rel="noreferrer" className="text-indigo-600 underline">Groq Console</a> (Recommended for &lt;300ms speed) and <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-indigo-600 underline">Google AI Studio</a>.
+                  </p>
+                </div>
+
+                {/* Model Override */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    AI Model Preset / Override
+                  </label>
+                  <select
+                    value={config.aiModel || (config.aiProvider === 'openai' ? 'gpt-4o-mini' : config.aiProvider === 'gemini' ? 'gemini-2.5-flash' : 'llama-3.3-70b-versatile')}
+                    onChange={e => setConfig(prev => ({ ...prev, aiModel: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  >
+                    <optgroup label="Groq LPU (Ultra-Low Latency)">
+                      <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Recommended)</option>
+                      <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Fastest)</option>
+                      <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
+                      <option value="deepseek-r1-distill-llama-70b">deepseek-r1-distill-llama-70b</option>
+                    </optgroup>
+                    <optgroup label="Google Gemini">
+                      <option value="gemini-2.5-flash">gemini-2.5-flash (Standard 2026)</option>
+                      <option value="gemini-flash-latest">gemini-flash-latest</option>
+                      <option value="gemini-3.7-flash">gemini-3.7-flash (High Reasoning)</option>
+                    </optgroup>
+                    <optgroup label="OpenAI">
+                      <option value="gpt-4o-mini">gpt-4o-mini (Fast &amp; Cost Efficient)</option>
+                      <option value="gpt-4o">gpt-4o (Flagship Model)</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
             )}
           </div>
 

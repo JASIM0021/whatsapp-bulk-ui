@@ -3048,11 +3048,13 @@ function ServiceAvailabilityTab() {
 function AITab() {
   const [provider, setProvider] = useState<'openai' | 'gemini' | 'groq'>('groq');
   const [chatbotProvider, setChatbotProvider] = useState<'groq' | 'openai' | 'gemini'>('groq');
+  const [whatsappBotProvider, setWhatsappBotProvider] = useState<'groq' | 'openai' | 'gemini'>('groq');
+  const [whatsappBotModel, setWhatsappBotModel] = useState<string>('llama-3.3-70b-versatile');
   const [openaiKeys, setOpenaiKeys] = useState<string[]>([]);
   const [geminiKeys, setGeminiKeys] = useState<string[]>([]);
   const [groqKeys, setGroqKeys] = useState<string[]>([]);
-  const [groqModel, setGroqModel] = useState<string>('openai/gpt-oss-20b');
-  const [chatbotModel, setChatbotModel] = useState<string>('openai/gpt-oss-20b');
+  const [groqModel, setGroqModel] = useState<string>('llama-3.3-70b-versatile');
+  const [chatbotModel, setChatbotModel] = useState<string>('llama-3.3-70b-versatile');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -3068,11 +3070,13 @@ function AITab() {
         if (data.success && data.data) {
           setProvider(data.data.provider || 'groq');
           setChatbotProvider(data.data.chatbot_provider || 'groq');
+          setWhatsappBotProvider(data.data.whatsapp_bot_provider || 'groq');
+          setWhatsappBotModel(data.data.whatsapp_bot_model || 'llama-3.3-70b-versatile');
           setOpenaiKeys(data.data.openai_keys || []);
           setGeminiKeys(data.data.gemini_keys || []);
           setGroqKeys(data.data.groq_keys || []);
-          setGroqModel(data.data.groq_model || 'openai/gpt-oss-20b');
-          setChatbotModel(data.data.chatbot_model || data.data.groq_model || 'openai/gpt-oss-20b');
+          setGroqModel(data.data.groq_model || 'llama-3.3-70b-versatile');
+          setChatbotModel(data.data.chatbot_model || data.data.groq_model || 'llama-3.3-70b-versatile');
         } else {
           setMessage({ type: 'error', text: data.error || data.message || 'Failed to load configuration' });
         }
@@ -3135,11 +3139,13 @@ function AITab() {
         body: JSON.stringify({
           provider,
           chatbot_provider: chatbotProvider,
+          whatsapp_bot_provider: whatsappBotProvider,
+          whatsapp_bot_model: whatsappBotModel.trim() || 'llama-3.3-70b-versatile',
           openai_keys: cleanOpenai,
           gemini_keys: cleanGemini,
           groq_keys: cleanGroq,
-          groq_model: groqModel.trim() || 'openai/gpt-oss-20b',
-          chatbot_model: chatbotModel.trim() || groqModel.trim() || 'openai/gpt-oss-20b',
+          groq_model: groqModel.trim() || 'llama-3.3-70b-versatile',
+          chatbot_model: chatbotModel.trim() || groqModel.trim() || 'llama-3.3-70b-versatile',
         }),
       });
       const data = await res.json();
@@ -3149,9 +3155,11 @@ function AITab() {
           setOpenaiKeys(data.data.openai_keys || []);
           setGeminiKeys(data.data.gemini_keys || []);
           setGroqKeys(data.data.groq_keys || []);
-          setGroqModel(data.data.groq_model || 'openai/gpt-oss-20b');
+          setGroqModel(data.data.groq_model || 'llama-3.3-70b-versatile');
           setChatbotProvider(data.data.chatbot_provider || 'groq');
-          setChatbotModel(data.data.chatbot_model || 'openai/gpt-oss-20b');
+          setChatbotModel(data.data.chatbot_model || 'llama-3.3-70b-versatile');
+          setWhatsappBotProvider(data.data.whatsapp_bot_provider || 'groq');
+          setWhatsappBotModel(data.data.whatsapp_bot_model || 'llama-3.3-70b-versatile');
         } else {
           setOpenaiKeys(cleanOpenai);
           setGeminiKeys(cleanGemini);
@@ -3424,6 +3432,137 @@ function AITab() {
                 title="Set to Groq Compound Mini"
               >
                 Compound Mini
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* WhatsApp Bot AI Engine & Provider Routing */}
+        <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                <Bot size={16} className="text-emerald-600" /> WhatsApp Bot AI Engine &amp; Service Routing
+              </h3>
+              <p className="text-xs text-gray-600">Route all WhatsApp auto-replies across Groq, OpenAI, or Gemini with automatic cross-provider fallback cascade.</p>
+            </div>
+            <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
+              Active: {whatsappBotProvider.toUpperCase()}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setWhatsappBotProvider('groq');
+                if (!whatsappBotModel || whatsappBotModel.includes('gpt-4') || whatsappBotModel.includes('gemini')) {
+                  setWhatsappBotModel('llama-3.3-70b-versatile');
+                }
+              }}
+              className={`p-3 rounded-lg border text-left transition-all ${
+                whatsappBotProvider === 'groq'
+                  ? 'border-emerald-600 bg-white shadow-sm ring-2 ring-emerald-500/20'
+                  : 'border-gray-200 bg-white/70 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                  <Zap size={13} className="text-amber-500" /> Groq LPU (Ultra-Fast ~200ms)
+                </span>
+                <input
+                  type="radio"
+                  checked={whatsappBotProvider === 'groq'}
+                  onChange={() => setWhatsappBotProvider('groq')}
+                  className="text-emerald-600 focus:ring-emerald-500"
+                />
+              </div>
+              <span className="text-[11px] text-gray-500 block">Instant reply latency on Groq hardware. Recommended for WhatsApp conversations.</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setWhatsappBotProvider('openai');
+                if (!whatsappBotModel || whatsappBotModel.includes('llama')) {
+                  setWhatsappBotModel('gpt-4o-mini');
+                }
+              }}
+              className={`p-3 rounded-lg border text-left transition-all ${
+                whatsappBotProvider === 'openai'
+                  ? 'border-emerald-600 bg-white shadow-sm ring-2 ring-emerald-500/20'
+                  : 'border-gray-200 bg-white/70 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-gray-900">OpenAI (GPT-4o Mini)</span>
+                <input
+                  type="radio"
+                  checked={whatsappBotProvider === 'openai'}
+                  onChange={() => setWhatsappBotProvider('openai')}
+                  className="text-emerald-600 focus:ring-emerald-500"
+                />
+              </div>
+              <span className="text-[11px] text-gray-500 block">Uses configured OpenAI keys with automated key rotation.</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setWhatsappBotProvider('gemini');
+                if (!whatsappBotModel || whatsappBotModel.includes('llama')) {
+                  setWhatsappBotModel('gemini-2.5-flash');
+                }
+              }}
+              className={`p-3 rounded-lg border text-left transition-all ${
+                whatsappBotProvider === 'gemini'
+                  ? 'border-emerald-600 bg-white shadow-sm ring-2 ring-emerald-500/20'
+                  : 'border-gray-200 bg-white/70 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-gray-900">Gemini (2.5 Flash)</span>
+                <input
+                  type="radio"
+                  checked={whatsappBotProvider === 'gemini'}
+                  onChange={() => setWhatsappBotProvider('gemini')}
+                  className="text-emerald-600 focus:ring-emerald-500"
+                />
+              </div>
+              <span className="text-[11px] text-gray-500 block">Uses configured Google Gemini keys with automated key rotation.</span>
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-800 mb-1">WhatsApp Bot Model Override</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={whatsappBotModel}
+                onChange={(e) => setWhatsappBotModel(e.target.value)}
+                placeholder="e.g. llama-3.3-70b-versatile"
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              />
+              <button
+                type="button"
+                onClick={() => setWhatsappBotModel('llama-3.3-70b-versatile')}
+                className="text-xs px-2.5 py-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-lg whitespace-nowrap font-medium"
+              >
+                Llama 3.3 70B
+              </button>
+              <button
+                type="button"
+                onClick={() => setWhatsappBotModel('gemini-2.5-flash')}
+                className="text-xs px-2.5 py-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-lg whitespace-nowrap font-medium"
+              >
+                Gemini 2.5 Flash
+              </button>
+              <button
+                type="button"
+                onClick={() => setWhatsappBotModel('gpt-4o-mini')}
+                className="text-xs px-2.5 py-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-lg whitespace-nowrap font-medium"
+              >
+                GPT-4o Mini
               </button>
             </div>
           </div>
