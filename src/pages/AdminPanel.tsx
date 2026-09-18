@@ -623,19 +623,20 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
           </p>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {[
-              { id: 'whatsapp',     label: 'WhatsApp Sender' },
-              { id: 'whatsapp_bot', label: 'WhatsApp AI Bot' },
-              { id: 'email',        label: 'Email Marketing' },
-              { id: 'chatbot',      label: 'Website Chatbot' },
-              { id: 'facebook',     label: 'Facebook' },
-              { id: 'linkedin',     label: 'LinkedIn Publisher' },
-              { id: 'linkedin_bot', label: 'LinkedIn AI Bot' },
-              { id: 'seo',          label: 'SEO Manager' },
-              { id: 'seo_bot',      label: 'SEO AI Bot' },
-              { id: 'leads',        label: 'Leads Manager' },
-              { id: 'calendar',     label: 'Nexbot Calendar' },
-              { id: 'trading',      label: 'AI Trading Workspace' },
-              { id: 'youtube',      label: 'Tuber YouTube AI Employee' },
+              { id: 'whatsapp',          label: 'WhatsApp Sender' },
+              { id: 'whatsapp_bot',      label: 'WhatsApp AI Bot' },
+              { id: 'whatsapp_business', label: 'WhatsApp Business (Nexa Pro)' },
+              { id: 'email',             label: 'Email Marketing' },
+              { id: 'chatbot',           label: 'Website Chatbot' },
+              { id: 'facebook',          label: 'Facebook' },
+              { id: 'linkedin',          label: 'LinkedIn Publisher' },
+              { id: 'linkedin_bot',      label: 'LinkedIn AI Bot' },
+              { id: 'seo',               label: 'SEO Manager' },
+              { id: 'seo_bot',           label: 'SEO AI Bot' },
+              { id: 'leads',             label: 'Leads Manager' },
+              { id: 'calendar',          label: 'Nexbot Calendar' },
+              { id: 'trading',           label: 'AI Trading Workspace' },
+              { id: 'youtube',           label: 'Tuber YouTube AI Employee' },
             ].map(({ id, label }) => {
               const active = grantedServices.has(id);
               return (
@@ -1362,19 +1363,20 @@ function InvoicesTab() {
 
 /* ─── Plans Tab ─── */
 const ALL_SERVICES = [
-  'whatsapp',     // WhatsApp bulk send
-  'whatsapp_bot', // WhatsApp AI auto-reply bot
-  'chatbot',      // Website chatbot widget
-  'email',        // Email bulk send
-  'facebook',     // Facebook posting
-  'linkedin',     // LinkedIn connect + manual posts
-  'linkedin_bot', // LinkedIn automation bot + AI images
-  'seo',          // SEO dashboard / pages / vitals (basic)
-  'seo_bot',      // SEO auto-fix bot + blog bot (premium)
-  'leads',        // Leads scraping & outreach
-  'calendar',     // Nexbot Calendar & scheduling
-  'trading',      // AI Trading Workspace
-  'youtube',      // Tuber YouTube Creator
+  'whatsapp',          // WhatsApp bulk send
+  'whatsapp_bot',      // WhatsApp AI auto-reply bot
+  'whatsapp_business', // WhatsApp Business (Nexa Pro) official Meta Cloud API
+  'chatbot',           // Website chatbot widget
+  'email',             // Email bulk send
+  'facebook',          // Facebook posting
+  'linkedin',          // LinkedIn connect + manual posts
+  'linkedin_bot',      // LinkedIn automation bot + AI images
+  'seo',               // SEO dashboard / pages / vitals (basic)
+  'seo_bot',           // SEO auto-fix bot + blog bot (premium)
+  'leads',             // Leads scraping & outreach
+  'calendar',          // Nexbot Calendar & scheduling
+  'trading',           // AI Trading Workspace
+  'youtube',           // Tuber YouTube Creator
 ] as const;
 
 interface PlanFormState {
@@ -2921,19 +2923,20 @@ function InfluencersTab() {
 
 /* ─── Service Availability Tab ─── */
 const SVC_LABELS: Record<string, { label: string; desc: string }> = {
-  whatsapp:     { label: 'WhatsApp Sender',  desc: 'Bulk messaging at scale' },
-  whatsapp_bot: { label: 'WhatsApp AI Bot',  desc: '24/7 auto-reply chatbot' },
-  email:        { label: 'Email Marketing',  desc: 'Bulk campaigns & tracking' },
-  chatbot:      { label: 'Website Chatbot',  desc: 'Embeddable AI widget' },
-  facebook:     { label: 'Facebook',         desc: 'Schedule & publish posts' },
-  linkedin:     { label: 'LinkedIn',         desc: 'Publish & schedule posts' },
-  linkedin_bot: { label: 'LinkedIn AI Bot',  desc: 'Automated AI posting' },
-  seo:          { label: 'SEO Manager',      desc: 'Audit & health tracking' },
-  seo_bot:      { label: 'SEO AI Bot',       desc: 'AI blog & recommendations' },
-  leads:        { label: 'Leads Manager',    desc: 'Scrape & enrich maps leads' },
-  calendar:     { label: 'Nexbot Calendar',  desc: 'Calendly-grade scheduling & Meet sync' },
-  trading:      { label: 'AI Trading Workspace', desc: 'Secure E2EE algo trading' },
-  youtube:      { label: 'Tuber YouTube AI Employee', desc: 'YouTube Growth Automation' },
+  whatsapp:          { label: 'WhatsApp Sender',              desc: 'Bulk messaging at scale' },
+  whatsapp_bot:      { label: 'WhatsApp AI Bot',              desc: '24/7 auto-reply chatbot' },
+  whatsapp_business: { label: 'WhatsApp Business (Nexa Pro)', desc: 'Meta Official Cloud API & Templates' },
+  email:             { label: 'Email Marketing',              desc: 'Bulk campaigns & tracking' },
+  chatbot:           { label: 'Website Chatbot',              desc: 'Embeddable AI widget' },
+  facebook:          { label: 'Facebook',                     desc: 'Schedule & publish posts' },
+  linkedin:          { label: 'LinkedIn',                     desc: 'Publish & schedule posts' },
+  linkedin_bot:      { label: 'LinkedIn AI Bot',              desc: 'Automated AI posting' },
+  seo:               { label: 'SEO Manager',                  desc: 'Audit & health tracking' },
+  seo_bot:           { label: 'SEO AI Bot',                   desc: 'AI blog & recommendations' },
+  leads:             { label: 'Leads Manager',                desc: 'Scrape & enrich maps leads' },
+  calendar:          { label: 'Nexbot Calendar',              desc: 'Calendly-grade scheduling & Meet sync' },
+  trading:           { label: 'AI Trading Workspace',         desc: 'Secure E2EE algo trading' },
+  youtube:           { label: 'Tuber YouTube AI Employee',    desc: 'YouTube Growth Automation' },
 };
 
 interface ServiceStatus {

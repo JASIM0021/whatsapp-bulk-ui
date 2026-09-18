@@ -1,25 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
-import { Check, Zap, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X, Code, Copy, ChevronDown, ChevronUp, Trash2, Plus, ExternalLink, MessageSquare, Bot, Mail, MessageCircle, Facebook, Search, Sparkles, TrendingUp } from 'lucide-react';
+import { Check, Zap, ArrowLeft, Loader2, CreditCard, Calendar, Tag, X, Code, Copy, ChevronDown, ChevronUp, Trash2, Plus, ExternalLink, MessageSquare, Bot, Mail, MessageCircle, Facebook, Search, Sparkles, TrendingUp, Smartphone } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 // ─── Add-on pricing metadata ──────────────────────────────────────────────────
 
 const SVC_META = [
-  { id: 'whatsapp',     planMonthly: 'wa',       planYearly: 'wa_yr',       label: 'WhatsApp Sender', desc: 'Bulk messaging at scale',    colorBg: 'bg-green-500',   icon: 'MessageSquare' },
-  { id: 'whatsapp_bot', planMonthly: 'wa_bot',   planYearly: 'wa_bot_yr',   label: 'WhatsApp AI Bot', desc: '24/7 auto-reply chatbot',    colorBg: 'bg-emerald-600', icon: 'Bot' },
-  { id: 'email',        planMonthly: 'email',    planYearly: 'email_yr',    label: 'Email Marketing', desc: 'Bulk campaigns & tracking',  colorBg: 'bg-blue-500',    icon: 'Mail' },
-  { id: 'chatbot',      planMonthly: 'chatbot',  planYearly: 'chatbot_yr',  label: 'Website Chatbot', desc: 'Embeddable AI widget',       colorBg: 'bg-sky-500',     icon: 'MessageCircle' },
-  { id: 'facebook',     planMonthly: 'facebook', planYearly: 'facebook_yr', label: 'Facebook',        desc: 'Schedule & publish posts',   colorBg: 'bg-indigo-600',  icon: 'Facebook' },
-  { id: 'linkedin',     planMonthly: 'li',       planYearly: 'li_yr',       label: 'LinkedIn',        desc: 'Publish & schedule posts',   colorBg: 'bg-blue-700',    icon: 'LI' },
-  { id: 'linkedin_bot', planMonthly: 'li_bot',   planYearly: 'li_bot_yr',   label: 'LinkedIn AI Bot', desc: 'Automated AI posting',       colorBg: 'bg-cyan-600',    icon: 'Bot' },
-  { id: 'seo',          planMonthly: 'seo',      planYearly: 'seo_yr',      label: 'SEO Manager',     desc: 'Audit & health tracking',    colorBg: 'bg-violet-600',  icon: 'Search' },
-  { id: 'seo_bot',      planMonthly: 'seo_bot',  planYearly: 'seo_bot_yr',  label: 'SEO AI Bot',      desc: 'AI blog & recommendations',  colorBg: 'bg-purple-600',  icon: 'Sparkles' },
-  { id: 'leads',        planMonthly: 'leads',    planYearly: 'leads_yr',    label: 'Leads Manager',   desc: 'Scrape & enrich maps leads', colorBg: 'bg-amber-500',   icon: 'Sparkles' },
-  { id: 'calendar',     planMonthly: 'calendar', planYearly: 'calendar_yr', label: 'Nexbot Calendar', desc: 'Google Meet sync & booking', colorBg: 'bg-teal-600',    icon: 'Calendar' },
-  { id: 'trading',      planMonthly: 'trading',  planYearly: 'trading_yr',  label: 'AI Trading Workspace', desc: 'Secure E2EE algo trading', colorBg: 'bg-orange-600', icon: 'TrendingUp' },
-  { id: 'youtube',      planMonthly: 'youtube',  planYearly: 'youtube_yr',  label: 'Tuber YouTube AI Employee', desc: 'YouTube Growth Automation', colorBg: 'bg-red-600', icon: 'Tv' },
+  { id: 'whatsapp',          planMonthly: 'wa',       planYearly: 'wa_yr',       label: 'WhatsApp Sender', desc: 'Bulk messaging at scale',    colorBg: 'bg-green-500',   icon: 'MessageSquare' },
+  { id: 'whatsapp_bot',      planMonthly: 'wa_bot',   planYearly: 'wa_bot_yr',   label: 'WhatsApp AI Bot', desc: '24/7 auto-reply chatbot',    colorBg: 'bg-emerald-600', icon: 'Bot' },
+  { id: 'whatsapp_business', planMonthly: 'wa_biz',   planYearly: 'wa_biz_yr',   label: 'WhatsApp Business (Nexa Pro)', desc: 'Meta Official Cloud API & Templates', colorBg: 'bg-emerald-500', icon: 'Smartphone' },
+  { id: 'email',             planMonthly: 'email',    planYearly: 'email_yr',    label: 'Email Marketing', desc: 'Bulk campaigns & tracking',  colorBg: 'bg-blue-500',    icon: 'Mail' },
+  { id: 'chatbot',           planMonthly: 'chatbot',  planYearly: 'chatbot_yr',  label: 'Website Chatbot', desc: 'Embeddable AI widget',       colorBg: 'bg-sky-500',     icon: 'MessageCircle' },
+  { id: 'facebook',          planMonthly: 'facebook', planYearly: 'facebook_yr', label: 'Facebook',        desc: 'Schedule & publish posts',   colorBg: 'bg-indigo-600',  icon: 'Facebook' },
+  { id: 'linkedin',          planMonthly: 'li',       planYearly: 'li_yr',       label: 'LinkedIn',        desc: 'Publish & schedule posts',   colorBg: 'bg-blue-700',    icon: 'LI' },
+  { id: 'linkedin_bot',      planMonthly: 'li_bot',   planYearly: 'li_bot_yr',   label: 'LinkedIn AI Bot', desc: 'Automated AI posting',       colorBg: 'bg-cyan-600',    icon: 'Bot' },
+  { id: 'seo',               planMonthly: 'seo',      planYearly: 'seo_yr',      label: 'SEO Manager',     desc: 'Audit & health tracking',    colorBg: 'bg-violet-600',  icon: 'Search' },
+  { id: 'seo_bot',           planMonthly: 'seo_bot',  planYearly: 'seo_bot_yr',  label: 'SEO AI Bot',      desc: 'AI blog & recommendations',  colorBg: 'bg-purple-600',  icon: 'Sparkles' },
+  { id: 'leads',             planMonthly: 'leads',    planYearly: 'leads_yr',    label: 'Leads Manager',   desc: 'Scrape & enrich maps leads', colorBg: 'bg-amber-500',   icon: 'Sparkles' },
+  { id: 'calendar',          planMonthly: 'calendar', planYearly: 'calendar_yr', label: 'Nexbot Calendar', desc: 'Google Meet sync & booking', colorBg: 'bg-teal-600',    icon: 'Calendar' },
+  { id: 'trading',           planMonthly: 'trading',  planYearly: 'trading_yr',  label: 'AI Trading Workspace', desc: 'Secure E2EE algo trading', colorBg: 'bg-orange-600', icon: 'TrendingUp' },
+  { id: 'youtube',           planMonthly: 'youtube',  planYearly: 'youtube_yr',  label: 'Tuber YouTube AI Employee', desc: 'YouTube Growth Automation', colorBg: 'bg-red-600', icon: 'Tv' },
 ] as const;
 
 const COMBO_DEFS = [
@@ -27,11 +28,11 @@ const COMBO_DEFS = [
   { planId: 'social',   name: 'Social Suite',   services: ['whatsapp', 'facebook', 'linkedin'] as const,                                                                          savingsPct: '16%', highlight: false },
   { planId: 'growth',   name: 'Growth Pack',    services: ['whatsapp', 'email', 'linkedin', 'seo'] as const,                                                                      savingsPct: '25%', highlight: true  },
   { planId: 'business', name: 'Business Suite', services: ['whatsapp', 'whatsapp_bot', 'email', 'linkedin', 'linkedin_bot', 'seo'] as const,                                      savingsPct: '24%', highlight: false },
-  { planId: 'ultimate', name: 'Ultimate',       services: ['whatsapp', 'whatsapp_bot', 'chatbot', 'email', 'facebook', 'linkedin', 'linkedin_bot', 'seo', 'seo_bot', 'leads', 'calendar', 'trading', 'youtube'] as const,   savingsPct: '33%', highlight: true  },
+  { planId: 'ultimate', name: 'Ultimate',       services: ['whatsapp', 'whatsapp_bot', 'whatsapp_business', 'chatbot', 'email', 'facebook', 'linkedin', 'linkedin_bot', 'seo', 'seo_bot', 'leads', 'calendar', 'trading', 'youtube'] as const,   savingsPct: '33%', highlight: true  },
 ];
 
 const SVC_TO_PLAN: Record<string, string> = {
-  whatsapp: 'wa', whatsapp_bot: 'wa_bot', email: 'email',
+  whatsapp: 'wa', whatsapp_bot: 'wa_bot', whatsapp_business: 'wa_biz', email: 'email',
   chatbot: 'chatbot', facebook: 'facebook', linkedin: 'li',
   linkedin_bot: 'li_bot', seo: 'seo', seo_bot: 'seo_bot', leads: 'leads',
   calendar: 'calendar', trading: 'trading', youtube: 'youtube',
@@ -41,6 +42,7 @@ const SVC_TO_PLAN: Record<string, string> = {
 const SVC_GROUPS = [
   { ids: ['whatsapp'],                  label: 'WhatsApp Sender', desc: 'Bulk messaging at scale',    colorBg: 'bg-green-500',   icon: 'MessageSquare', subLabels: [] as string[] },
   { ids: ['whatsapp_bot'],              label: 'WhatsApp AI Bot', desc: '24/7 auto-reply chatbot',   colorBg: 'bg-emerald-600', icon: 'Bot',           subLabels: [] as string[] },
+  { ids: ['whatsapp_business'],         label: 'WhatsApp Business (Nexa Pro)', desc: 'Official Meta Cloud API & Templates', colorBg: 'bg-emerald-500', icon: 'Smartphone', subLabels: [] as string[] },
   { ids: ['email'],                     label: 'Email Marketing', desc: 'Bulk campaigns & tracking', colorBg: 'bg-blue-500',    icon: 'Mail',          subLabels: [] as string[] },
   { ids: ['chatbot'],                   label: 'Website Chatbot', desc: 'Embeddable AI widget',      colorBg: 'bg-sky-500',     icon: 'MessageCircle', subLabels: [] as string[] },
   { ids: ['facebook'],                  label: 'Facebook',        desc: 'Schedule & publish posts',  colorBg: 'bg-indigo-600',  icon: 'Facebook',      subLabels: [] as string[] },
@@ -883,7 +885,7 @@ export function SubscriptionPage() {
               );
             }
             const MAP: Record<string, React.ElementType> = {
-              MessageSquare, Bot, Mail, MessageCircle, Facebook, Search, Sparkles, Calendar, TrendingUp,
+              MessageSquare, Bot, Mail, MessageCircle, Facebook, Search, Sparkles, Calendar, TrendingUp, Smartphone,
             };
             const Icon = MAP[id] ?? Zap;
             return <Icon className="w-5 h-5" />;
