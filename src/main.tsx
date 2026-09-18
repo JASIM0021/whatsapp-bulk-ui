@@ -71,6 +71,7 @@ const YouTubeAgentPage = lazy(() => import('./pages/youtube/YouTubeAgentPage').t
 const AIWorkersPage = lazy(() => import('./pages/agents/AIWorkersPage').then(m => ({ default: m.AIWorkersPage })))
 const AgentStudioPage = lazy(() => import('./pages/agents/AgentStudioPage').then(m => ({ default: m.AgentStudioPage })))
 const CustomConnectorsPage = lazy(() => import('./pages/connectors/CustomConnectorsPage').then(m => ({ default: m.CustomConnectorsPage })))
+const WhatsappBusinessPage = lazy(() => import('./pages/whatsapp_business/WhatsappBusinessPage').then(m => ({ default: m.WhatsappBusinessPage })))
 
 function GmailCallbackRedirect() {
   const location = useLocation();
@@ -242,6 +243,13 @@ function AppRoutes() {
         <ProtectedRoute>
           <AppProvider>
             <App />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
+      <Route path="/whatsapp-business" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <WhatsappBusinessPage />
           </AppProvider>
         </ProtectedRoute>
       } />

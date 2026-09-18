@@ -54,6 +54,18 @@ export function DashboardPage() {
       dbId: 'whatsapp',
     },
     {
+      id: 'whatsapp-business',
+      title: 'Nexa Pro - WhatsApp Business Cloud API',
+      description: 'Official Meta WhatsApp Business Cloud API with Embedded Signup, templates, broadcasts, and AI auto-replies.',
+      iconPath: '/agents/agent-whatsapp.jpg?v=2',
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-200',
+      hoverBorder: 'hover:border-emerald-400',
+      iconBg: 'bg-emerald-100',
+      path: '/whatsapp-business',
+      dbId: 'whatsapp_business',
+    },
+    {
       id: 'email',
       title: 'Mailo - Email Outreach Employee',
       description: 'Create and broadcast professional email marketing campaigns with custom templates.',
