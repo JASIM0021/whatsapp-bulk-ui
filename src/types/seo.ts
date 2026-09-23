@@ -364,10 +364,14 @@ export interface RankRun {
   summary?: string;
   improvements?: string[];
   nextSteps?: string[];
-  files?: { path: string; additions: number; deletions: number }[];
+  files?: { path: string; additions: number; deletions: number; sourceUrl?: string; liveUrl?: string }[];
   reverted?: string[];
   commitSha?: string;
   prUrl?: string;
+  prNumber?: number;
+  prState?: 'open' | 'merged' | 'closed';
+  prMergeable?: boolean;
+  mergedAt?: string;
   log?: string;
   error?: string;
   creditRefunded: boolean;

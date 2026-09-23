@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Rocket, Github, GitPullRequest, HardDrive, RefreshCw, Sparkles, Plus, X, Play, Save,
   AlertCircle, CheckCircle, Clock, Coins, ChevronDown, ChevronUp, ExternalLink,
-  ToggleLeft, ToggleRight, Loader2, FileCode, ListChecks, Lightbulb, ShieldCheck,
+  ToggleLeft, ToggleRight, Loader2, FileCode, ListChecks, Lightbulb, ShieldCheck, GitMerge, Globe,
 } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import type { RankConfig, RankKeyword, RankRun, RankCredits, RankCreditPack, SEOBlogRepo } from '@/types/seo';
@@ -172,6 +172,97 @@ function CreditsBar({ credits, onPurchased }: { credits: RankCredits | null; onP
 
 // ── Runs ─────────────────────────────────────────────────────────────────────
 
+const PR_STYLE: Record<NonNullable<RankRun['prState']>, string> = {
+  open:   'bg-emerald-50 text-emerald-700 border-emerald-200',
+  merged: 'bg-purple-50 text-purple-700 border-purple-200',
+  closed: 'bg-gray-100 text-gray-600 border-gray-200',
+};
+
+function PullRequestPanel({ run, onUpdated }: { run: RankRun; onUpdated: (r: RankRun) => void }) {
+  const [busy, setBusy] = useState<'check' | 'merge' | null>(null);
+  const [message, setMessage] = useState<Message>(null);
+  const [mergeable, setMergeable] = useState<boolean | undefined>(run.prMergeable);
+
+  const check = async () => {
+    setBusy('check'); setMessage(null);
+    try {
+      const json = await readJSON<RankRun>(await apiFetch(API_ENDPOINTS.seo.rankRunPR(run.id)));
+      if (!json.success || !json.data) throw new Error(json.error || 'Could not check the pull request');
+      onUpdated(json.data);
+      setMergeable(json.data.prMergeable);
+      const state = json.data.prState;
+      setMessage({
+        type: 'ok',
+        text: state === 'merged' ? 'Merged.' : state === 'closed' ? 'This pull request was closed without merging.'
+          : json.data.prMergeable ? 'Open and ready to merge.' : 'Open, but GitHub reports it can\'t be merged yet (checks running, conflicts or branch protection).',
+      });
+    } catch (e: unknown) {
+      setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Could not check the pull request' });
+    }
+    setBusy(null);
+  };
+
+  const merge = async () => {
+    if (!window.confirm(`Merge pull request #${run.prNumber} into ${run.baseBranch}? The changes will go live on your next deploy.`)) return;
+    setBusy('merge'); setMessage(null);
+    try {
+      const json = await readJSON<RankRun>(await apiFetch(API_ENDPOINTS.seo.rankRunMerge(run.id), { method: 'POST' }));
+      if (!json.success || !json.data) throw new Error(json.error || 'Merge failed');
+      onUpdated(json.data);
+      setMessage({ type: 'ok', text: `Merged into ${run.baseBranch}. Live links below work once your site redeploys.` });
+    } catch (e: unknown) {
+      setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Merge failed' });
+    }
+    setBusy(null);
+  };
+
+  if (!run.prNumber) {
+    // PR couldn't be opened automatically (e.g. missing permission): link to GitHub's compare page.
+    return run.prUrl ? (
+      <a href={run.prUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-emerald-700 font-semibold hover:underline">
+        <GitPullRequest size={14} />{run.prState === 'merged' ? 'View the commit on GitHub' : 'Open the pull request on GitHub'}<ExternalLink size={12} />
+      </a>
+    ) : null;
+  }
+
+  const state = run.prState ?? 'open';
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <GitPullRequest size={16} className="text-gray-500 flex-shrink-0" />
+          <span className="font-semibold text-gray-800">Pull request #{run.prNumber}</span>
+          <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border ${PR_STYLE[state]}`}>{state}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <a href={run.prUrl} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50">
+            <ExternalLink size={12} />View on GitHub
+          </a>
+          <button onClick={check} disabled={busy !== null}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            {busy === 'check' ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}Check PR
+          </button>
+          {state === 'open' && (
+            <button onClick={merge} disabled={busy !== null || mergeable === false}
+              title={mergeable === false ? 'GitHub reports this PR can\'t be merged yet' : undefined}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400">
+              {busy === 'merge' ? <Loader2 size={12} className="animate-spin" /> : <GitMerge size={12} />}Merge
+            </button>
+          )}
+        </div>
+      </div>
+      {run.runBranch && (
+        <p className="text-[11px] text-gray-500 font-mono truncate">{run.runBranch} → {run.baseBranch}</p>
+      )}
+      {state === 'merged' && run.mergedAt && (
+        <p className="text-[11px] text-gray-500">Merged {new Date(run.mergedAt).toLocaleString()}</p>
+      )}
+      <Notice message={message} />
+    </div>
+  );
+}
+
 function RunCard({ run }: { run: RankRun }) {
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<RankRun | null>(null);
@@ -188,31 +279,33 @@ function RunCard({ run }: { run: RankRun }) {
       } catch { /* keep summary view */ }
     }
   };
+  // PR check/merge responses omit the log; keep the one already loaded.
+  const applyUpdate = (u: RankRun) => setDetail(prev => ({ ...u, log: u.log ?? prev?.log }));
   const r = detail ?? run;
+  const merged = r.prState === 'merged';
 
   return (
     <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
       <button onClick={toggle} className="w-full flex items-center justify-between gap-3 p-3 text-left hover:bg-gray-50">
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${STATUS_STYLE[run.status]}`}>
-              {active && <Loader2 size={10} className="animate-spin" />}{run.status}
+            <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${STATUS_STYLE[r.status]}`}>
+              {active && <Loader2 size={10} className="animate-spin" />}{r.status}
             </span>
-            <span className="text-sm font-semibold text-gray-800 truncate">“{run.keyword}”</span>
-            {run.trigger === 'schedule' && <span className="text-[10px] text-gray-400">daily</span>}
+            <span className="text-sm font-semibold text-gray-800 truncate">“{r.keyword}”</span>
+            {r.prNumber ? (
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${PR_STYLE[r.prState ?? 'open']}`}>
+                PR #{r.prNumber} · {r.prState ?? 'open'}
+              </span>
+            ) : null}
+            {r.trigger === 'schedule' && <span className="text-[10px] text-gray-400">daily</span>}
           </div>
           <p className="text-xs text-gray-500 truncate">
-            {active ? run.stage : run.status === 'failed' ? run.error : run.summary}
+            {active ? r.stage : r.status === 'failed' ? r.error : r.summary}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {run.prUrl && (
-            <a href={run.prUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              className="hidden sm:flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg hover:bg-emerald-100">
-              <GitPullRequest size={12} />Review
-            </a>
-          )}
-          <span className="text-[11px] text-gray-400 whitespace-nowrap">{new Date(run.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+          <span className="text-[11px] text-gray-400 whitespace-nowrap">{new Date(r.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
           {open ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
         </div>
       </button>
@@ -223,11 +316,7 @@ function RunCard({ run }: { run: RankRun }) {
             <p className="text-red-600 flex items-start gap-1.5"><AlertCircle size={14} className="mt-0.5 flex-shrink-0" />{r.error}</p>
           )}
           {r.summary && <p className="text-gray-700">{r.summary}</p>}
-          {r.prUrl && (
-            <a href={r.prUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-emerald-700 font-semibold hover:underline">
-              <GitPullRequest size={14} />Review the changes on GitHub<ExternalLink size={12} />
-            </a>
-          )}
+          {(r.prNumber || r.prUrl) && <PullRequestPanel run={r} onUpdated={applyUpdate} />}
           {!!r.improvements?.length && (
             <div>
               <p className="text-[11px] font-semibold text-gray-500 uppercase mb-1 flex items-center gap-1"><ListChecks size={12} />Changes</p>
@@ -243,11 +332,25 @@ function RunCard({ run }: { run: RankRun }) {
           {!!r.files?.length && (
             <div>
               <p className="text-[11px] font-semibold text-gray-500 uppercase mb-1 flex items-center gap-1"><FileCode size={12} />Files ({r.files.length})</p>
-              <ul className="space-y-0.5 font-mono text-xs">
+              <ul className="space-y-1 text-xs">
                 {r.files.map(f => (
-                  <li key={f.path} className="flex justify-between gap-2">
-                    <span className="truncate text-gray-700">{f.path}</span>
-                    <span className="flex-shrink-0"><span className="text-emerald-600">+{f.additions}</span> <span className="text-red-500">−{f.deletions}</span></span>
+                  <li key={f.path} className="flex items-center justify-between gap-2">
+                    <span className="truncate font-mono text-gray-700">{f.path}</span>
+                    <span className="flex items-center gap-2 flex-shrink-0">
+                      <span className="font-mono"><span className="text-emerald-600">+{f.additions}</span> <span className="text-red-500">−{f.deletions}</span></span>
+                      {f.sourceUrl && (
+                        <a href={f.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-0.5 text-gray-500 hover:text-gray-800" title="View source on GitHub">
+                          <Github size={12} />Source
+                        </a>
+                      )}
+                      {f.liveUrl ? (
+                        <a href={f.liveUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-0.5 text-emerald-700 hover:underline" title={f.liveUrl}>
+                          <Globe size={12} />Live
+                        </a>
+                      ) : !merged && r.prNumber ? (
+                        <span className="text-gray-300" title="Live link appears after the pull request is merged">Live</span>
+                      ) : null}
+                    </span>
                   </li>
                 ))}
               </ul>

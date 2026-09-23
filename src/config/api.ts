@@ -88,6 +88,8 @@ export const API_ENDPOINTS = {
     users: `${API_BASE_URL}/api/admin/users`,
     user: (id: string) => `${API_BASE_URL}/api/admin/users/${id}`,
     userRankCredits: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/rank-credits`,
+    seoAgent: `${API_BASE_URL}/api/admin/seo-agent`,
+    logs: `${API_BASE_URL}/api/admin/logs`,
     sendEmail: `${API_BASE_URL}/api/admin/email/promotional`,
     userActivity: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/activity`,
     updateUserPlan: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/plan`,
@@ -227,6 +229,8 @@ export const API_ENDPOINTS = {
     rankRun:                `${API_BASE_URL}/api/seo/rank/run`,
     rankRuns:               `${API_BASE_URL}/api/seo/rank/runs`,
     rankRunDetail:          (id: string) => `${API_BASE_URL}/api/seo/rank/runs/${id}`,
+    rankRunPR:              (id: string) => `${API_BASE_URL}/api/seo/rank/runs/${id}/pr`,
+    rankRunMerge:           (id: string) => `${API_BASE_URL}/api/seo/rank/runs/${id}/merge`,
     rankCredits:            `${API_BASE_URL}/api/seo/rank/credits`,
   },
   // ── SEO Blog (GitHub App) ─────────────────────────────────────────────────────

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
+import { AdminSEOAgentTab } from './AdminSEOAgentTab';
+import { AdminLogsTab } from './AdminLogsTab';
 import {
   Users,
   BarChart3,
@@ -46,6 +48,7 @@ import {
   Sparkles,
   Database,
   Rocket,
+  Terminal,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -83,7 +86,7 @@ interface AdminUser {
   };
 }
 
-type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers' | 'transactions' | 'ai' | 'leads';
+type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers' | 'transactions' | 'ai' | 'seoagent' | 'logs' | 'leads';
 
 interface Invoice {
   id: string;
@@ -4514,6 +4517,8 @@ export function AdminPanel() {
     { id: 'services', label: 'Services', icon: AlertTriangle },
     { id: 'influencers', label: 'Influencers', icon: TrendingUp },
     { id: 'ai', label: 'AI Settings', icon: Cpu },
+    { id: 'seoagent', label: 'SEO Agent', icon: Rocket },
+    { id: 'logs', label: 'Logs', icon: Terminal },
   ];
 
   return (
@@ -4575,6 +4580,8 @@ export function AdminPanel() {
         {tab === 'services' && <ServiceAvailabilityTab />}
         {tab === 'influencers' && <InfluencersTab />}
         {tab === 'ai' && <AITab />}
+        {tab === 'seoagent' && <AdminSEOAgentTab />}
+        {tab === 'logs' && <AdminLogsTab />}
       </div>
     </div>
   );
