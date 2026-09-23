@@ -87,6 +87,7 @@ export const API_ENDPOINTS = {
     stats: `${API_BASE_URL}/api/admin/stats`,
     users: `${API_BASE_URL}/api/admin/users`,
     user: (id: string) => `${API_BASE_URL}/api/admin/users/${id}`,
+    userRankCredits: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/rank-credits`,
     sendEmail: `${API_BASE_URL}/api/admin/email/promotional`,
     userActivity: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/activity`,
     updateUserPlan: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/plan`,

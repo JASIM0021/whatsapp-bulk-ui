@@ -45,6 +45,7 @@ import {
   Zap,
   Sparkles,
   Database,
+  Rocket,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -67,6 +68,7 @@ interface AdminUser {
   canEditLeadSources?: boolean;
   allowedLeadSources?: string[];
   leadBalance?: number;
+  rankCredits?: number;
   freeLeadsClaimed?: boolean;
   createdAt: string;
   subscription?: {
@@ -332,6 +334,13 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
   const [svcSaving, setSvcSaving] = useState(false);
   const [svcMsg, setSvcMsg] = useState('');
 
+  // Rank to Top credits state
+  const [rankCredits, setRankCredits] = useState(0);
+  const [rankAmount, setRankAmount] = useState('10');
+  const [rankNote, setRankNote] = useState('');
+  const [rankSaving, setRankSaving] = useState(false);
+  const [rankMsg, setRankMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
   useEffect(() => {
     if (user) {
       setName(user.name);
@@ -346,6 +355,10 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
       setPlanToSet(user.subscription?.plan || 'monthly');
       setPlanDays('');
       setGrantedServices(new Set(user.subscription?.enabledServices ?? []));
+      setRankCredits(user.rankCredits ?? 0);
+      setRankAmount('10');
+      setRankNote('');
+      setRankMsg(null);
     }
   }, [user]);
 
@@ -439,6 +452,34 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
       setSvcMsg('Network error');
     } finally {
       setSvcSaving(false);
+    }
+  };
+
+  const handleRankCredits = async (sign: 1 | -1) => {
+    const amount = Math.floor(Number(rankAmount));
+    if (!user || !amount || amount < 1) {
+      setRankMsg({ ok: false, text: 'Enter a whole number of credits (1 or more).' });
+      return;
+    }
+    setRankSaving(true); setRankMsg(null);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.admin.userRankCredits(user.id), {
+        method: 'POST',
+        body: JSON.stringify({ amount: sign * amount, note: rankNote.trim() }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setRankMsg({ ok: false, text: data.error || 'Failed to update credits' });
+        return;
+      }
+      setRankCredits(data.data.rankCredits);
+      setRankNote('');
+      setRankMsg({ ok: true, text: `${sign > 0 ? 'Added' : 'Removed'} ${amount} credit${amount === 1 ? '' : 's'}. New balance: ${data.data.rankCredits}.` });
+      onUpdated();
+    } catch {
+      setRankMsg({ ok: false, text: 'Network error' });
+    } finally {
+      setRankSaving(false);
     }
   };
 
@@ -678,6 +719,59 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
           {svcMsg && (
             <p className={`mt-2 text-xs rounded-lg px-3 py-2 ${svcMsg.includes('saved') || svcMsg.includes('Add-ons') ? 'bg-violet-50 text-violet-700' : 'bg-red-50 text-red-600'}`}>
               {svcMsg}
+            </p>
+          )}
+        </div>
+
+        {/* Rank to Top Credits Section */}
+        <div className="px-6 pb-6 border-t border-gray-100 pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              <Rocket size={14} className="text-emerald-500" /> Rank to Top Credits
+            </p>
+            <span className="text-xs text-gray-500">Balance: <span className="font-bold text-emerald-700">{rankCredits}</span></span>
+          </div>
+          <div className="flex gap-2 mb-2">
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={rankAmount}
+              onChange={e => setRankAmount(e.target.value)}
+              className="w-24 px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-emerald-500"
+              aria-label="Number of credits"
+            />
+            <input
+              type="text"
+              value={rankNote}
+              onChange={e => setRankNote(e.target.value)}
+              maxLength={200}
+              placeholder="Note (optional), e.g. goodwill, refund"
+              className="flex-1 min-w-0 px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleRankCredits(1)}
+              disabled={rankSaving}
+              className="flex-1 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+            >
+              {rankSaving ? 'Saving…' : 'Add credits'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRankCredits(-1)}
+              disabled={rankSaving || rankCredits < 1}
+              className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:border-gray-300 disabled:opacity-50 transition-colors"
+            >
+              Remove
+            </button>
+          </div>
+          <p className="mt-2 text-[11px] text-gray-400">1 credit = 1 bot run. Changes are recorded in the user's credit history.</p>
+          {rankMsg && (
+            <p className={`mt-2 text-xs rounded-lg px-3 py-2 ${rankMsg.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+              {rankMsg.text}
             </p>
           )}
         </div>
