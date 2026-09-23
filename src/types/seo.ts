@@ -190,3 +190,200 @@ export interface SEOBlogRepo {
   fullName: string;
   private: boolean;
 }
+
+// ── SEO Keyword Research & Ranking Agent ─────────────────────────────────────
+
+export interface SEOKeywordResult {
+  keyword: string;
+  searchVolume: '<1K' | '1K-10K' | '10K-100K' | '100K-1M' | '>1M';
+  difficulty: number; // 0-100
+  competition: 'low' | 'medium' | 'high';
+  intent: 'informational' | 'commercial' | 'transactional' | 'navigational';
+  trend: 'rising' | 'stable' | 'declining';
+  related: string[];
+  popularity?: number;  // 0-100, autocomplete frequency/position
+  opportunity?: number; // 0-100, volume vs difficulty
+}
+
+export interface SEOKeywordResearchResponse {
+  seed: string;
+  geo: string;
+  keywords: SEOKeywordResult[];
+  questions: string[];
+  totalIdeas: number;
+  context: string;
+  source: 'autocomplete' | 'ai';
+}
+
+export interface SEOKeywordInsightSubscription {
+  enabled: boolean;
+  seeds: string[];
+  geo: string;
+  sendHourUtc: number;
+  email: string;
+  lastSentAt?: string;
+  lastError?: string;
+}
+
+export interface SEOKeywordAgentRec {
+  type: 'on_page' | 'content' | 'technical' | 'backlink';
+  priority: 'high' | 'medium' | 'low';
+  pagePath?: string;
+  title: string;
+  description: string;
+  actionItems: string[];
+}
+
+export interface SEOKeywordAgentResult {
+  recommendations: SEOKeywordAgentRec[];
+  contentBrief: string;
+  rankingScore: number;
+  runAt: string;
+}
+
+export interface SEOTargetedKeyword {
+  id: string;
+  keyword: string;
+  searchVolume: string;
+  difficulty: number;
+  competition: string;
+  intent: string;
+  trend: string;
+  related: string[];
+  agentResult?: SEOKeywordAgentResult;
+  autoPublish: boolean;
+  currentPosition: number;
+  lastScanAt?: string;
+  lastDailyRun?: string;
+  createdAt: string;
+}
+
+// ── SERP Scan & Competitor Analysis ──────────────────────────────────────────
+
+export interface SEOSERPEntry {
+  rank: number;
+  url: string;
+  title: string;
+  snippet: string;
+  domain: string;
+  isUserSite: boolean;
+}
+
+export interface SEOCompetitorBlogPost {
+  url: string;
+  title: string;
+}
+
+export interface SEOCompetitorAnalysis {
+  rank: number;
+  domain: string;
+  url: string;
+  title: string;
+  metaDesc: string;
+  headings: string[];
+  blogPosts: SEOCompetitorBlogPost[];
+  wordCount: number;
+  topKeywords: string[];
+}
+
+export interface SEOSuggestedBlogTitle {
+  title: string;
+  keyword: string;
+  angle: string;
+}
+
+export interface SEOKeywordStrategy {
+  approach: string;
+  contentGaps: string[];
+  suggestedBlogTitles: SEOSuggestedBlogTitle[];
+  quickWins: string[];
+  estimatedTimeToRank: string;
+}
+
+export interface SEOKeywordScanResponse {
+  keywordId: string;
+  keyword: string;
+  userPosition: number;
+  competitors: SEOCompetitorAnalysis[];
+  strategy: SEOKeywordStrategy;
+  scannedAt: string;
+}
+
+export interface SEOKeywordDailyRunResponse {
+  id: string;
+  keyword: string;
+  date: string;
+  blogGenerated: boolean;
+  blogTitle: string;
+  commitUrl: string;
+  error?: string;
+  runAt: string;
+}
+
+// ── Rank to Top ──────────────────────────────────────────────────────────────
+
+export interface RankKeyword {
+  keyword: string;
+  source: 'ai' | 'manual';
+  reason?: string;
+  enabled: boolean;
+  runs: number;
+}
+
+export interface RankConfig {
+  githubConnected: boolean;
+  repoOwner: string;
+  repoName: string;
+  branch: string;
+  deliveryMode: 'pull_request' | 'direct';
+  siteUrl: string;
+  businessBrief: string;
+  nicheSummary: string;
+  keywords: RankKeyword[];
+  enabled: boolean;
+  runHourUtc: number;
+  workspaceBytes: number;
+  workspaceLimit: number;
+  workspaceCommit?: string;
+  workspaceSyncedAt?: string;
+  credits: number;
+  lastError?: string;
+}
+
+export type RankRunStatus = 'queued' | 'preparing' | 'auditing' | 'optimizing' | 'delivering' | 'completed' | 'failed';
+
+export interface RankRun {
+  id: string;
+  keyword: string;
+  trigger: 'manual' | 'schedule';
+  status: RankRunStatus;
+  stage?: string;
+  repo: string;
+  baseBranch: string;
+  runBranch?: string;
+  summary?: string;
+  improvements?: string[];
+  nextSteps?: string[];
+  files?: { path: string; additions: number; deletions: number }[];
+  reverted?: string[];
+  commitSha?: string;
+  prUrl?: string;
+  log?: string;
+  error?: string;
+  creditRefunded: boolean;
+  createdAt: string;
+  finishedAt?: string;
+}
+
+export interface RankCreditPack {
+  plan: string;
+  name: string;
+  credits: number;
+  amount: number;
+}
+
+export interface RankCredits {
+  credits: number;
+  packs: RankCreditPack[];
+  ledger: { delta: number; reason: string; note?: string; createdAt: string }[];
+}

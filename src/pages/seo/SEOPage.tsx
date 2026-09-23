@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Settings, BarChart2, FileText, AlertTriangle, Activity,
   ArrowLeft, Crown, LogOut, User, Zap, Menu, X,
-  MessageSquare, Mail, Facebook, Wrench, Bot, BookOpen, Tag,
+  MessageSquare, Mail, Facebook, Wrench, Bot, BookOpen, Tag, KeyRound, Rocket,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSEOSession } from '@/hooks/useSEOSession';
@@ -16,8 +16,10 @@ import { SEOAutoFixTab } from './SEOAutoFixTab';
 import { SEOBotTab } from './SEOBotTab';
 import { SEOBlogTab } from './SEOBlogTab';
 import { SEOTagManagerTab } from './SEOTagManagerTab';
+import { SEOKeywordTab } from './SEOKeywordTab';
+import { SEORankToTopTab } from './SEORankToTopTab';
 
-type Tab = 'setup' | 'dashboard' | 'pages' | 'issues' | 'vitals' | 'autofix' | 'bot' | 'blog' | 'gtm';
+type Tab = 'setup' | 'dashboard' | 'pages' | 'issues' | 'vitals' | 'autofix' | 'bot' | 'keywords' | 'rank' | 'blog' | 'gtm';
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
   { id: 'setup',     label: 'Setup',       icon: <Settings size={20} />,      desc: 'Embed script' },
@@ -27,6 +29,8 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }
   { id: 'vitals',    label: 'Web Vitals',  icon: <Activity size={20} />,      desc: 'LCP · FCP · CLS · TTFB' },
   { id: 'autofix',   label: 'Auto Fix',    icon: <Wrench size={20} />,        desc: 'Fix issues automatically' },
   { id: 'bot',       label: 'SEO Bot',     icon: <Bot size={20} />,           desc: 'Trends & recommendations' },
+  { id: 'keywords',  label: 'Keywords',    icon: <KeyRound size={20} />,      desc: 'Research & rank with AI agent' },
+  { id: 'rank',      label: 'Rank to Top', icon: <Rocket size={20} />,        desc: 'Daily AI SEO engineer on your code' },
   { id: 'blog',      label: 'Blog Posts',  icon: <BookOpen size={20} />,      desc: 'AI-generated SEO blogs' },
   { id: 'gtm',       label: 'Tag Manager', icon: <Tag size={20} />,           desc: 'Google Tag Manager' },
 ];
@@ -39,6 +43,8 @@ const TAB_LABELS: Record<Tab, string> = {
   vitals:    'Core Web Vitals',
   autofix:   'Auto Fix',
   bot:       'SEO Bot',
+  keywords:  'Keyword Research',
+  rank:      'Rank to Top',
   blog:      'Blog Posts',
   gtm:       'Tag Manager',
 };
@@ -229,6 +235,8 @@ export function SEOPage() {
           {tab === 'vitals'    && <SEOWebVitalsTab />}
           {tab === 'autofix'   && <SEOAutoFixTab />}
           {tab === 'bot'       && <SEOBotTab isPaid={hasSEOBot} />}
+          {tab === 'keywords'  && <SEOKeywordTab isPaid={hasSEOBot} />}
+          {tab === 'rank'      && <SEORankToTopTab isPaid={hasSEOBot} />}
           {tab === 'blog'      && <SEOBlogTab isPaid={hasSEOBot} />}
           {tab === 'gtm'       && <SEOTagManagerTab />}
         </div>

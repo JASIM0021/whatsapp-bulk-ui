@@ -20,7 +20,13 @@ export function SEOBlogCallbackPage() {
       .then(res => res.json())
       .then(json => {
         if (json.success) {
-          navigate('/seo?tab=blog', { replace: true });
+          // The GitHub App is shared by Blog Posts and Rank to Top; return to whichever started the install.
+          let tab = 'blog';
+          try {
+            tab = sessionStorage.getItem('seo_github_return_tab') || 'blog';
+            sessionStorage.removeItem('seo_github_return_tab');
+          } catch { /* ignore */ }
+          navigate(`/seo?tab=${tab === 'rank' ? 'rank' : 'blog'}`, { replace: true });
         } else {
           setError(json.error || 'Failed to save GitHub App installation.');
         }
