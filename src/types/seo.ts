@@ -352,10 +352,19 @@ export interface RankConfig {
 
 export type RankRunStatus = 'queued' | 'preparing' | 'auditing' | 'optimizing' | 'delivering' | 'completed' | 'failed';
 
+export interface RankFileDiff {
+  path: string;
+  url?: string;
+  diff: string;
+  truncated?: boolean;
+}
+
 export interface RankRun {
   id: string;
   keyword: string;
   trigger: 'manual' | 'schedule';
+  mode?: 'repo' | 'live';
+  diffs?: RankFileDiff[];
   status: RankRunStatus;
   stage?: string;
   repo: string;

@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Rocket, Github, GitPullRequest, HardDrive, RefreshCw, Sparkles, Plus, X, Play, Save,
   AlertCircle, CheckCircle, Clock, Coins, ChevronDown, ChevronUp, ExternalLink,
-  ToggleLeft, ToggleRight, Loader2, FileCode, ListChecks, Lightbulb, ShieldCheck, GitMerge, Globe,
+  ToggleLeft, ToggleRight, Loader2, FileCode, ListChecks, Lightbulb, ShieldCheck, GitMerge, Globe, Copy, Check,
 } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
-import type { RankConfig, RankKeyword, RankRun, RankCredits, RankCreditPack, SEOBlogRepo } from '@/types/seo';
+import type { RankConfig, RankKeyword, RankRun, RankCredits, RankCreditPack, RankFileDiff, SEOBlogRepo } from '@/types/seo';
 import { localTimeLabel, UTC_HOUR_OPTIONS } from './utcHourOptions';
 
 const MAX_KEYWORDS = 10;
@@ -172,6 +172,91 @@ function CreditsBar({ credits, onPurchased }: { credits: RankCredits | null; onP
 
 // ── Runs ─────────────────────────────────────────────────────────────────────
 
+// ── Live-site diffs ──────────────────────────────────────────────────────────
+
+interface DiffHunk { header: string; lines: string[] }
+
+// parseHunks splits a unified diff into hunks (file header lines dropped).
+function parseHunks(diff: string): DiffHunk[] {
+  const hunks: DiffHunk[] = [];
+  for (const line of diff.split('\n')) {
+    if (line.startsWith('@@')) hunks.push({ header: line, lines: [] });
+    else if (hunks.length && !line.startsWith('\\')) hunks[hunks.length - 1].lines.push(line);
+  }
+  for (const h of hunks) while (h.lines.length && h.lines[h.lines.length - 1] === '') h.lines.pop();
+  return hunks;
+}
+
+// side returns the hunk as it reads before (context + removed) or after (context + added).
+function side(h: DiffHunk, which: 'before' | 'after'): string {
+  const drop = which === 'before' ? '+' : '-';
+  return h.lines.filter(l => !l.startsWith(drop)).map(l => l.slice(1)).join('\n');
+}
+
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setDone(true);
+      setTimeout(() => setDone(false), 1500);
+    } catch { /* clipboard blocked */ }
+  };
+  return (
+    <button onClick={copy} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-gray-300 bg-white text-gray-700 hover:bg-gray-50">
+      {done ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}{done ? 'Copied' : label}
+    </button>
+  );
+}
+
+function LiveDiff({ d, siteBase }: { d: RankFileDiff; siteBase: string }) {
+  const [open, setOpen] = useState(true);
+  const hunks = parseHunks(d.diff);
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-gray-50 border-b border-gray-200">
+        <button onClick={() => setOpen(v => !v)} className="flex items-center gap-1.5 min-w-0 text-left">
+          {open ? <ChevronUp size={13} className="text-gray-400" /> : <ChevronDown size={13} className="text-gray-400" />}
+          <span className="font-mono text-xs font-semibold text-gray-800 truncate">{d.url || d.path}</span>
+          <span className="text-[10px] text-gray-400">{hunks.length} change{hunks.length === 1 ? '' : 's'}</span>
+        </button>
+        <div className="flex items-center gap-1.5">
+          {d.url && siteBase && (
+            <a href={siteBase + d.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] text-emerald-700 hover:underline">
+              <Globe size={11} />Live page
+            </a>
+          )}
+          {d.diff && <CopyButton text={d.diff} label="Copy diff" />}
+        </div>
+      </div>
+      {open && (
+        <div className="divide-y divide-gray-100">
+          {d.truncated && !d.diff && <p className="px-3 py-2 text-xs text-gray-500">This diff was too large to show.</p>}
+          {hunks.map((h, i) => (
+            <div key={i}>
+              <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-sky-50/60">
+                <span className="font-mono text-[10px] text-sky-700 truncate">{h.header}</span>
+                <span className="flex items-center gap-1.5 flex-shrink-0">
+                  <CopyButton text={side(h, 'before')} label="Copy before" />
+                  <CopyButton text={side(h, 'after')} label="Copy after" />
+                </span>
+              </div>
+              <pre className="overflow-x-auto text-[11px] leading-5 font-mono py-1">
+                {h.lines.map((l, j) => (
+                  <div key={j} className={`px-3 whitespace-pre ${l.startsWith('+') ? 'bg-emerald-50 text-emerald-800' : l.startsWith('-') ? 'bg-red-50 text-red-700' : 'text-gray-600'}`}>
+                    {l || ' '}
+                  </div>
+                ))}
+              </pre>
+            </div>
+          ))}
+          {d.truncated && d.diff && <p className="px-3 py-2 text-[11px] text-gray-500">Diff shortened — the full change is larger.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const PR_STYLE: Record<NonNullable<RankRun['prState']>, string> = {
   open:   'bg-emerald-50 text-emerald-700 border-emerald-200',
   merged: 'bg-purple-50 text-purple-700 border-purple-200',
@@ -298,6 +383,7 @@ function RunCard({ run }: { run: RankRun }) {
                 PR #{r.prNumber} · {r.prState ?? 'open'}
               </span>
             ) : null}
+            {r.mode === 'live' && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200">live site</span>}
             {r.trigger === 'schedule' && <span className="text-[10px] text-gray-400">daily</span>}
           </div>
           <p className="text-xs text-gray-500 truncate">
@@ -317,6 +403,15 @@ function RunCard({ run }: { run: RankRun }) {
           )}
           {r.summary && <p className="text-gray-700">{r.summary}</p>}
           {(r.prNumber || r.prUrl) && <PullRequestPanel run={r} onUpdated={applyUpdate} />}
+          {r.mode === 'live' && !!r.diffs?.length && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase flex items-center gap-1"><Copy size={12} />Copy-paste fixes</p>
+              <p className="text-xs text-gray-500">
+                These are exact before/after changes to your live pages. Find the <b>before</b> text in your site builder, CMS, theme or code and replace it with the <b>after</b> text.
+              </p>
+              {r.diffs.map(d => <LiveDiff key={d.path} d={d} siteBase={`https://${r.repo}`} />)}
+            </div>
+          )}
           {!!r.improvements?.length && (
             <div>
               <p className="text-[11px] font-semibold text-gray-500 uppercase mb-1 flex items-center gap-1"><ListChecks size={12} />Changes</p>
@@ -329,7 +424,7 @@ function RunCard({ run }: { run: RankRun }) {
               <ul className="list-disc pl-5 space-y-0.5 text-gray-700">{r.nextSteps.map((s, i) => <li key={i}>{s}</li>)}</ul>
             </div>
           )}
-          {!!r.files?.length && (
+          {!!r.files?.length && r.mode !== 'live' && (
             <div>
               <p className="text-[11px] font-semibold text-gray-500 uppercase mb-1 flex items-center gap-1"><FileCode size={12} />Files ({r.files.length})</p>
               <ul className="space-y-1 text-xs">
@@ -585,6 +680,7 @@ export function SEORankToTopTab({ isPaid }: { isPaid: boolean }) {
   }
 
   const repoValue = cfg.repoOwner && cfg.repoName ? `${cfg.repoOwner}/${cfg.repoName}` : '';
+  const hasTarget = !!repoValue || !!cfg.siteUrl.trim();
   const usedPct = Math.min(100, (cfg.workspaceBytes / cfg.workspaceLimit) * 100);
   const enabledKeywords = cfg.keywords.filter(k => k.enabled);
 
@@ -592,72 +688,88 @@ export function SEORankToTopTab({ isPaid }: { isPaid: boolean }) {
     <div className="max-w-4xl mx-auto space-y-5">
       <CreditsBar credits={credits} onPurchased={loadCredits} />
 
-      {/* 1. Repository */}
-      <Card step={1} icon={<Github size={16} />} title="Connect your website repository"
-        subtitle="The bot works on a private copy of your code (up to 500 MB) and sends changes as a pull request.">
-        {!cfg.githubConnected ? (
-          <button onClick={connectGitHub} disabled={connecting}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-60">
-            {connecting ? <Loader2 size={15} className="animate-spin" /> : <Github size={15} />}Connect GitHub
+      {/* 1. Website */}
+      <Card step={1} icon={<Globe size={16} />} title="Connect your website"
+        subtitle="Enter your live site. Optionally connect its GitHub repo to get changes as pull requests; without a repo you get copy-paste fixes.">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input value={cfg.siteUrl} onChange={e => update({ siteUrl: e.target.value })} placeholder="https://example.com"
+            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <button onClick={() => save(cfg, setRepoMsg)} disabled={saving || !dirty}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400">
+            <Save size={14} />{saving ? 'Saving…' : 'Save'}
           </button>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-xs font-semibold text-gray-500">Repository</span>
-                <select value={repoValue}
-                  onChange={e => { const [o, n] = e.target.value.split('/'); update({ repoOwner: o || '', repoName: n || '' }); }}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                  <option value="">Select a repository…</option>
-                  {repoValue && !repos.some(r => r.fullName === repoValue) && <option value={repoValue}>{repoValue}</option>}
-                  {repos.map(r => <option key={r.fullName} value={r.fullName}>{r.fullName}{r.private ? ' (private)' : ''}</option>)}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold text-gray-500">Branch</span>
-                <input value={cfg.branch} onChange={e => update({ branch: e.target.value })} placeholder="main"
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold text-gray-500">Live website URL</span>
-                <input value={cfg.siteUrl} onChange={e => update({ siteUrl: e.target.value })} placeholder="https://example.com"
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold text-gray-500">How to deliver changes</span>
-                <select value={cfg.deliveryMode} onChange={e => update({ deliveryMode: e.target.value as RankConfig['deliveryMode'] })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                  <option value="pull_request">Pull request for me to review (recommended)</option>
-                  <option value="direct">Push directly to the branch</option>
-                </select>
-              </label>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span className="flex items-center gap-1"><HardDrive size={12} />Workspace storage</span>
-                <span>{formatBytes(cfg.workspaceBytes)} / {formatBytes(cfg.workspaceLimit)}</span>
+        </div>
+
+        <div className={`rounded-lg border px-3 py-2 text-xs flex items-start gap-2 ${repoValue ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : cfg.siteUrl ? 'bg-sky-50 border-sky-200 text-sky-800' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
+          {repoValue ? <GitPullRequest size={14} className="mt-0.5 flex-shrink-0" /> : <Globe size={14} className="mt-0.5 flex-shrink-0" />}
+          <span>
+            {repoValue
+              ? <>Runs edit <b>{repoValue}</b> and open a pull request for you to review and merge.</>
+              : cfg.siteUrl
+                ? <>Live-site mode: each run reads your live pages, scripts, robots.txt and sitemap, then gives you <b>copy-paste fixes</b> (before/after diffs) for your site builder, CMS or code.</>
+                : <>Enter your website URL to start. Connecting a GitHub repo is optional.</>}
+          </span>
+        </div>
+
+        <div className="border-t border-gray-100 pt-4 space-y-3">
+          <p className="text-xs font-semibold text-gray-500 flex items-center gap-1.5"><Github size={13} />GitHub repository <span className="font-normal text-gray-400">(optional)</span></p>
+          {!cfg.githubConnected ? (
+            <button onClick={connectGitHub} disabled={connecting}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-60">
+              {connecting ? <Loader2 size={15} className="animate-spin" /> : <Github size={15} />}Connect GitHub for pull requests
+            </button>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="block">
+                  <span className="text-xs font-semibold text-gray-500">Repository</span>
+                  <select value={repoValue}
+                    onChange={e => { const [o, n] = e.target.value.split('/'); update({ repoOwner: o || '', repoName: n || '' }); }}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="">None — use live-site mode</option>
+                    {repoValue && !repos.some(r => r.fullName === repoValue) && <option value={repoValue}>{repoValue}</option>}
+                    {repos.map(r => <option key={r.fullName} value={r.fullName}>{r.fullName}{r.private ? ' (private)' : ''}</option>)}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold text-gray-500">Branch</span>
+                  <input value={cfg.branch} onChange={e => update({ branch: e.target.value })} placeholder="main" disabled={!repoValue}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-50" />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold text-gray-500">How to deliver changes</span>
+                  <select value={cfg.deliveryMode} onChange={e => update({ deliveryMode: e.target.value as RankConfig['deliveryMode'] })} disabled={!repoValue}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-50">
+                    <option value="pull_request">Pull request (recommended)</option>
+                    <option value="direct">Push directly to the branch</option>
+                  </select>
+                </label>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full ${usedPct > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usedPct}%` }} />
-              </div>
-              <p className="text-[11px] text-gray-400">
-                {cfg.workspaceSyncedAt
-                  ? `Synced ${new Date(cfg.workspaceSyncedAt).toLocaleString()}${cfg.workspaceCommit ? ` at ${cfg.workspaceCommit}` : ''}`
-                  : 'Not synced yet — sync to check your repository fits.'}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button onClick={() => save(cfg, setRepoMsg)} disabled={saving || !dirty}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400">
-                <Save size={14} />{saving ? 'Saving…' : 'Save'}
-              </button>
-              <button onClick={sync} disabled={syncing || !repoValue || hasActive}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-                <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />{syncing ? 'Syncing…' : 'Sync workspace'}
-              </button>
-            </div>
-          </>
-        )}
+              {repoValue && (
+                <>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span className="flex items-center gap-1"><HardDrive size={12} />Workspace storage</span>
+                      <span>{formatBytes(cfg.workspaceBytes)} / {formatBytes(cfg.workspaceLimit)}</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${usedPct > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usedPct}%` }} />
+                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      {cfg.workspaceSyncedAt
+                        ? `Synced ${new Date(cfg.workspaceSyncedAt).toLocaleString()}${cfg.workspaceCommit ? ` at ${cfg.workspaceCommit}` : ''}`
+                        : 'Not synced yet — sync to check your repository fits.'}
+                    </p>
+                  </div>
+                  <button onClick={sync} disabled={syncing || hasActive}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                    <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />{syncing ? 'Syncing…' : 'Sync workspace'}
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
         <Notice message={repoMsg} />
       </Card>
 
@@ -749,7 +861,9 @@ export function SEORankToTopTab({ isPaid }: { isPaid: boolean }) {
 
       {/* 3. Run */}
       <Card step={3} icon={<Play size={16} />} title="Run the bot"
-        subtitle="Each run audits your code for one keyword, applies the fixes and opens a pull request. Failed runs are refunded.">
+        subtitle={repoValue
+          ? 'Each run audits your code for one keyword, applies the fixes and opens a pull request. Failed runs are refunded.'
+          : 'Each run audits your live pages for one keyword and gives you copy-paste fixes. Failed runs are refunded.'}>
         <div className="flex flex-wrap items-center justify-between gap-3 border border-gray-200 rounded-xl p-3">
           <div>
             <p className="text-sm font-semibold text-gray-800">Run automatically every day</p>
@@ -761,8 +875,8 @@ export function SEORankToTopTab({ isPaid }: { isPaid: boolean }) {
               {UTC_HOUR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <button onClick={() => { const next = { ...cfg, enabled: !cfg.enabled }; setCfg(next); save(next, setRunMsg); }}
-              disabled={saving || (!cfg.enabled && (!repoValue || enabledKeywords.length === 0))}
-              title={!repoValue || enabledKeywords.length === 0 ? 'Connect a repository and add a keyword first' : undefined}
+              disabled={saving || (!cfg.enabled && (!hasTarget || enabledKeywords.length === 0))}
+              title={!hasTarget || enabledKeywords.length === 0 ? 'Enter your website (or connect a repository) and add a keyword first' : undefined}
               className="disabled:opacity-50">
               {cfg.enabled ? <ToggleRight size={30} className="text-emerald-500" /> : <ToggleLeft size={30} className="text-gray-400" />}
             </button>
@@ -777,7 +891,7 @@ export function SEORankToTopTab({ isPaid }: { isPaid: boolean }) {
             <option value="">Next keyword in rotation</option>
             {enabledKeywords.map(k => <option key={k.keyword} value={k.keyword}>{k.keyword}</option>)}
           </select>
-          <button onClick={runNow} disabled={starting || hasActive || !repoValue || enabledKeywords.length === 0 || cfg.credits < 1}
+          <button onClick={runNow} disabled={starting || hasActive || !hasTarget || enabledKeywords.length === 0 || cfg.credits < 1}
             className="flex items-center justify-center gap-1.5 px-5 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400">
             {starting ? <Loader2 size={14} className="animate-spin" /> : <Rocket size={14} />}Run now · 1 credit
           </button>
