@@ -307,6 +307,7 @@ export const API_ENDPOINTS = {
   },
   oauth: {
     approve: `${API_BASE_URL}/api/oauth/approve`,
+    clientInfo: (clientId: string) => `${API_BASE_URL}/api/oauth/client-info?client_id=${encodeURIComponent(clientId)}`,
   },
   // ── Nexbot Calendar & Booking ─────────────────────────────────────────────
   calendar: {

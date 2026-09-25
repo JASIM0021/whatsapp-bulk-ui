@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { useSEO } from '@/hooks/useSEO';
+import { pendingPostAuthRedirect } from '@/lib/postAuthRedirect';
 
 type Step =
   | 'form'            // login / signup form
@@ -31,9 +32,11 @@ export function LoginPage() {
   })();
 
   // After login, redirect back to where the user came from (e.g. /check-chatbot)
-  const redirectTo: string = (location.state as { redirect?: string })?.redirect || '/app';
+  // …or back to an app-connection consent screen (OAuth) the user started before logging in.
+  const redirectTo: string = (location.state as { redirect?: string })?.redirect || pendingPostAuthRedirect() || '/app';
 
   const getPostAuthDest = () => {
+    if (pendingPostAuthRedirect()) return pendingPostAuthRedirect()!;
     if (hasBotDraft) return '/setup';
     return redirectTo;
   };
@@ -197,7 +200,7 @@ export function LoginPage() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Invalid code');
       loginWithToken(data.data.token, data.data.user);
-      navigate('/setup');
+      navigate(pendingPostAuthRedirect() || '/setup');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {

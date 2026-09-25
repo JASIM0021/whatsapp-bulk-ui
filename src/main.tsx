@@ -12,6 +12,7 @@ import { useSetupStatus } from './hooks/useSetupStatus'
 import { LandingLayout } from './components/landing/LandingLayout'
 import { HomePage } from './components/landing/HomePage'
 import { LoginPage } from './components/auth/LoginPage'
+import { pendingPostAuthRedirect, rememberPostAuthRedirect } from './lib/postAuthRedirect'
 
 // Loading spinner for lazy-loaded routes
 function RouteSpinner() {
@@ -80,6 +81,7 @@ function GmailCallbackRedirect() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -90,7 +92,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // OAuth consent (/mcp-auth?…): come back here after login/signup instead of the dashboard.
+    const here = location.pathname + location.search;
+    rememberPostAuthRedirect(here);
+    return <Navigate to="/login" replace state={here.startsWith('/mcp-auth') ? { redirect: here } : undefined} />;
   }
 
   return <>{children}</>;
@@ -108,7 +113,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to={pendingPostAuthRedirect() || '/app'} replace />;
   }
 
   return <>{children}</>;

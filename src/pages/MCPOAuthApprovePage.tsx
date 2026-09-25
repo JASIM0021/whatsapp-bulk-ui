@@ -1,8 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
-import { ShieldCheck, Bot, Check, X, Lock, AlertCircle, User, Sparkles, Key, Share2, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Bot, Check, X, Lock, AlertCircle, User, Sparkles, Key, Share2, ArrowRight, MessageCircle, Smartphone, Crown, ExternalLink, Ban } from 'lucide-react';
+import { clearPostAuthRedirect } from '@/lib/postAuthRedirect';
+
+/** Public info about a trusted partner app (GET /api/oauth/client-info). */
+interface TrustedAppInfo {
+  client_id: string;
+  name: string;
+  trusted: boolean;
+  scope: string;
+  logo_url?: string;
+  description?: string;
+}
 
 export function MCPOAuthApprovePage() {
   const [searchParams] = useSearchParams();
@@ -18,6 +29,17 @@ export function MCPOAuthApprovePage() {
   const state = searchParams.get('state') || '';
   const codeChallenge = searchParams.get('code_challenge') || '';
   const codeChallengeMethod = searchParams.get('code_challenge_method') || '';
+
+  // Trusted partner apps (e.g. Tuition Manager) get their own consent screen; AI agents keep the one below.
+  const [appInfo, setAppInfo] = useState<TrustedAppInfo | null | undefined>(clientID ? undefined : null);
+  useEffect(() => {
+    clearPostAuthRedirect(); // we're back from login/signup
+    if (!clientID) return;
+    apiFetch(API_ENDPOINTS.oauth.clientInfo(clientID))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setAppInfo(d && d.success && d.trusted ? (d as TrustedAppInfo) : null))
+      .catch(() => setAppInfo(null));
+  }, [clientID]);
 
   // Derive friendly app name
   const getAppName = (id: string) => {
@@ -94,6 +116,27 @@ export function MCPOAuthApprovePage() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  if (appInfo === undefined) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (appInfo) {
+    return (
+      <TrustedAppConsent
+        app={appInfo}
+        userEmail={user?.email}
+        loading={loading}
+        error={error}
+        onApprove={handleAuthorize}
+        onCancel={handleCancel}
+      />
     );
   }
 
@@ -228,6 +271,158 @@ export function MCPOAuthApprovePage() {
             <span>End-to-End Encrypted OAuth 2.0 Flow • RFC 7636 PKCE Compliant</span>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+interface WAStatus {
+  linked: boolean;
+}
+interface PlanStatus {
+  plan: string;
+  isActive: boolean;
+  daysLeft: number;
+  hasWhatsApp: boolean;
+}
+
+/** What a partner app may do with each scope, in plain language. */
+const SCOPE_CAN: Record<string, string[]> = {
+  whatsapp: ['Send WhatsApp messages from your linked number (reminders, alerts, receipts)', 'See whether your WhatsApp is linked and your plan status'],
+};
+const CANNOT = ['Read your WhatsApp chats or contacts', 'Access your campaigns, bots, email or other NexBotix data', 'See your password or payment details'];
+
+function TrustedAppConsent({
+  app,
+  userEmail,
+  loading,
+  error,
+  onApprove,
+  onCancel,
+}: {
+  app: TrustedAppInfo;
+  userEmail?: string;
+  loading: boolean;
+  error: string | null;
+  onApprove: () => void;
+  onCancel: () => void;
+}) {
+  const [wa, setWa] = useState<WAStatus | null>(null);
+  const [plan, setPlan] = useState<PlanStatus | null>(null);
+
+  useEffect(() => {
+    apiFetch(API_ENDPOINTS.whatsapp.status)
+      .then((r) => r.json())
+      .then((r) => setWa({ linked: !!(r?.success && r.data?.isConnected && r.data?.isReady) }))
+      .catch(() => setWa({ linked: false }));
+    apiFetch(API_ENDPOINTS.subscription.status)
+      .then((r) => r.json())
+      .then((r) => {
+        const d = r?.data || r;
+        if (d && typeof d === 'object' && 'plan' in d)
+          setPlan({ plan: d.plan, isActive: !!d.isActive, daysLeft: d.daysLeft ?? 0, hasWhatsApp: (d.enabledServices || []).includes('whatsapp') });
+      })
+      .catch(() => {});
+  }, []);
+
+  const can = SCOPE_CAN[app.scope] || [`Use: ${app.scope}`];
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-7 shadow-2xl">
+        <div className="flex items-center justify-center gap-3 mb-5">
+          {app.logo_url ? (
+            <img src={app.logo_url} alt="" className="w-14 h-14 rounded-2xl bg-white p-1" />
+          ) : (
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
+              <ShieldCheck className="w-7 h-7 text-emerald-400" />
+            </div>
+          )}
+          <ArrowRight className="w-5 h-5 text-slate-500" />
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
+            <MessageCircle className="w-7 h-7 text-emerald-400" />
+          </div>
+        </div>
+        <h1 className="text-center text-xl font-bold">Connect {app.name} to NexBotix</h1>
+        {app.description && <p className="text-center text-sm text-slate-400 mt-1.5">{app.description}</p>}
+        {userEmail && <p className="text-center text-xs text-slate-500 mt-2">Signed in as {userEmail}</p>}
+
+        <div className="mt-6 space-y-2">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">{app.name} will be able to</div>
+          {can.map((c) => (
+            <div key={c} className="flex items-start gap-2.5 text-sm text-slate-200">
+              <Check className="w-4 h-4 mt-0.5 text-emerald-400 shrink-0" /> {c}
+            </div>
+          ))}
+          <div className="pt-3 text-xs font-semibold uppercase tracking-wide text-slate-400">It will not be able to</div>
+          {CANNOT.map((c) => (
+            <div key={c} className="flex items-start gap-2.5 text-sm text-slate-400">
+              <Ban className="w-4 h-4 mt-0.5 text-slate-500 shrink-0" /> {c}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 grid gap-2">
+          <div className={`flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm ${wa?.linked ? 'bg-emerald-500/10 text-emerald-300' : 'bg-amber-500/10 text-amber-200'}`}>
+            <Smartphone className="w-4 h-4 shrink-0" />
+            {wa === null ? (
+              'Checking your WhatsApp…'
+            ) : wa.linked ? (
+              'Your WhatsApp is linked — messages will send automatically.'
+            ) : (
+              <span>
+                WhatsApp is not linked yet. You can connect now and link it after:{' '}
+                <a href="/app" target="_blank" rel="noreferrer" className="underline inline-flex items-center gap-1">
+                  scan the QR code <ExternalLink className="w-3 h-3" />
+                </a>
+              </span>
+            )}
+          </div>
+          {plan && (
+            <div className={`flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm ${plan.isActive && plan.hasWhatsApp ? 'bg-slate-800 text-slate-300' : 'bg-red-500/10 text-red-200'}`}>
+              <Crown className="w-4 h-4 shrink-0" />
+              {!plan.isActive ? (
+                <span>
+                  Your NexBotix plan has expired.{' '}
+                  <a href="/subscription" target="_blank" rel="noreferrer" className="underline">Renew</a> to send messages.
+                </span>
+              ) : !plan.hasWhatsApp ? (
+                <span>
+                  Your plan doesn’t include WhatsApp.{' '}
+                  <a href="/subscription" target="_blank" rel="noreferrer" className="underline">Upgrade</a> to send messages.
+                </span>
+              ) : plan.plan === 'trial' ? (
+                `Free trial — ${plan.daysLeft} day${plan.daysLeft === 1 ? '' : 's'} left`
+              ) : (
+                `Plan: ${plan.plan}${plan.daysLeft ? ` · ${plan.daysLeft} days left` : ''}`
+              )}
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl bg-red-500/10 px-3.5 py-2.5 text-sm text-red-300">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> {error}
+          </div>
+        )}
+
+        <div className="mt-6 flex gap-3">
+          <button onClick={onCancel} disabled={loading} className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium disabled:opacity-50">
+            Cancel
+          </button>
+          <button
+            onClick={onApprove}
+            disabled={loading}
+            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <>Allow & connect <ArrowRight className="w-4 h-4" /></>}
+          </button>
+        </div>
+        <p className="mt-4 text-center text-xs text-slate-500">
+          <Lock className="inline w-3 h-3 mr-1" />
+          You can disconnect {app.name} at any time from either app.
+        </p>
       </div>
     </div>
   );
