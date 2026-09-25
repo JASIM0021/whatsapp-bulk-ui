@@ -232,6 +232,7 @@ export const API_ENDPOINTS = {
     rankRunPR:              (id: string) => `${API_BASE_URL}/api/seo/rank/runs/${id}/pr`,
     rankRunMerge:           (id: string) => `${API_BASE_URL}/api/seo/rank/runs/${id}/merge`,
     rankCredits:            `${API_BASE_URL}/api/seo/rank/credits`,
+    rankGithubDisconnect:   `${API_BASE_URL}/api/seo/rank/github/disconnect`,
   },
   // ── SEO Blog (GitHub App) ─────────────────────────────────────────────────────
   seoBlog: {

@@ -452,6 +452,18 @@ function App() {
                 <span>Campaigns</span>
               </button>
 
+              {/* WhatsApp Business (Nexa Pro) */}
+              {user?.subscription?.isActive && (user?.subscription?.enabledServices?.includes('whatsapp_business') || user?.role === 'admin') && (
+                <button
+                  onClick={() => navigate('/whatsapp-business')}
+                  title="WhatsApp Business Cloud API (Nexa Pro)"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors text-xs font-semibold border border-emerald-200"
+                >
+                  <Smartphone size={14} className="text-emerald-600" />
+                  <span>Nexa Pro</span>
+                </button>
+              )}
+
               {/* Email channel switch */}
               {user?.subscription?.isActive && user?.subscription?.enabledServices?.includes('email') && (
                 <button

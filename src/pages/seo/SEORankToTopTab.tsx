@@ -487,6 +487,7 @@ export function SEORankToTopTab({ isPaid }: { isPaid: boolean }) {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [starting, setStarting] = useState(false);
   const [suggestions, setSuggestions] = useState<RankKeyword[]>([]);
@@ -589,6 +590,37 @@ export function SEORankToTopTab({ isPaid }: { isPaid: boolean }) {
       setRepoMsg({ type: 'error', text: e instanceof Error ? e.message : 'Failed to connect GitHub' });
       setConnecting(false);
     }
+  };
+
+  const disconnectGitHub = async () => {
+    if (!cfg) return;
+    const ok = window.confirm(
+      'Disconnect GitHub?\n\n' +
+      '• Rank to Top stops opening pull requests and forgets the repository\n' +
+      '• SEO Blog auto-posting (which uses the same GitHub connection) is paused\n' +
+      '• Our copy of your repository is deleted from the server\n' +
+      '• The NexBotix app is uninstalled from your GitHub account, unless a teammate\'s NexBotix account uses the same GitHub connection\n\n' +
+      (cfg.siteUrl ? 'Daily runs continue in live-site mode for ' + cfg.siteUrl + '.' : 'Daily runs will be turned off (no website URL is set).'));
+    if (!ok) return;
+    setDisconnecting(true);
+    setRepoMsg(null);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.seo.rankGithubDisconnect, { method: 'POST' });
+      const json = await readJSON<{ config: RankConfig; revokedOnGitHub: boolean }>(res);
+      if (!json.success || !json.data) throw new Error(json.error || 'Failed to disconnect');
+      setCfg(json.data.config);
+      setRepos([]);
+      setDirty(false);
+      setRepoMsg({
+        type: 'ok',
+        text: json.data.revokedOnGitHub
+          ? 'GitHub disconnected and the NexBotix app was removed from your GitHub account.'
+          : 'GitHub disconnected from your NexBotix account. The app stays installed on GitHub because another NexBotix account uses it (or GitHub was unreachable) — you can remove it under GitHub → Settings → Applications.',
+      });
+    } catch (e: unknown) {
+      setRepoMsg({ type: 'error', text: e instanceof Error ? e.message : 'Failed to disconnect' });
+    }
+    setDisconnecting(false);
   };
 
   const sync = async () => {
@@ -712,7 +744,19 @@ export function SEORankToTopTab({ isPaid }: { isPaid: boolean }) {
         </div>
 
         <div className="border-t border-gray-100 pt-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 flex items-center gap-1.5"><Github size={13} />GitHub repository <span className="font-normal text-gray-400">(optional)</span></p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-gray-500 flex items-center gap-1.5"><Github size={13} />GitHub repository <span className="font-normal text-gray-400">(optional)</span></p>
+            {cfg.githubConnected && (
+              <span className="flex items-center gap-2">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">connected</span>
+                <button onClick={disconnectGitHub} disabled={disconnecting || hasActive}
+                  title={hasActive ? 'Wait for the current run to finish' : 'Disconnect GitHub and revoke access'}
+                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
+                  {disconnecting ? <Loader2 size={11} className="animate-spin" /> : <X size={11} />}Disconnect
+                </button>
+              </span>
+            )}
+          </div>
           {!cfg.githubConnected ? (
             <button onClick={connectGitHub} disabled={connecting}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-60">

@@ -87,13 +87,16 @@ export function WhatsappBusinessPage() {
   const [savingBot, setSavingBot] = useState(false);
   const [botSavedSuccess, setBotSavedSuccess] = useState(false);
 
+  const [sessionInfo, setSessionInfo] = useState<{ wabaId?: string; phoneId?: string }>({});
+
   const fetchStatus = async () => {
     try {
       const res = await apiFetch(API_ENDPOINTS.whatsappBusiness.status);
       const json = await res.json();
       if (json.success && json.data) {
         setAccount(json.data.account);
-        setAppId(json.data.appId || '');
+        const resolvedAppId = json.data.appId || (import.meta.env.VITE_META_WA_APP_ID as string) || '';
+        setAppId(resolvedAppId);
         setConfigId(json.data.configId || '');
         if (json.data.account) {
           setAutoReply(json.data.account.autoReplyEnabled ?? true);
@@ -101,6 +104,11 @@ export function WhatsappBusinessPage() {
           setSystemPrompt(json.data.account.systemPrompt || '');
           setAiProvider(json.data.account.aiProvider || 'openai');
           setAiModel(json.data.account.aiModel || 'gpt-4o-mini');
+        }
+
+        // Initialize FB SDK if appId is present
+        if (resolvedAppId && typeof window !== 'undefined') {
+          initFacebookSDK(resolvedAppId);
         }
       }
     } catch (e) {
@@ -111,8 +119,68 @@ export function WhatsappBusinessPage() {
     }
   };
 
+  const initFacebookSDK = (fbAppId: string) => {
+    const fbWin = window as any;
+    if (!document.getElementById('facebook-jssdk')) {
+      const js = document.createElement('script');
+      js.id = 'facebook-jssdk';
+      js.src = 'https://connect.facebook.net/en_US/sdk.js';
+      js.async = true;
+      js.defer = true;
+      js.onload = () => {
+        if (fbWin.FB) {
+          fbWin.FB.init({
+            appId: fbAppId,
+            autoLogAppEvents: true,
+            xfbml: true,
+            version: 'v21.0',
+          });
+        }
+      };
+      document.body.appendChild(js);
+    } else if (fbWin.FB) {
+      fbWin.FB.init({
+        appId: fbAppId,
+        autoLogAppEvents: true,
+        xfbml: true,
+        version: 'v21.0',
+      });
+    }
+  };
+
   useEffect(() => {
     fetchStatus();
+
+    // Check URL parameters for OAuth redirect callback (?code=...)
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      handleExchangeCode(code);
+    }
+
+    // Listen for Meta Embedded Signup message events (session info)
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== 'https://www.facebook.com' && event.origin !== 'https://web.facebook.com') {
+        return;
+      }
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data && data.type === 'WA_EMBEDDED_SIGNUP') {
+          if (data.event === 'FINISH' || data.data?.phone_number_id || data.data?.waba_id) {
+            setSessionInfo({
+              wabaId: data.data?.waba_id,
+              phoneId: data.data?.phone_number_id,
+            });
+          }
+        }
+      } catch {
+        // non-json message, ignore
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   // Fetch templates when tab changes to templates or direct/broadcast
@@ -157,24 +225,24 @@ export function WhatsappBusinessPage() {
 
   // Meta Embedded Signup SDK handler
   const handleLaunchEmbeddedSignup = () => {
-    if (!appId) {
-      alert('Meta App ID is not configured on the server. Please use Manual BYOK or set META_WA_APP_ID in backend .env.');
+    const effectiveAppId = appId || (import.meta.env.VITE_META_WA_APP_ID as string) || '';
+    if (!effectiveAppId) {
+      alert('Meta App ID is not configured. Please use Manual BYOK or set META_WA_APP_ID in backend .env.');
       return;
     }
 
-    // Ensure FB SDK is available or open popup
     const fbWindow = window as any;
     if (fbWindow.FB) {
       fbWindow.FB.login(
         (response: any) => {
           if (response.authResponse && response.authResponse.code) {
-            handleExchangeCode(response.authResponse.code);
+            handleExchangeCode(response.authResponse.code, sessionInfo.wabaId, sessionInfo.phoneId);
           } else {
             console.log('User cancelled login or did not fully authorize.');
           }
         },
         {
-          config_id: configId,
+          config_id: configId || undefined,
           response_type: 'code',
           override_default_response_type: true,
           extras: {
@@ -186,8 +254,8 @@ export function WhatsappBusinessPage() {
       );
     } else {
       // Direct Meta OAuth URL fallback
-      const redirectUri = window.location.origin + '/whatsapp-business';
-      const oauthUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(
+      const redirectUri = window.location.origin + '/fb/redirect';
+      const oauthUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${effectiveAppId}&redirect_uri=${encodeURIComponent(
         redirectUri
       )}&scope=whatsapp_business_management,whatsapp_business_messaging&response_type=code`;
       window.location.href = oauthUrl;
@@ -199,7 +267,11 @@ export function WhatsappBusinessPage() {
     try {
       const res = await apiFetch(API_ENDPOINTS.whatsappBusiness.exchangeCode, {
         method: 'POST',
-        body: JSON.stringify({ code, wabaId, phoneNumberId: phoneId }),
+        body: JSON.stringify({
+          code,
+          wabaId: wabaId || sessionInfo.wabaId,
+          phoneNumberId: phoneId || sessionInfo.phoneId,
+        }),
       });
       const json = await res.json();
       if (json.success) {

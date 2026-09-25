@@ -10,9 +10,10 @@ interface Props {
 }
 
 const PRESET_SKILLS = [
-  'web-development', 'mobile-development', 'android', 'ios', 'react-native',
-  'flutter', 'react.js', 'node.js', 'python', 'go', 'php', 'laravel',
-  'wordpress', 'ai-development', 'full-stack'
+  'react', 'react-native', 'next.js', 'typescript', 'javascript',
+  'mobile-development', 'web-development', 'full-stack', 'frontend-development', 'backend-development',
+  'android', 'ios', 'flutter', 'node.js', 'python', 'go', 'php', 'laravel',
+  'api-development', 'ai-development', 'wordpress'
 ];
 
 export function FreelancerConfigTab({ status, config, onRefresh }: Props) {

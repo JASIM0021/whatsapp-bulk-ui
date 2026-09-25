@@ -253,6 +253,13 @@ function AppRoutes() {
           </AppProvider>
         </ProtectedRoute>
       } />
+      <Route path="/fb/redirect" element={
+        <ProtectedRoute>
+          <AppProvider>
+            <WhatsappBusinessPage />
+          </AppProvider>
+        </ProtectedRoute>
+      } />
 
       {/* Facebook channel */}
       <Route path="/facebook" element={
