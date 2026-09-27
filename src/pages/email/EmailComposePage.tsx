@@ -2,12 +2,14 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   Send, Users, FileText, Plus, Clock, Upload,
   CheckCircle2, AlertCircle, Loader2, Variable,
-  X, Mail, ArrowRight, Sparkles, Eye, Code2, ChevronDown,
-  Tag, Copy, Check
+  X, Mail, ArrowRight, Sparkles, ChevronDown,
+  Tag, Copy, Check, Megaphone, Save, Layers, Target
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { useNavigate } from 'react-router-dom';
+import { EmailCampaign, RetargetPayload, RETARGET_STORAGE_KEY } from './emailAnalyticsTypes';
+import { EmailBodyEditor } from './EmailBodyEditor';
 
 interface EmailContact { email: string; name?: string; vars?: Record<string, string> }
 interface EmailTemplate { id: string; name: string; subject: string; bodyHtml: string; variables: string[] }
@@ -27,8 +29,13 @@ const SAMPLE_HTML = `<div style="max-width:600px;margin:0 auto;font-family:Inter
 </div>`;
 
 type ViewMode = 'code' | 'preview';
+type CampaignMode = 'new' | 'existing' | 'none';
 
-export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
+const DEFAULT_BATCH = 100;
+const MAX_PER_SEND = 500;
+const batchStorageKey = (fileKey: string) => `email_batch:${fileKey}`;
+
+export function EmailComposePage({ isPaid, onOpenCampaign }: { isPaid: boolean; onOpenCampaign?: (id: string) => void }) {
   const navigate = useNavigate();
   const [contacts, setContacts] = useState<EmailContact[]>([{ email: '', name: '' }]);
   const [subject, setSubject] = useState('');
@@ -39,7 +46,7 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
   const [showTemplates, setShowTemplates] = useState(false);
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState<{ sent: number; failed: number; total: number } | null>(null);
-  const [done, setDone] = useState<{ sent: number; failed: number; errors: string[]; scheduled?: boolean } | null>(null);
+  const [done, setDone] = useState<{ sent: number; failed: number; errors: string[]; scheduled?: boolean; campaignId?: string } | null>(null);
   const [csvError, setCsvError] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('code');
   const [globalVars, setGlobalVars] = useState<Record<string, string>>({});
@@ -47,6 +54,21 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Batch range (1-based, inclusive) over the valid recipient list
+  const [fileKey, setFileKey] = useState<string | null>(null);
+  const [rangeFrom, setRangeFrom] = useState(1);
+  const [rangeTo, setRangeTo] = useState(0); // 0 = through the end
+  // Save-as-template
+  const [saveTemplate, setSaveTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  // Campaign dialog
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [campaignMode, setCampaignMode] = useState<CampaignMode>('new');
+  const [campaignName, setCampaignName] = useState('');
+  const [campaignId, setCampaignId] = useState('');
+  const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
+  const [retargetFrom, setRetargetFrom] = useState<{ id: string; name: string } | null>(null);
 
   // Collect all available dynamic variable keys from loaded contacts (e.g. name, email, company, address, website...)
   const availableTags = useMemo(() => {
@@ -171,6 +193,33 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
     }
   }, [setContacts]);
 
+  // Load a re-target audience handed over from the Campaigns tab
+  useEffect(() => {
+    const raw = sessionStorage.getItem(RETARGET_STORAGE_KEY);
+    if (!raw) return;
+    sessionStorage.removeItem(RETARGET_STORAGE_KEY);
+    try {
+      const p: RetargetPayload = JSON.parse(raw);
+      if (!p.contacts?.length) return;
+      setContacts(p.contacts.map(c => ({ email: c.email, name: c.name || '', vars: c.vars || undefined })));
+      if (p.subject) setSubject(p.subject);
+      if (p.bodyHtml) setBodyHtml(p.bodyHtml);
+      setFileKey(null); setRangeFrom(1); setRangeTo(0);
+      setCampaignMode('existing'); setCampaignId(p.campaignId);
+      setRetargetFrom({ id: p.campaignId, name: p.campaignName });
+    } catch (e) {
+      console.error('Failed to load re-target audience:', e);
+    }
+  }, []);
+
+  const loadCampaigns = async () => {
+    try {
+      const r = await apiFetch(API_ENDPOINTS.email.campaigns);
+      const d = await r.json();
+      if (d.success) setCampaigns(d.data || []);
+    } catch { /* ignore */ }
+  };
+
   const loadTemplates = async () => {
     try {
       const r = await apiFetch(API_ENDPOINTS.email.templates);
@@ -179,7 +228,41 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
     } catch { /* ignore */ }
   };
 
-  const validCount = contacts.filter(c => c.email.includes('@')).length;
+  // Unique, cleaned recipients in upload order — the list the batch range indexes into
+  const validContacts = useMemo(() => {
+    const seen = new Set<string>();
+    const out: EmailContact[] = [];
+    for (const c of contacts) {
+      const email = (c.email || '').toString().trim().replace(/^["'`]|["'`]$/g, '').toLowerCase();
+      if (email && email.includes('@') && !seen.has(email)) {
+        seen.add(email);
+        out.push({ email, name: (c.name || '').toString().trim(), vars: c.vars });
+      }
+    }
+    return out;
+  }, [contacts]);
+  const validCount = validContacts.length;
+  const batchFrom = Math.min(Math.max(1, rangeFrom || 1), Math.max(1, validCount));
+  const batchTo = rangeTo <= 0 ? validCount : Math.min(Math.max(batchFrom, rangeTo), validCount);
+  const selectedContacts = useMemo(() => validContacts.slice(batchFrom - 1, batchTo), [validContacts, batchFrom, batchTo]);
+  const positionByEmail = useMemo(() => new Map(validContacts.map((c, i) => [c.email, i + 1])), [validContacts]);
+
+  const setBatch = (from: number, size: number) => {
+    const f = Math.min(Math.max(1, from), Math.max(1, validCount));
+    setRangeFrom(f);
+    setRangeTo(Math.min(validCount, f + size - 1));
+  };
+
+  // After an upload, suggest the next unsent batch for this file (remembered per browser)
+  const applyDefaultBatch = (key: string, count: number) => {
+    setFileKey(key);
+    if (count <= DEFAULT_BATCH) { setRangeFrom(1); setRangeTo(0); return; }
+    let last = 0;
+    try { last = Number(localStorage.getItem(batchStorageKey(key)) || 0); } catch { /* storage unavailable */ }
+    const from = last > 0 && last < count ? last + 1 : 1;
+    setRangeFrom(from);
+    setRangeTo(Math.min(count, from + DEFAULT_BATCH - 1));
+  };
   const addRow = () => setContacts(c => [...c, { email: '', name: '' }]);
   const removeRow = (i: number) => setContacts(c => c.filter((_, j) => j !== i));
   const updateRow = (i: number, field: keyof EmailContact, val: string) =>
@@ -261,6 +344,7 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
           const parsed = parseContactsFromRows(rows);
           if (!parsed.length) { setCsvError('No valid email addresses found. Make sure a column is labelled "Email".'); return; }
           setContacts(parsed);
+          applyDefaultBatch(`${file.name}:${parsed.length}`, parsed.length);
         } catch {
           setCsvError('Failed to read Excel file. Please try a CSV instead.');
         }
@@ -276,6 +360,7 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
         const parsed = parseContactsFromRows(rows);
         if (!parsed.length) { setCsvError('No valid email addresses found. Make sure a column is labelled "Email".'); return; }
         setContacts(parsed);
+        applyDefaultBatch(`${file.name}:${parsed.length}`, parsed.length);
       };
       reader.readAsText(file);
     }
@@ -318,23 +403,48 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
     return out;
   }, [globalVars]);
 
-  const send = async () => {
-    const seen = new Set<string>();
-    const valid: EmailContact[] = [];
-    for (const c of contacts) {
-      const cleanEmail = (c.email || '').toString().trim().replace(/^["'`]|["'`]$/g, '').toLowerCase();
-      if (cleanEmail && cleanEmail.includes('@') && !seen.has(cleanEmail)) {
-        seen.add(cleanEmail);
-        valid.push({
-          email: cleanEmail,
-          name: (c.name || '').toString().trim(),
-          vars: c.vars,
-        });
-      }
-    }
-    if (!valid.length) { alert('Add at least one valid email'); return; }
+  // Step 1: validate, then ask how to group this send into a campaign
+  const send = () => {
+    if (!selectedContacts.length) { alert('Add at least one valid email'); return; }
+    if (selectedContacts.length > MAX_PER_SEND) { alert(`You can send to at most ${MAX_PER_SEND} recipients at once — narrow the batch range.`); return; }
     if (!subject.trim()) { alert('Subject is required'); return; }
     if (!bodyHtml.trim()) { alert('Body is required'); return; }
+    if (saveTemplate && !templateName.trim()) { alert('Give the template a name, or untick "Save as template".'); return; }
+    if (!campaignName) {
+      const day = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      setCampaignName(`${subject.trim().slice(0, 60)} · ${day}`);
+    }
+    loadCampaigns();
+    setShowCampaignModal(true);
+  };
+
+  // Step 2: actually send / schedule
+  const doSend = async () => {
+    if (campaignMode === 'new' && !campaignName.trim()) { alert('Enter a campaign name'); return; }
+    if (campaignMode === 'existing' && !campaignId) { alert('Choose a campaign'); return; }
+    setShowCampaignModal(false);
+
+    const valid = selectedContacts;
+    const campaignFields = campaignMode === 'new'
+      ? { campaignName: campaignName.trim() }
+      : campaignMode === 'existing' ? { campaignId } : {};
+
+    if (saveTemplate) {
+      try {
+        const r = await apiFetch(API_ENDPOINTS.email.templates, {
+          method: 'POST',
+          body: JSON.stringify({ name: templateName.trim(), category: 'campaign', subject, bodyHtml, variables: detectedVars }),
+        });
+        const d = await r.json();
+        if (d.success) { setSaveTemplate(false); setTemplateName(''); loadTemplates(); }
+        else alert(`Template not saved: ${d.error || 'unknown error'} — continuing with the send.`);
+      } catch { alert('Template not saved — continuing with the send.'); }
+    }
+
+    const rememberBatch = () => {
+      if (!fileKey) return;
+      try { localStorage.setItem(batchStorageKey(fileKey), String(batchTo)); } catch { /* storage unavailable */ }
+    };
 
     // Build per-contact payloads with variables resolved and vars preserved
     const resolvedContacts = valid.map(c => ({
@@ -350,10 +460,10 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
       try {
         const r = await apiFetch(API_ENDPOINTS.email.schedule, {
           method: 'POST',
-          body: JSON.stringify({ contacts: resolvedContacts, message: { subject, bodyHtml }, scheduledAt: new Date(scheduledAt).toISOString() }),
+          body: JSON.stringify({ contacts: resolvedContacts, message: { subject, bodyHtml }, scheduledAt: new Date(scheduledAt).toISOString(), ...campaignFields }),
         });
         const d = await r.json();
-        if (d.success) setDone({ sent: 0, failed: 0, errors: [], scheduled: true });
+        if (d.success) { rememberBatch(); setDone({ sent: 0, failed: 0, errors: [], scheduled: true, campaignId: d.campaign_id || undefined }); }
         else alert(d.error || 'Failed to schedule');
       } catch { alert('Failed to schedule'); }
       setSending(false); return;
@@ -364,8 +474,14 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
       const response = await fetch(API_ENDPOINTS.email.send, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
-        body: JSON.stringify({ contacts: resolvedContacts, message: { subject, bodyHtml } }),
+        body: JSON.stringify({ contacts: resolvedContacts, message: { subject, bodyHtml }, ...campaignFields }),
       });
+      if (!response.ok) {
+        const d = await response.json().catch(() => ({}));
+        alert(d.error || `Send failed (${response.status})`);
+        setSending(false); setProgress(null); return;
+      }
+      rememberBatch();
       const rdr = response.body?.getReader();
       if (!rdr) { setSending(false); return; }
       const dec = new TextDecoder(); let buf = '';
@@ -388,6 +504,8 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
   const reset = () => {
     setDone(null); setProgress(null); setContacts([{ email: '', name: '' }]);
     setSubject(''); setBodyHtml(SAMPLE_HTML); setScheduleEnabled(false); setScheduledAt('');
+    setFileKey(null); setRangeFrom(1); setRangeTo(0);
+    setCampaignMode('new'); setCampaignName(''); setCampaignId(''); setRetargetFrom(null);
   };
 
   /* Upgrade gate */
@@ -426,6 +544,12 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
             {done.errors.map((e, i) => <p key={i} className="text-xs text-red-700 py-0.5">{e}</p>)}
           </div>
         )}
+        {done.campaignId && onOpenCampaign && (
+          <button onClick={() => onOpenCampaign(done.campaignId!)}
+            className="w-full mb-2 flex items-center justify-center gap-2 py-3 bg-white border border-blue-200 text-blue-700 rounded-xl font-semibold text-sm hover:bg-blue-50 transition-all">
+            <Megaphone size={16} />View campaign tracking
+          </button>
+        )}
         <button onClick={reset}
           className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700 transition-all">
           <ArrowRight size={16} />New Campaign
@@ -436,6 +560,13 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
 
   return (
     <div className="space-y-4">
+
+      {retargetFrom && (
+        <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 border border-blue-200 rounded-2xl text-sm text-blue-800">
+          <Target size={15} className="flex-shrink-0" />
+          <span className="min-w-0">Re-targeting <strong>{retargetFrom.name}</strong>: {validCount} recipient{validCount === 1 ? '' : 's'} loaded. This send will be added to that campaign.</span>
+        </div>
+      )}
 
       {/* ── Recipients ─────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -459,9 +590,13 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
         </div>
         {csvError && <div className="mx-4 mt-2 flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700"><AlertCircle size={12} />{csvError}</div>}
         <div className="px-4 sm:px-5 py-3 space-y-2 max-h-52 overflow-y-auto">
-          {contacts.map((c, i) => (
-            <div key={i} className="flex gap-2 items-center group">
-              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.email.includes('@') ? 'bg-green-500' : 'bg-gray-300'}`} />
+          {contacts.map((c, i) => {
+            const pos = positionByEmail.get((c.email || '').trim().replace(/^["'`]|["'`]$/g, '').toLowerCase());
+            const inBatch = pos !== undefined && pos >= batchFrom && pos <= batchTo;
+            return (
+            <div key={i} className={`flex gap-2 items-center group transition-opacity ${validCount > 1 && !inBatch ? 'opacity-40' : ''}`}>
+              <span className="w-8 text-right text-[10px] text-gray-400 tabular-nums flex-shrink-0">{pos ?? ''}</span>
+              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${inBatch ? 'bg-green-500' : 'bg-gray-300'}`} />
               <input value={c.email} onChange={e => updateRow(i, 'email', e.target.value)} placeholder="email@example.com" type="email"
                 className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
               <input value={c.name || ''} onChange={e => updateRow(i, 'name', e.target.value)} placeholder="Name"
@@ -472,7 +607,8 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
                 </button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
         <div className="px-4 sm:px-5 py-2.5 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1 items-center justify-between">
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
@@ -493,6 +629,43 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
           <p className="text-xs text-gray-400">{validCount} valid</p>
         </div>
       </div>
+
+      {/* ── Batch range ─────────────────────────────────────────── */}
+      {validCount > 1 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Layers size={15} className="text-blue-600" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Send to a batch</p>
+                <p className="text-xs text-gray-400">Pick which rows of your {validCount} contacts to email now</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-gray-500 text-xs">Rows</span>
+              <input type="number" min={1} max={validCount} value={batchFrom}
+                onChange={e => { const f = Number(e.target.value) || 1; setRangeFrom(f); if (rangeTo > 0 && rangeTo < f) setRangeTo(f); }}
+                className="w-20 px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm tabular-nums outline-none focus:ring-2 focus:ring-blue-500" />
+              <span className="text-gray-400">to</span>
+              <input type="number" min={batchFrom} max={validCount} value={batchTo}
+                onChange={e => setRangeTo(Number(e.target.value) || 0)}
+                className="w-20 px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm tabular-nums outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <button onClick={() => setBatch(1, DEFAULT_BATCH)} className="px-2.5 py-1 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">First {Math.min(DEFAULT_BATCH, validCount)}</button>
+            {batchTo < validCount && (
+              <button onClick={() => setBatch(batchTo + 1, batchTo - batchFrom + 1)} className="px-2.5 py-1 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">
+                Next batch → {batchTo + 1}–{Math.min(validCount, batchTo + (batchTo - batchFrom + 1))}
+              </button>
+            )}
+            <button onClick={() => { setRangeFrom(1); setRangeTo(0); }} className="px-2.5 py-1 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">All {validCount}</button>
+            <span className={`ml-auto text-xs font-semibold ${selectedContacts.length > MAX_PER_SEND ? 'text-red-600' : 'text-blue-700'}`}>
+              {selectedContacts.length} selected{selectedContacts.length > MAX_PER_SEND ? ` · max ${MAX_PER_SEND} per send` : ''}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* ── Available Dynamic Variables Bar ──────────────────────── */}
       {availableTags.length > 2 && (
@@ -604,51 +777,18 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
           </div>
         </div>
 
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 min-w-0">
+        <EmailBodyEditor
+          value={bodyHtml}
+          onChange={setBodyHtml}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          subject={subject}
+          renderPreview={html => applyVars(html, contacts[0] || { email: 'john@example.com', name: 'John Doe' })}
+          hint={<>
             <Variable size={12} className="text-gray-400 flex-shrink-0" />
             <span className="truncate">Use {availableTags.slice(0, 3).map(t => `{{${t}}}`).join(', ')}{availableTags.length > 3 ? '...' : ''} for personalization</span>
-          </div>
-          <div className="flex bg-gray-200 rounded-lg p-0.5 gap-0.5 self-end sm:self-auto flex-shrink-0">
-            <button onClick={() => setViewMode('code')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'code' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              <Code2 size={12} />Code
-            </button>
-            <button onClick={() => setViewMode('preview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'preview' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              <Eye size={12} />Preview
-            </button>
-          </div>
-        </div>
-
-        {/* Editor */}
-        {viewMode === 'code' ? (
-          <div>
-            <div className="px-4 py-2 bg-slate-900 flex items-center gap-2">
-              <div className="flex gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500" /><span className="w-3 h-3 rounded-full bg-yellow-500" /><span className="w-3 h-3 rounded-full bg-green-500" /></div>
-              <span className="text-slate-400 text-xs ml-2 font-mono">email.html</span>
-            </div>
-            <textarea value={bodyHtml} onChange={e => setBodyHtml(e.target.value)} rows={14}
-              className="w-full px-4 py-4 bg-slate-950 text-green-400 text-xs font-mono focus:outline-none resize-none leading-relaxed block"
-              placeholder="Paste your HTML email here…" spellCheck={false} />
-          </div>
-        ) : (
-          <div>
-            <div className="px-4 py-2.5 bg-white border-b border-gray-100 flex items-center gap-2 text-xs text-gray-500">
-              <Eye size={12} className="text-blue-500" />
-              <span className="font-medium">Live Preview</span>
-              {subject && <span className="text-gray-400 truncate">· {subject}</span>}
-            </div>
-            <div className="bg-gray-50" style={{ height: 360 }}>
-              {bodyHtml
-                ? <iframe srcDoc={applyVars(bodyHtml, contacts[0] || { email: 'john@example.com', name: 'John Doe' })}
-                    className="w-full h-full border-0" title="Email preview" sandbox="allow-same-origin" />
-                : <div className="flex items-center justify-center h-full text-gray-300"><Mail size={40} /></div>
-              }
-            </div>
-          </div>
-        )}
+          </>}
+        />
       </div>
 
       {/* ── Dynamic Variables ───────────────────────────────────── */}
@@ -710,6 +850,22 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
         </div>
       )}
 
+      {/* ── Save as template ─────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          <input type="checkbox" checked={saveTemplate} onChange={e => {
+            setSaveTemplate(e.target.checked);
+            if (e.target.checked && !templateName) setTemplateName(subject.trim().slice(0, 80));
+          }} className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+          <Save size={15} className={saveTemplate ? 'text-blue-600' : 'text-gray-400'} />
+          <span className={`text-sm font-semibold ${saveTemplate ? 'text-gray-900' : 'text-gray-500'}`}>Save this email as a template for future sends</span>
+        </label>
+        {saveTemplate && (
+          <input value={templateName} onChange={e => setTemplateName(e.target.value)} placeholder="Template name"
+            className="mt-3 w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+        )}
+      </div>
+
       {/* ── Schedule ────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
         <label className="flex items-center justify-between cursor-pointer select-none">
@@ -751,15 +907,62 @@ export function EmailComposePage({ isPaid }: { isPaid: boolean }) {
       )}
 
       {/* ── Send Button ─────────────────────────────────────────── */}
-      <button onClick={send} disabled={sending || validCount === 0}
+      <button onClick={send} disabled={sending || selectedContacts.length === 0}
         className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/30 hover:shadow-blue-500/50">
         {sending
           ? <><Loader2 size={16} className="animate-spin" />{progress ? `Sending ${progress.sent + progress.failed} / ${progress.total}…` : 'Scheduling…'}</>
           : scheduleEnabled
             ? <><Clock size={16} />Schedule Campaign</>
-            : <><Send size={16} />Send to {validCount || '—'} Recipients</>
+            : <><Send size={16} />Send to {selectedContacts.length || '—'} Recipients</>
         }
       </button>
+
+      {/* ── Campaign dialog ─────────────────────────────────────── */}
+      {showCampaignModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowCampaignModal(false)} />
+          <div className="relative w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-bold text-gray-900 flex items-center gap-2"><Megaphone size={16} className="text-blue-600" />Track this send as a campaign?</h3>
+                <p className="text-xs text-gray-500 mt-1">{scheduleEnabled ? 'Scheduling' : 'Sending'} to {selectedContacts.length} recipient{selectedContacts.length === 1 ? '' : 's'}{validCount > 1 ? ` (rows ${batchFrom}–${batchTo})` : ''}. Opens and clicks are tracked either way; a campaign groups them so you can report on and re-target this audience later.</p>
+              </div>
+              <button onClick={() => setShowCampaignModal(false)} className="p-1 text-gray-400 hover:text-gray-700"><X size={16} /></button>
+            </div>
+
+            <div className="space-y-2">
+              {([
+                { id: 'new', label: 'Create a new campaign' },
+                { id: 'existing', label: 'Add to an existing campaign' },
+                { id: 'none', label: 'Send without a campaign' },
+              ] as { id: CampaignMode; label: string }[]).map(o => (
+                <label key={o.id} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer text-sm ${campaignMode === o.id ? 'border-blue-500 bg-blue-50/60' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <input type="radio" name="campaignMode" checked={campaignMode === o.id} onChange={() => setCampaignMode(o.id)} className="text-blue-600 focus:ring-blue-500" />
+                  <span className="font-medium text-gray-800">{o.label}</span>
+                </label>
+              ))}
+            </div>
+
+            {campaignMode === 'new' && (
+              <input autoFocus value={campaignName} onChange={e => setCampaignName(e.target.value)} placeholder="Campaign name, e.g. Clinic outreach – Sep"
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+            )}
+            {campaignMode === 'existing' && (
+              <select value={campaignId} onChange={e => setCampaignId(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="">Choose a campaign…</option>
+                {retargetFrom && !campaigns.some(c => c.id === retargetFrom.id) && <option value={retargetFrom.id}>{retargetFrom.name}</option>}
+                {campaigns.map(c => <option key={c.id} value={c.id}>{c.name} ({c.stats.sent} sent)</option>)}
+              </select>
+            )}
+
+            <button onClick={doSend}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/30">
+              {scheduleEnabled ? <><Clock size={15} />Schedule {selectedContacts.length} emails</> : <><Send size={15} />Send {selectedContacts.length} emails</>}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

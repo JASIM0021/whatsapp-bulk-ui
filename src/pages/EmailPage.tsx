@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Mail, Send, CalendarClock, FileText, Bot, Settings, History,
-  ArrowLeft, Crown, LogOut, User, Zap, MessageSquare, Menu, X
+  ArrowLeft, Crown, LogOut, User, Zap, MessageSquare, Menu, X, LayoutDashboard, Megaphone
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { EmailSMTPPage } from './email/EmailSMTPPage';
@@ -12,12 +12,19 @@ import { EmailTemplatePage } from './email/EmailTemplatePage';
 import { EmailBotPage } from './email/EmailBotPage';
 import { EmailInboxPage } from './email/EmailInboxPage';
 import { EmailSentPage } from './email/EmailSentPage';
+import { EmailOverviewPage } from './email/EmailOverviewPage';
+import { EmailCampaignsPage } from './email/EmailCampaignsPage';
 
-type Tab = 'inbox' | 'compose' | 'schedule' | 'sent' | 'templates' | 'bot' | 'smtp';
+type Tab = 'overview' | 'inbox' | 'compose' | 'campaigns' | 'schedule' | 'sent' | 'templates' | 'bot' | 'smtp';
+
+// Tabs shown in the mobile bottom bar; the rest live in the drawer.
+const MOBILE_TABS: Tab[] = ['overview', 'inbox', 'compose', 'campaigns'];
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
+  { id: 'overview',  label: 'Home',      icon: <LayoutDashboard size={20} />, desc: 'KPIs & tracking' },
   { id: 'inbox',     label: 'Inbox',     icon: <Mail size={20} />,         desc: 'Check messages' },
   { id: 'compose',   label: 'Send',      icon: <Send size={20} />,         desc: 'Bulk campaigns' },
+  { id: 'campaigns', label: 'Campaigns', icon: <Megaphone size={20} />,    desc: 'Opens, clicks, re-target' },
   { id: 'schedule',  label: 'Scheduled', icon: <CalendarClock size={20} />, desc: 'Queued jobs'     },
   { id: 'sent',      label: 'Sent',      icon: <History size={20} />,       desc: 'Sent history'   },
   { id: 'templates', label: 'Templates', icon: <FileText size={20} />,      desc: 'HTML library'   },
@@ -26,11 +33,15 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }
 ];
 
 const TAB_LABELS: Record<Tab, string> = {
-  inbox: 'Inbox Messages', compose: 'Send Email', schedule: 'Scheduled', sent: 'Sent Emails', templates: 'Templates', bot: 'Email Bot', smtp: 'SMTP Setup',
+  overview: 'Email Home', campaigns: 'Campaigns', inbox: 'Inbox Messages', compose: 'Send Email', schedule: 'Scheduled', sent: 'Sent Emails', templates: 'Templates', bot: 'Email Bot', smtp: 'SMTP Setup',
 };
 
 export function EmailPage() {
-  const [tab, setTab] = useState<Tab>('inbox');
+  const [tab, setTab] = useState<Tab>('overview');
+  const [campaignId, setCampaignId] = useState<string | null>(null);
+  // Bumped to remount the composer so it picks up a re-target audience
+  const [composeKey, setComposeKey] = useState(0);
+  const openCampaign = (id: string) => { setCampaignId(id); setTab('campaigns'); };
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -63,7 +74,7 @@ export function EmailPage() {
         {NAV_ITEMS.map(item => (
           <button
             key={item.id}
-            onClick={() => { setTab(item.id); setDrawerOpen(false); }}
+            onClick={() => { setTab(item.id); if (item.id === 'campaigns') setCampaignId(null); setDrawerOpen(false); }}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group ${
               tab === item.id
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
@@ -196,8 +207,16 @@ export function EmailPage() {
 
         {/* Page content */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 pb-20 md:pb-6">
+          {tab === 'overview'  && <EmailOverviewPage onOpenCampaign={openCampaign} onGoToCampaigns={() => { setCampaignId(null); setTab('campaigns'); }} />}
           {tab === 'inbox'     && <EmailInboxPage isPaid={isPaid} />}
-          {tab === 'compose'   && <EmailComposePage isPaid={isPaid} />}
+          {tab === 'compose'   && <EmailComposePage key={composeKey} isPaid={isPaid} onOpenCampaign={openCampaign} />}
+          {tab === 'campaigns' && (
+            <EmailCampaignsPage
+              selectedId={campaignId}
+              onSelect={setCampaignId}
+              onRetarget={() => { setComposeKey(k => k + 1); setTab('compose'); }}
+            />
+          )}
           {tab === 'schedule'  && <EmailSchedulePage isPaid={isPaid} />}
           {tab === 'sent'      && <EmailSentPage isPaid={isPaid} />}
           {tab === 'templates' && <EmailTemplatePage isPaid={isPaid} />}
@@ -207,10 +226,10 @@ export function EmailPage() {
 
         {/* ── Mobile Bottom Tab Bar (hidden on desktop) ─────────── */}
         <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-slate-900 border-t border-slate-800 flex">
-          {NAV_ITEMS.map(item => (
+          {NAV_ITEMS.filter(item => MOBILE_TABS.includes(item.id)).map(item => (
             <button
               key={item.id}
-              onClick={() => setTab(item.id)}
+              onClick={() => { setTab(item.id); if (item.id === 'campaigns') setCampaignId(null); }}
               className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors ${
                 tab === item.id ? 'text-blue-400' : 'text-slate-500'
               }`}
@@ -222,6 +241,15 @@ export function EmailPage() {
               {tab === item.id && <span className="absolute bottom-0 w-8 h-0.5 bg-blue-400 rounded-full" />}
             </button>
           ))}
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors ${
+              !MOBILE_TABS.includes(tab) ? 'text-blue-400' : 'text-slate-500'
+            }`}
+          >
+            <Menu size={20} />
+            <span className="text-[9px] font-semibold leading-none">More</span>
+          </button>
         </nav>
       </div>
     </div>

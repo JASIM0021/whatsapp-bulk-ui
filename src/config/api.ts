@@ -165,6 +165,12 @@ export const API_ENDPOINTS = {
     sentHostinger: `${API_BASE_URL}/api/email/sent/hostinger`,
     sentHostingerMessage: (uid: number) => `${API_BASE_URL}/api/email/sent/hostinger/message/${uid}`,
     uploadDeck: `${API_BASE_URL}/api/email/deck`,
+    uploadImage: `${API_BASE_URL}/api/email/images`,
+    campaigns: `${API_BASE_URL}/api/email/campaigns`,
+    campaign: (id: string) => `${API_BASE_URL}/api/email/campaigns/${id}`,
+    campaignRecipients: (id: string) => `${API_BASE_URL}/api/email/campaigns/${id}/recipients`,
+    campaignRetarget: (id: string) => `${API_BASE_URL}/api/email/campaigns/${id}/retarget`,
+    analyticsOverview: `${API_BASE_URL}/api/email/analytics/overview`,
   },
   // ── Facebook (Omnichannel) ────────────────────────────────────────────
   facebook: {
