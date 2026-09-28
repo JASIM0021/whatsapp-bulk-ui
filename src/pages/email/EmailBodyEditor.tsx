@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Code2, Eye, ImagePlus, Loader2, X, AlignLeft, AlignCenter, AlignRight,
-  ArrowUp, ArrowDown, Trash2, Link2, Maximize2,
+  ArrowUp, ArrowDown, Trash2, Link2, Maximize2, RefreshCw, Upload,
 } from 'lucide-react';
 import {
   EDITOR_ATTR, caretIndexFromPoint, editorElements, findDropTarget, htmlToFragment, imageUnit,
   insertAt, isImageFile, parseTemplate, serializeTemplate, snapOutOfTag, uploadImageAsHtml, DropTarget,
+  caretRangeAt, serializeDisplay, uploadImage, isHttpUrl,
 } from './emailImageUtils';
 
 export type EditorViewMode = 'code' | 'preview';
@@ -23,6 +24,10 @@ interface ImgProps {
 
 interface EditorHandlers {
   value: string;
+  sample: boolean;
+  onInput: () => void;
+  onPaste: (e: ClipboardEvent) => void;
+  onSelectionChange: () => void;
   selIdx: number | null;
   props: ImgProps | null;
   commit: (fn: (raw: Document, els: Element[]) => Element | void) => number | null;
@@ -41,6 +46,7 @@ const MAX_W = 600;
 // Preview-only styles; the element is tagged so it's never saved into the template.
 const EDITOR_STYLE = `<style ${EDITOR_ATTR}>
   img { cursor: pointer; }
+  body[contenteditable="true"] { outline: none; cursor: text; }
   img.nx-sel { outline: 2px solid #2563eb !important; outline-offset: 2px; }
   [data-nx-drop="before"] { box-shadow: 0 -3px 0 0 #2563eb !important; }
   [data-nx-drop="after"] { box-shadow: 0 3px 0 0 #2563eb !important; }
@@ -140,10 +146,24 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
   const [codeDragOver, setCodeDragOver] = useState(false);
   const [selIdx, setSelIdx] = useState<number | null>(null);
   const [props, setProps] = useState<ImgProps | null>(null);
+  const [sample, setSample] = useState(false);
+  const [replaceOpen, setReplaceOpen] = useState(false);
+  const [replaceUrl, setReplaceUrl] = useState('');
+  const replaceFileRef = useRef<HTMLInputElement>(null);
+  const caretRef = useRef<Range | null>(null);
+  const textTimerRef = useRef<number | null>(null);
+
+  // The iframe only reloads when the HTML changes from outside the preview
+  // (code edits, AI, image operations). Text typed in the preview is saved
+  // without reloading, so the cursor stays where it is.
+  const [frameSource, setFrameSource] = useState(value);
+  const [emitted, setEmitted] = useState<string | null>(null);
+  if (value !== frameSource && value !== emitted) setFrameSource(value);
+  const reloadFrame = () => { setEmitted(null); setFrameSource(latest.current.value); };
 
   const frameDoc = () => iframeRef.current?.contentDocument ?? null;
 
-  const uploadAll = async (files: File[]): Promise<string> => {
+  const uploadAll = async (files: File[], inline = false): Promise<string> => {
     const images = files.filter(isImageFile);
     if (images.length < files.length) setError('Only PNG, JPEG, GIF or WebP images can be added.');
     else setError('');
@@ -151,7 +171,7 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
     setUploading(n => n + images.length);
     const parts: string[] = [];
     for (const f of images) {
-      try { parts.push(await uploadImageAsHtml(f)); }
+      try { parts.push(await uploadImageAsHtml(f, inline)); }
       catch (e) { setError(e instanceof Error ? e.message : String(e)); }
       finally { setUploading(n => n - 1); }
     }
@@ -161,7 +181,8 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
   // Everything the iframe listeners need, refreshed after every render so the
   // listeners (attached once per iframe load) never see stale state.
   const latest = useRef<EditorHandlers>({
-    value, selIdx, props,
+    value, selIdx, props, sample,
+    onInput: () => {}, onPaste: () => {}, onSelectionChange: () => {},
     commit: () => null, decorate: () => {}, onDragOver: () => {}, onDrop: () => {},
     onDragStart: () => {}, onClick: () => {}, onKeyDown: () => {}, applyImage: () => {},
   });
@@ -172,7 +193,61 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
    * preview's element index addresses the same node in the raw template.
    * Returns the new index of the image the mutation returns, if any.
    */
+  /** Saves text typed in the preview now (no reload). */
+  const flushText = () => {
+    if (textTimerRef.current !== null) { window.clearTimeout(textTimerRef.current); textTimerRef.current = null; }
+    const doc = frameDoc();
+    if (!doc?.body || latest.current.sample || doc.body.getAttribute('contenteditable') !== 'true') return;
+    const next = serializeDisplay(doc, latest.current.value);
+    if (next === latest.current.value) return;
+    latest.current.value = next;
+    setEmitted(next);
+    onChange(next);
+  };
+
+  const onInput = () => {
+    if (textTimerRef.current !== null) window.clearTimeout(textTimerRef.current);
+    textTimerRef.current = window.setTimeout(flushText, 400);
+  };
+
+  const onSelectionChange = () => {
+    const doc = frameDoc();
+    const sel = doc?.getSelection();
+    if (!doc || !sel || sel.rangeCount === 0) return;
+    const r = sel.getRangeAt(0);
+    if (doc.body.contains(r.startContainer)) caretRef.current = r.cloneRange();
+  };
+
+  /** Drops HTML at a text position in the live preview and selects the new image. */
+  const insertInline = (range: Range, html: string) => {
+    const doc = frameDoc();
+    if (!doc || !doc.body.contains(range.startContainer)) return false;
+    const frag = htmlToFragment(doc, html);
+    const imgs = frag.querySelectorAll('img');
+    const last = imgs[imgs.length - 1] ?? null;
+    const r = range.cloneRange();
+    r.collapse(false);
+    r.insertNode(frag);
+    flushText();
+    if (last) {
+      setSelIdx(editorElements(doc).indexOf(last));
+      setProps(readProps(last as HTMLImageElement));
+    }
+    return true;
+  };
+
+  const onPaste = async (e: ClipboardEvent) => {
+    const files = Array.from(e.clipboardData?.files ?? []).filter(isImageFile);
+    if (!files.length) return; // ordinary text paste → handled by onInput
+    e.preventDefault();
+    const range = caretRef.current;
+    const html = await uploadAll(files, true);
+    if (!html) return;
+    if (!range || !insertInline(range, html)) commit(raw => { raw.body.append(htmlToFragment(raw, html)); });
+  };
+
   const commit = (fn: (raw: Document, els: Element[]) => Element | void): number | null => {
+    flushText();
     const original = latest.current.value;
     const raw = parseTemplate(original);
     const result = fn(raw, editorElements(raw));
@@ -211,6 +286,29 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
       return img;
     });
     if (newIdx !== null) setSelIdx(newIdx);
+  };
+
+  const replaceSrc = (url: string) => {
+    if (selIdx === null) return;
+    const idx = selIdx;
+    const newIdx = commit((_raw, els) => {
+      const img = els[idx];
+      if (img?.tagName !== 'IMG') return;
+      img.setAttribute('src', url);
+      return img;
+    });
+    if (newIdx !== null) setSelIdx(newIdx);
+    setReplaceOpen(false); setReplaceUrl('');
+  };
+
+  const onReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploading(n => n + 1); setError('');
+    try { replaceSrc((await uploadImage(file)).url); }
+    catch (err) { setError(err instanceof Error ? err.message : String(err)); }
+    finally { setUploading(n => n - 1); }
   };
 
   /** Live-resizes the displayed image without saving (slider / drag handle). */
@@ -272,6 +370,7 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
     handle.setAttribute(EDITOR_ATTR, '');
     handle.setAttribute('data-nx-handle', '');
     handle.title = 'Drag to resize';
+    handle.contentEditable = 'false';
     Object.assign(handle.style, {
       position: 'absolute', width: '14px', height: '14px', background: '#2563eb', border: '2px solid #fff',
       borderRadius: '4px', boxShadow: '0 1px 4px rgba(0,0,0,.3)', cursor: 'nwse-resize', zIndex: '9999', touchAction: 'none',
@@ -306,9 +405,11 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
     const types = Array.from(e.dataTransfer?.types ?? []);
     if (!types.includes('Files') && !types.includes(MOVE_TYPE)) return;
     e.preventDefault();
+    if (latest.current.sample) { if (e.dataTransfer) e.dataTransfer.dropEffect = 'none'; return; }
     if (e.dataTransfer) e.dataTransfer.dropEffect = types.includes(MOVE_TYPE) ? 'move' : 'copy';
     const doc = frameDoc();
     if (!doc) return;
+    if (types.includes('Files') && caretRangeAt(doc, e.clientX, e.clientY)) { clearDropMark(); return; } // in-text drop: browser shows the caret
     const t = findDropTarget(doc, e.clientX, e.clientY);
     if (dropMarkRef.current !== t.el) clearDropMark();
     t.el.setAttribute('data-nx-drop', t.pos);
@@ -319,7 +420,7 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
     e.preventDefault();
     clearDropMark();
     const doc = frameDoc();
-    if (!doc || !e.dataTransfer) return;
+    if (!doc || !e.dataTransfer || latest.current.sample) return;
     const t = findDropTarget(doc, e.clientX, e.clientY);
     const tIdx = targetIndex(doc, t);
 
@@ -339,6 +440,13 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
 
     const files = Array.from(e.dataTransfer.files);
     if (!files.length) return;
+    // Dropped onto a line of text → place it right there, inline.
+    const caret = caretRangeAt(doc, e.clientX, e.clientY);
+    if (caret) {
+      const html = await uploadAll(files, true);
+      if (html && insertInline(caret, html)) return;
+      if (!html) return;
+    }
     const html = await uploadAll(files);
     if (!html) return;
     commit((raw, els) => {
@@ -358,7 +466,7 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
   const onClick = (e: MouseEvent) => {
     const el = e.target as Element | null;
     if (el?.closest('a')) e.preventDefault(); // keep links from navigating the preview
-    if (el?.hasAttribute('data-nx-handle')) return;
+    if (el?.hasAttribute('data-nx-handle') || latest.current.sample) return;
     const doc = frameDoc();
     if (doc && el?.tagName === 'IMG') {
       setSelIdx(editorElements(doc).indexOf(el));
@@ -366,6 +474,7 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
     } else {
       setSelIdx(null); setProps(null);
     }
+    setReplaceOpen(false);
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -376,7 +485,12 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
   };
 
   useEffect(() => {
-    latest.current = { value, selIdx, props, commit, decorate, onDragOver, onDrop, onDragStart, onClick, onKeyDown, applyImage };
+    // flushText() writes latest.current.value directly for reads within the same
+    // event; by the time this effect runs the parent has re-rendered with it.
+    latest.current = {
+      value, selIdx, props, sample, onInput, onPaste, onSelectionChange,
+      commit, decorate, onDragOver, onDrop, onDragStart, onClick, onKeyDown, applyImage,
+    };
   });
 
   // Re-highlight when the selection changes without an iframe reload.
@@ -394,6 +508,14 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
     doc.addEventListener('dragstart', e => latest.current.onDragStart(e));
     doc.addEventListener('click', e => latest.current.onClick(e));
     doc.addEventListener('keydown', e => latest.current.onKeyDown(e));
+    if (!latest.current.sample && doc.body) {
+      doc.body.setAttribute('contenteditable', 'true');
+      doc.body.setAttribute('spellcheck', 'true');
+      doc.addEventListener('input', () => latest.current.onInput());
+      doc.addEventListener('paste', e => latest.current.onPaste(e));
+      doc.addEventListener('selectionchange', () => latest.current.onSelectionChange());
+    }
+    caretRef.current = null;
     latest.current.decorate();
   };
 
@@ -432,8 +554,13 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
       insertIntoCode(files, snapOutOfTag(value, ta ? ta.selectionStart : value.length));
       return;
     }
-    // Preview: place after the selected image, otherwise at the end.
+    // Preview: after the selected image, else at the text cursor, else at the end.
     const idx = selIdx;
+    const caret = caretRef.current;
+    if (idx === null && caret) {
+      const html = await uploadAll(files, true);
+      if (!html || insertInline(caret, html)) return;
+    }
     const html = await uploadAll(files);
     if (!html) return;
     commit((raw, els) => {
@@ -444,8 +571,16 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
   };
 
   const switchMode = (m: EditorViewMode) => {
-    if (m === 'code') { setSelIdx(null); setProps(null); }
+    if (m === 'code') { flushText(); setSelIdx(null); setProps(null); }
+    else reloadFrame();
     onViewModeChange(m);
+  };
+
+  const toggleSample = (on: boolean) => {
+    flushText();
+    setSelIdx(null); setProps(null); setReplaceOpen(false);
+    setSample(on);
+    reloadFrame();
   };
 
   const iconBtn = 'p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-white disabled:opacity-40';
@@ -513,10 +648,16 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
             <Eye size={12} className="text-blue-500" />
             <span className="font-medium">Live Preview</span>
             {subject && <span className="text-gray-400 truncate">· {subject}</span>}
-            <span className="ml-auto text-gray-400 hidden md:inline">Drag images in · click one to resize, align, link or move it</span>
+            <span className="ml-auto text-gray-400 hidden lg:inline">
+              {sample ? 'Showing sample data (view only)' : 'Click to edit text · click in a sentence, then add an image to place it there · click an image to edit or replace it'}
+            </span>
+            <label className="flex items-center gap-1.5 cursor-pointer select-none ml-auto lg:ml-3 flex-shrink-0">
+              <input type="checkbox" checked={sample} onChange={e => toggleSample(e.target.checked)} className="accent-blue-600" />
+              Sample data
+            </label>
           </div>
 
-          {props && selIdx !== null && (
+          {props && selIdx !== null && !sample && (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 bg-blue-50/60 border-b border-blue-100 text-xs text-gray-700">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-500">Width</span>
@@ -576,6 +717,31 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
                   placeholder="Alt text" className="w-28 px-2 py-1 border border-gray-200 rounded-md bg-white" />
               </div>
 
+              <div className="relative">
+                <button onClick={() => setReplaceOpen(o => !o)}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium ${replaceOpen ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300'}`}>
+                  <RefreshCw size={12} />Replace
+                </button>
+                {replaceOpen && (
+                  <div className="absolute z-20 top-full mt-1 left-0 w-72 bg-white border border-gray-200 rounded-xl shadow-xl p-3 space-y-2">
+                    <input ref={replaceFileRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="hidden" onChange={onReplaceFile} />
+                    <button onClick={() => replaceFileRef.current?.click()}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
+                      <Upload size={12} />Upload new image
+                    </button>
+                    <p className="text-center text-[10px] text-gray-400 uppercase tracking-wide">or use a link</p>
+                    <div className="flex gap-1.5">
+                      <input autoFocus value={replaceUrl} onChange={e => setReplaceUrl(e.target.value)} placeholder="https://…/image.png"
+                        onKeyDown={e => { if (e.key === 'Enter' && isHttpUrl(replaceUrl)) replaceSrc(replaceUrl.trim()); }}
+                        className="flex-1 min-w-0 px-2 py-1.5 border border-gray-200 rounded-lg" />
+                      <button disabled={!isHttpUrl(replaceUrl)} onClick={() => replaceSrc(replaceUrl.trim())}
+                        className="px-2.5 py-1.5 rounded-lg bg-gray-900 text-white font-semibold disabled:opacity-40">Apply</button>
+                    </div>
+                    <p className="text-[10px] text-gray-400">Size, alignment and link are kept.</p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-0.5 ml-auto">
                 <button onClick={() => moveUnit(-1)} className={iconBtn} title="Move up"><ArrowUp size={13} /></button>
                 <button onClick={() => moveUnit(1)} className={iconBtn} title="Move down"><ArrowDown size={13} /></button>
@@ -586,7 +752,7 @@ export function EmailBodyEditor({ value, onChange, viewMode, onViewModeChange, r
           )}
 
           <div className="relative bg-gray-50" style={{ height: 460 }}>
-            <iframe ref={iframeRef} srcDoc={renderPreview(value) + EDITOR_STYLE} onLoad={onFrameLoad}
+            <iframe ref={iframeRef} srcDoc={(sample ? renderPreview(frameSource) : frameSource) + EDITOR_STYLE} onLoad={onFrameLoad}
               className="w-full h-full border-0" title="Email preview" sandbox="allow-same-origin" />
             {uploading > 0 && (
               <div className="absolute inset-0 bg-white/60 flex items-center justify-center pointer-events-none">

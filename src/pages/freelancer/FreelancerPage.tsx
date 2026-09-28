@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Sliders, Bot, ShieldCheck, History,
-  ArrowLeft, Crown, LogOut, Zap, MessageSquare, Mail, Menu, X, Linkedin, Briefcase
+  ArrowLeft, Crown, LogOut, Zap, Menu, X, Briefcase
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUrlTab } from '@/hooks/useUrlTab';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { FreelancerSessionStatus, FreelancerBotConfig } from '@/types/freelancer';
 import { FreelancerConfigTab } from './FreelancerConfigTab';
@@ -21,6 +22,8 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }
   { id: 'history',   label: 'Bidding Log',   icon: <History size={20} />,     desc: 'Placed Bids Feed'   },
 ];
 
+const TAB_IDS = NAV_ITEMS.map(n => n.id);
+
 const TAB_LABELS: Record<Tab, string> = {
   config: 'Configuration & AI Persona',
   run: 'Auto-Bidding Engine',
@@ -29,9 +32,7 @@ const TAB_LABELS: Record<Tab, string> = {
 };
 
 export function FreelancerPage() {
-  const [searchParams] = useSearchParams();
-  const initialTab = (searchParams.get('tab') as Tab) || 'config';
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const [tab, setTab] = useUrlTab(TAB_IDS, 'config');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -104,39 +105,6 @@ export function FreelancerPage() {
           </button>
         ))}
       </nav>
-
-      <div className="px-3 pb-1 border-t border-slate-800 pt-3 space-y-1">
-        <button
-          onClick={() => navigate('/whatsapp')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-        >
-          <MessageSquare size={18} />
-          <div>
-            <p className="text-sm font-semibold leading-none">WhatsApp</p>
-            <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
-          </div>
-        </button>
-        <button
-          onClick={() => navigate('/email')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-        >
-          <Mail size={18} />
-          <div>
-            <p className="text-sm font-semibold leading-none">Email</p>
-            <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
-          </div>
-        </button>
-        <button
-          onClick={() => navigate('/linkedin')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-        >
-          <Linkedin size={18} />
-          <div>
-            <p className="text-sm font-semibold leading-none">LinkedIn</p>
-            <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
-          </div>
-        </button>
-      </div>
 
       <div className="px-3 pb-4 border-t border-slate-800 pt-3 space-y-2">
         {!isPaid && (

@@ -208,7 +208,7 @@ export default function BlogPostPage() {
 
               <ul className="space-y-2.5 text-xs text-slate-300 font-medium mb-8">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" /> 3-Day Unlimited Free Trial
+                  <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" /> 10 Free Bulk Messages
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" /> Streamable HTTP MCP Endpoint

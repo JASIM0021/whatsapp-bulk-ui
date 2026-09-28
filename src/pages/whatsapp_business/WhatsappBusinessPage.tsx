@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUrlTab } from '@/hooks/useUrlTab';
 import {
   Smartphone,
   Shield,
@@ -26,10 +27,11 @@ import {
 } from '@/types/whatsapp_business';
 
 type TabType = 'connect' | 'templates' | 'broadcast' | 'direct' | 'inbox' | 'bot';
+const TAB_IDS: readonly TabType[] = ['connect', 'templates', 'broadcast', 'direct', 'inbox', 'bot'];
 
 export function WhatsappBusinessPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>('connect');
+  const [activeTab, setActiveTab] = useUrlTab(TAB_IDS, 'connect');
   const [account, setAccount] = useState<WhatsAppBusinessAccount | null>(null);
   const [appId, setAppId] = useState<string>('');
   const [configId, setConfigId] = useState<string>('');

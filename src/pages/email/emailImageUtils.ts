@@ -6,6 +6,7 @@ const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_WIDTH = 1200; // plenty for a 600px email at 2× density
 const RESIZE_OVER_BYTES = 1.5 * 1024 * 1024;
 export const DEFAULT_IMAGE_WIDTH = 560;
+const INLINE_IMAGE_WIDTH = 240;
 
 export const isImageFile = (f: File) => /^image\/(png|jpe?g|gif|webp)$/i.test(f.type);
 
@@ -41,8 +42,8 @@ async function prepareImage(file: File): Promise<{ blob: Blob; width: number; he
   }
 }
 
-/** Uploads an image and returns ready-to-insert email HTML. */
-export async function uploadImageAsHtml(file: File): Promise<string> {
+/** Uploads an image and returns its public URL and (possibly downscaled) width. */
+export async function uploadImage(file: File): Promise<{ url: string; width: number }> {
   if (!isImageFile(file)) throw new Error(`${file.name}: only PNG, JPEG, GIF or WebP images are supported`);
   const { blob, width } = await prepareImage(file);
   if (blob.size > MAX_UPLOAD_BYTES) throw new Error(`${file.name}: image is larger than 5 MB`);
@@ -52,7 +53,19 @@ export async function uploadImageAsHtml(file: File): Promise<string> {
   const r = await apiFetch(API_ENDPOINTS.email.uploadImage, { method: 'POST', body: form });
   const d = await r.json().catch(() => ({}));
   if (!r.ok || !d.success) throw new Error(d.error || `${file.name}: upload failed`);
-  return buildImageHtml(d.url, Math.min(width, DEFAULT_IMAGE_WIDTH), file.name.replace(/\.[^.]+$/, ''));
+  return { url: d.url, width };
+}
+
+/**
+ * Uploads an image and returns ready-to-insert email HTML: a centred block,
+ * or (inline) a bare <img> that can sit inside a line of text.
+ */
+export async function uploadImageAsHtml(file: File, inline = false): Promise<string> {
+  const { url, width } = await uploadImage(file);
+  const alt = file.name.replace(/\.[^.]+$/, '');
+  return inline
+    ? buildInlineImageHtml(url, Math.min(width, INLINE_IMAGE_WIDTH), alt)
+    : buildImageHtml(url, Math.min(width, DEFAULT_IMAGE_WIDTH), alt);
 }
 
 const escAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -61,6 +74,12 @@ const escAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').
 export function buildImageHtml(url: string, width: number, alt = '') {
   return `<div data-nx-img style="text-align:center;margin:16px 0;"><img src="${escAttr(url)}" alt="${escAttr(alt)}" width="${width}" style="display:inline-block;width:${width}px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;" /></div>`;
 }
+
+export function buildInlineImageHtml(url: string, width: number, alt = '') {
+  return `<img src="${escAttr(url)}" alt="${escAttr(alt)}" width="${width}" style="display:inline-block;vertical-align:middle;width:${width}px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;" />`;
+}
+
+export const isHttpUrl = (s: string) => /^https?:\/\/\S+$/i.test(s.trim());
 
 // ── Code editor: map a drop point to a caret index ────────────────────────────
 
@@ -199,4 +218,37 @@ export function imageUnit(img: Element): Element {
   const a = img.parentElement;
   if (a?.tagName === 'A' && a.children.length === 1) return a;
   return img;
+}
+
+// ── Preview editor: inline (in-text) positions ────────────────────────────────
+
+/** Caret position at a point, but only when it falls inside real text. */
+export function caretRangeAt(doc: Document, x: number, y: number): Range | null {
+  let range: Range | null = null;
+  const d = doc as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null };
+  if (d.caretPositionFromPoint) {
+    const pos = d.caretPositionFromPoint(x, y);
+    if (pos) { range = doc.createRange(); range.setStart(pos.offsetNode, pos.offset); range.collapse(true); }
+  } else if (doc.caretRangeFromPoint) {
+    range = doc.caretRangeFromPoint(x, y);
+  }
+  const node = range?.startContainer;
+  if (!range || !node || node.nodeType !== Node.TEXT_NODE || !node.textContent?.trim()) return null;
+  const rect = node.parentElement?.getBoundingClientRect();
+  if (!rect || x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return null;
+  return range;
+}
+
+/** Serializes the live (edited) preview, stripping everything the editor added. */
+export function serializeDisplay(doc: Document, original: string): string {
+  const copy = parseTemplate('<!DOCTYPE html>' + doc.documentElement.outerHTML);
+  copy.querySelectorAll(`[${EDITOR_ATTR}]`).forEach(el => el.remove());
+  copy.querySelectorAll('[data-nx-drop]').forEach(el => el.removeAttribute('data-nx-drop'));
+  copy.querySelectorAll('.nx-sel').forEach(el => {
+    el.classList.remove('nx-sel');
+    if (!el.getAttribute('class')) el.removeAttribute('class');
+  });
+  copy.body.removeAttribute('contenteditable');
+  copy.body.removeAttribute('spellcheck');
+  return serializeTemplate(copy, original);
 }

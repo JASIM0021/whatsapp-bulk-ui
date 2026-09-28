@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-	Database, ArrowLeft, Crown, LogOut, MessageSquare, Menu, X, Mail, Search, Sparkles
+	Database, ArrowLeft, Crown, LogOut, Menu, X, Search, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUrlTab } from '@/hooks/useUrlTab';
 import { LeadsExtractorTab } from './leads/LeadsExtractorTab';
 import { LeadsDatabaseTab } from './leads/LeadsDatabaseTab';
 import { LeadsAutopilotTab } from './leads/LeadsAutopilotTab';
@@ -16,6 +17,8 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }
 	{ id: 'autopilot', label: 'AI Auto Pilot',   icon: <Search size={20} />,     desc: 'Automate outreach & follow-up' },
 ];
 
+const TAB_IDS = NAV_ITEMS.map(n => n.id);
+
 const TAB_LABELS: Record<Tab, string> = {
 	extractor: 'Lead Extractor',
 	database: 'Leads Database',
@@ -23,18 +26,11 @@ const TAB_LABELS: Record<Tab, string> = {
 };
 
 export function LeadsPage() {
-	const [tab, setTab] = useState<Tab>(() => {
-		const saved = localStorage.getItem('leads_active_tab') as Tab;
-		return (saved === 'extractor' || saved === 'database' || saved === 'autopilot') ? saved : 'extractor';
-	});
+	const [tab, handleTabChange] = useUrlTab(TAB_IDS, 'extractor', 'leads_active_tab');
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
 
-	const handleTabChange = (newTab: Tab) => {
-		setTab(newTab);
-		localStorage.setItem('leads_active_tab', newTab);
-	};
 	// isPaid check can be integrated for premium locking if needed
 
 	const SidebarContent = () => (
@@ -81,30 +77,6 @@ export function LeadsPage() {
 					</button>
 				))}
 			</nav>
-
-			{/* Channel switch */}
-			<div className="px-3 pb-1 border-t border-slate-800 pt-3 space-y-1">
-				<button
-					onClick={() => navigate('/whatsapp')}
-					className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-				>
-					<MessageSquare size={18} />
-					<div>
-						<p className="text-sm font-semibold leading-none">WhatsApp</p>
-						<p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
-					</div>
-				</button>
-				<button
-					onClick={() => navigate('/email')}
-					className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-				>
-					<Mail size={18} />
-					<div>
-						<p className="text-sm font-semibold leading-none">Email</p>
-						<p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
-					</div>
-				</button>
-			</div>
 
 			{/* User info */}
 			<div className="p-4 border-t border-slate-800 flex items-center justify-between gap-3">

@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Send, CalendarClock, LayoutGrid,
-  ArrowLeft, Crown, LogOut, User, Zap, MessageSquare, Mail, Menu, X, Link2, Facebook, Bot,
+  ArrowLeft, Crown, LogOut, User, Zap, Menu, X, Link2, Bot,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUrlTab } from '@/hooks/useUrlTab';
 import { useApp } from '@/contexts/AppContext';
 import { useLinkedInSession } from '@/hooks/useLinkedInSession';
 import { LinkedInConnectTab } from './LinkedInConnectTab';
@@ -31,12 +32,14 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }
   { id: 'bot',      label: 'Auto Bot',  icon: <Bot size={20} />,           desc: 'AI automation'    },
 ];
 
+const TAB_IDS = NAV_ITEMS.map(n => n.id);
+
 const TAB_LABELS: Record<Tab, string> = {
   connect: 'Connect Account', compose: 'Create Post', schedule: 'Scheduled Posts', posts: 'Published Posts', bot: 'Auto Bot',
 };
 
 export function LinkedInPage() {
-  const [tab, setTab] = useState<Tab>('connect');
+  const [tab, setTab, tabInUrl] = useUrlTab(TAB_IDS, 'connect');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [oauthBanner, setOauthBanner] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const { user, logout } = useAuth();
@@ -68,7 +71,7 @@ export function LinkedInPage() {
   }, [session.isConnected, session.isLoading, setIsLinkedInConnected]);
 
   useEffect(() => {
-    if (!session.isLoading && session.isConnected && tab === 'connect') {
+    if (!session.isLoading && session.isConnected && tab === 'connect' && !tabInUrl) {
       setTab('compose');
     }
   }, [session.isLoading, session.isConnected]);
@@ -119,31 +122,6 @@ export function LinkedInPage() {
           </button>
         ))}
       </nav>
-
-      {/* Channel switch */}
-      <div className="px-3 pb-1 border-t border-slate-800 pt-3 space-y-1">
-        <button onClick={() => navigate('/whatsapp')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
-          <MessageSquare size={18} />
-          <div>
-            <p className="text-sm font-semibold leading-none">WhatsApp</p>
-            <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
-          </div>
-        </button>
-        <button onClick={() => navigate('/email')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
-          <Mail size={18} />
-          <div>
-            <p className="text-sm font-semibold leading-none">Email</p>
-            <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
-          </div>
-        </button>
-        <button onClick={() => navigate('/facebook')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
-          <Facebook size={18} />
-          <div>
-            <p className="text-sm font-semibold leading-none">Facebook</p>
-            <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
-          </div>
-        </button>
-      </div>
 
       {/* User */}
       <div className="px-3 pb-4 border-t border-slate-800 pt-3 space-y-2">

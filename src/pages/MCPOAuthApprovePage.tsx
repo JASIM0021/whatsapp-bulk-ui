@@ -284,6 +284,7 @@ interface PlanStatus {
   plan: string;
   isActive: boolean;
   daysLeft: number;
+  messagesLeft: number;
   hasWhatsApp: boolean;
 }
 
@@ -321,7 +322,7 @@ function TrustedAppConsent({
       .then((r) => {
         const d = r?.data || r;
         if (d && typeof d === 'object' && 'plan' in d)
-          setPlan({ plan: d.plan, isActive: !!d.isActive, daysLeft: d.daysLeft ?? 0, hasWhatsApp: (d.enabledServices || []).includes('whatsapp') });
+          setPlan({ plan: d.plan, isActive: !!d.isActive, daysLeft: d.daysLeft ?? 0, messagesLeft: Math.max(0, (d.messageLimit ?? 0) - (d.messagesUsed ?? 0)), hasWhatsApp: (d.enabledServices || []).includes('whatsapp') });
       })
       .catch(() => {});
   }, []);
@@ -393,7 +394,7 @@ function TrustedAppConsent({
                   <a href="/subscription" target="_blank" rel="noreferrer" className="underline">Upgrade</a> to send messages.
                 </span>
               ) : plan.plan === 'trial' ? (
-                `Free trial — ${plan.daysLeft} day${plan.daysLeft === 1 ? '' : 's'} left`
+                `Free trial — ${plan.messagesLeft} message${plan.messagesLeft === 1 ? '' : 's'} left`
               ) : (
                 `Plan: ${plan.plan}${plan.daysLeft ? ` · ${plan.daysLeft} days left` : ''}`
               )}

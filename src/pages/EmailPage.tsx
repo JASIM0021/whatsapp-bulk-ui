@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Mail, Send, CalendarClock, FileText, Bot, Settings, History,
-  ArrowLeft, Crown, LogOut, User, Zap, MessageSquare, Menu, X, LayoutDashboard, Megaphone
+  ArrowLeft, Crown, LogOut, User, Zap, Menu, X, LayoutDashboard, Megaphone
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUrlTab } from '@/hooks/useUrlTab';
 import { EmailSMTPPage } from './email/EmailSMTPPage';
 import { EmailComposePage } from './email/EmailComposePage';
 import { EmailSchedulePage } from './email/EmailSchedulePage';
@@ -32,16 +33,28 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }
   { id: 'smtp',      label: 'SMTP',      icon: <Settings size={20} />,      desc: 'Connection'     },
 ];
 
+const TAB_IDS = NAV_ITEMS.map(n => n.id);
+
 const TAB_LABELS: Record<Tab, string> = {
   overview: 'Email Home', campaigns: 'Campaigns', inbox: 'Inbox Messages', compose: 'Send Email', schedule: 'Scheduled', sent: 'Sent Emails', templates: 'Templates', bot: 'Email Bot', smtp: 'SMTP Setup',
 };
 
 export function EmailPage() {
-  const [tab, setTab] = useState<Tab>('overview');
-  const [campaignId, setCampaignId] = useState<string | null>(null);
+  // Tab (and open campaign) live in the URL so a reload keeps your place.
+  const [tab] = useUrlTab(TAB_IDS, 'overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const campaignId = searchParams.get('campaign');
+  const go = (next: Tab, campaign: string | null = null) => {
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      params.set('tab', next);
+      if (campaign) params.set('campaign', campaign); else params.delete('campaign');
+      return params;
+    }, { replace: true });
+  };
   // Bumped to remount the composer so it picks up a re-target audience
   const [composeKey, setComposeKey] = useState(0);
-  const openCampaign = (id: string) => { setCampaignId(id); setTab('campaigns'); };
+  const openCampaign = (id: string) => go('campaigns', id);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -74,7 +87,7 @@ export function EmailPage() {
         {NAV_ITEMS.map(item => (
           <button
             key={item.id}
-            onClick={() => { setTab(item.id); if (item.id === 'campaigns') setCampaignId(null); setDrawerOpen(false); }}
+            onClick={() => { go(item.id); setDrawerOpen(false); }}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group ${
               tab === item.id
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
@@ -91,32 +104,6 @@ export function EmailPage() {
           </button>
         ))}
       </nav>
-
-      {/* Channel switch */}
-      <div className="px-3 pb-1 border-t border-slate-800 pt-3 space-y-1">
-        <button
-          onClick={() => navigate('/whatsapp')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-        >
-          <MessageSquare size={18} />
-          <div>
-            <p className="text-sm font-semibold leading-none">WhatsApp</p>
-            <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
-          </div>
-        </button>
-        <button
-          onClick={() => navigate('/facebook')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-        >
-          <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12.07h2.54V9.845c0-2.507 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562v1.875h2.773l-.443 2.89h-2.33v6.988C20.343 21.201 24 17.064 24 12.073z" />
-          </svg>
-          <div>
-            <p className="text-sm font-semibold leading-none">Facebook</p>
-            <p className="text-[10px] mt-0.5 text-slate-500">Switch channel</p>
-          </div>
-        </button>
-      </div>
 
       {/* User */}
       <div className="px-3 pb-4 border-t border-slate-800 pt-3 space-y-2">
@@ -207,14 +194,14 @@ export function EmailPage() {
 
         {/* Page content */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 pb-20 md:pb-6">
-          {tab === 'overview'  && <EmailOverviewPage onOpenCampaign={openCampaign} onGoToCampaigns={() => { setCampaignId(null); setTab('campaigns'); }} />}
+          {tab === 'overview'  && <EmailOverviewPage onOpenCampaign={openCampaign} onGoToCampaigns={() => go('campaigns')} />}
           {tab === 'inbox'     && <EmailInboxPage isPaid={isPaid} />}
           {tab === 'compose'   && <EmailComposePage key={composeKey} isPaid={isPaid} onOpenCampaign={openCampaign} />}
           {tab === 'campaigns' && (
             <EmailCampaignsPage
               selectedId={campaignId}
-              onSelect={setCampaignId}
-              onRetarget={() => { setComposeKey(k => k + 1); setTab('compose'); }}
+              onSelect={id => go('campaigns', id)}
+              onRetarget={() => { setComposeKey(k => k + 1); go('compose'); }}
             />
           )}
           {tab === 'schedule'  && <EmailSchedulePage isPaid={isPaid} />}
@@ -229,7 +216,7 @@ export function EmailPage() {
           {NAV_ITEMS.filter(item => MOBILE_TABS.includes(item.id)).map(item => (
             <button
               key={item.id}
-              onClick={() => { setTab(item.id); if (item.id === 'campaigns') setCampaignId(null); }}
+              onClick={() => go(item.id)}
               className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors ${
                 tab === item.id ? 'text-blue-400' : 'text-slate-500'
               }`}

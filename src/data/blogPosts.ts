@@ -75,7 +75,7 @@ export const BLOG_POSTS: BlogPost[] = [
       <h2>Real-World Use Case: Automated DevOps Incident Alerting</h2>
       <p>Imagine your CI/CD pipeline fails at 2 AM. Instead of checking emails, your Cursor AI agent automatically analyzes the build logs, diagnoses the root cause, and uses the <code>send_message</code> MCP tool to ping the on-call engineer on WhatsApp with the exact error trace and a one-click fix link. That is the power of connecting AI agents directly to instant messaging.</p>
       
-      <p>Ready to supercharge your AI workflows? Start your 3-day free trial on NexBotix today and experience seamless WhatsApp MCP integration.</p>
+      <p>Ready to supercharge your AI workflows? Start your free trial on NexBotix today with 10 free bulk messages and experience seamless WhatsApp MCP integration.</p>
     `
   },
   {

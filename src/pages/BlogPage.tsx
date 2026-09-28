@@ -277,14 +277,14 @@ export default function BlogPage() {
               Ready to Control WhatsApp with AI Agents?
             </h2>
             <p className="text-slate-400 max-w-xl mx-auto text-base sm:text-lg mb-8">
-              Get instant access to our built-in Model Context Protocol (MCP) server, automated chat flows, and 3 days of unlimited free trial access.
+              Get instant access to our built-in Model Context Protocol (MCP) server, automated chat flows, and 10 free bulk messages to try it out.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 onClick={() => navigate('/login?signup=true')}
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 text-slate-950 font-black text-base shadow-lg shadow-emerald-500/25 hover:scale-105 transition-all flex items-center justify-center gap-2"
               >
-                Start 3-Day Free Trial <ArrowRight className="w-5 h-5" />
+                Start Free Trial — 10 Messages <ArrowRight className="w-5 h-5" />
               </button>
               <button
                 onClick={() => navigate('/pricing')}

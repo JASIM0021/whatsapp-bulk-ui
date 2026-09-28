@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUrlTab } from '@/hooks/useUrlTab';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import {
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react';
 
 type Tab = 'overview' | 'keys' | 'whatsapp' | 'email' | 'calendar' | 'mcp';
+const TAB_IDS: readonly Tab[] = ['overview', 'keys', 'whatsapp', 'email', 'calendar', 'mcp'];
 
 interface APIKeyInfo {
   id: string;
@@ -31,7 +33,7 @@ export function DeveloperPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [activeTab, setActiveTab] = useUrlTab(TAB_IDS, 'overview');
   const [apiKeys, setApiKeys] = useState<APIKeyInfo[]>([]);
   const [keysLoading, setKeysLoading] = useState(false);
   const [connectedAgents, setConnectedAgents] = useState<ConnectedAgentInfo[]>([]);
