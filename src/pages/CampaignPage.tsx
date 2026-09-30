@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, CheckCheck, Check, Clock, X as XIcon,
   MessageSquare, RefreshCw, Users,
-  Inbox, Send, Search,
+  Inbox, Send, Search, Sparkles, Loader2,
 } from 'lucide-react'
 import { apiFetch, API_ENDPOINTS } from '@/config/api'
-import type { Campaign, CampaignMessage, CampaignDetail } from '@/types/campaign'
+import {
+  FOLLOW_UP_DAYS, WA_RETARGET_STORAGE_KEY,
+  type Campaign, type CampaignMessage, type CampaignDetail, type CampaignFollowUp,
+  type FollowUpAudience, type Segment, type WaRetargetPayload,
+} from '@/types/campaign'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -299,147 +303,222 @@ function ReplyDrawer({
 
 // ─── Re-target modal ──────────────────────────────────────────────────────────
 
-function RetargetModal({
-  campaign,
-  messages,
-  onClose,
-}: {
-  campaign: Campaign
-  messages: CampaignMessage[]
-  onClose: () => void
-}) {
-  const [retargetMsg, setRetargetMsg] = useState(campaign.preview || '')
-  const [retargetName, setRetargetName] = useState(`Re: ${campaign.name}`)
-  const [retargetFilter, setRetargetFilter] = useState<'all' | 'failed' | 'not_read'>('all')
+const SEGMENTS: { id: Segment; label: string; hint: string }[] = [
+  { id: 'not_replied', label: "Didn't reply", hint: 'Got the message but never answered' },
+  { id: 'not_read', label: 'Not read', hint: 'Delivered but never opened' },
+  { id: 'read', label: 'Read', hint: 'Opened the message' },
+  { id: 'replied', label: 'Replied', hint: 'Answered at least once' },
+  { id: 'failed', label: 'Failed', hint: 'Send failed: retry these' },
+  { id: 'all', label: 'Everyone', hint: 'Every contact in this campaign' },
+]
+
+function RetargetModal({ campaign, onClose }: { campaign: Campaign; onClose: () => void }) {
+  const navigate = useNavigate()
+  const [counts, setCounts] = useState<Record<string, number> | null>(null)
+  const [segment, setSegment] = useState<Segment>('not_replied')
   const [loading, setLoading] = useState(false)
-  const [done, setDone] = useState('')
+  const [error, setError] = useState('')
 
-  const targetContacts = messages.filter(m => {
-    if (retargetFilter === 'failed') return m.status === 'failed'
-    if (retargetFilter === 'not_read') return m.status !== 'read'
-    return true
-  })
+  useEffect(() => {
+    apiFetch(API_ENDPOINTS.campaigns.segments(campaign.id))
+      .then(r => r.json())
+      .then(d => { if (d.success) setCounts(d.data) })
+      .catch(() => setError('Could not load segments'))
+  }, [campaign.id])
 
-  const handleRetarget = async () => {
-    if (!retargetMsg.trim() || loading) return
-    setLoading(true)
-    const contacts = targetContacts.map(m => ({ phone: m.phone, name: m.name || '' }))
+  const openInComposer = async () => {
+    setLoading(true); setError('')
     try {
-      const res = await apiFetch(API_ENDPOINTS.whatsapp.sendBg, {
-        method: 'POST',
-        body: JSON.stringify({
-          contacts,
-          messages: [{ type: 'text', text: retargetMsg }],
-          campaignName: retargetName.trim() || `Re: ${campaign.name}`,
-        }),
-      })
-      const json = await res.json()
-      if (json.success) {
-        setDone(`Campaign started! ${contacts.length} contacts queued.`)
-        setTimeout(onClose, 2500)
-      } else {
-        setDone('Error: ' + (json.error || 'Failed to start'))
-      }
-    } catch {
-      setDone('Network error')
+      const res = await apiFetch(API_ENDPOINTS.campaigns.retarget(campaign.id), { method: 'POST', body: JSON.stringify({ segment }) })
+      const d = await res.json()
+      if (!d.success) throw new Error(d.error || 'Failed to load contacts')
+      if (!d.data?.length) { setError('Nobody is in that segment yet.'); return }
+      const payload: WaRetargetPayload = { campaignId: campaign.id, campaignName: campaign.name, segment, contacts: d.data }
+      sessionStorage.setItem(WA_RETARGET_STORAGE_KEY, JSON.stringify(payload))
+      navigate('/whatsapp')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to load contacts')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-bold text-gray-900">Re-target Campaign</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Send a follow-up to contacts from this campaign</p>
+            <h3 className="font-bold text-gray-900">Re-target “{campaign.name}”</h3>
+            <p className="text-xs text-gray-500 mt-0.5">Pick who to message again. They open in the composer with this campaign preselected, so you can use variables, images, scheduling and follow-ups.</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
-            <XIcon size={16} />
-          </button>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700"><XIcon size={16} /></button>
         </div>
-        <div className="p-5 space-y-4">
-          {/* Campaign name */}
-          <div>
-            <label className="text-xs font-medium text-gray-700 mb-1.5 block">Campaign name</label>
-            <input
-              type="text"
-              value={retargetName}
-              onChange={e => setRetargetName(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
-            />
-          </div>
-
-          {/* Target filter */}
-          <div>
-            <label className="text-xs font-medium text-gray-700 mb-1.5 block">Send to</label>
-            <div className="flex gap-2">
-              {([
-                ['all', 'All contacts'],
-                ['failed', 'Failed only'],
-                ['not_read', 'Not read'],
-              ] as const).map(([val, label]) => (
-                <button
-                  key={val}
-                  onClick={() => setRetargetFilter(val)}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${retargetFilter === val ? 'bg-green-600 text-white border-green-600' : 'text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <p className="text-[11px] text-gray-400 mt-1.5">{targetContacts.length} contacts selected</p>
-          </div>
-
-          {/* Message */}
-          <div>
-            <label className="text-xs font-medium text-gray-700 mb-1.5 block">Message</label>
-            <textarea
-              rows={4}
-              value={retargetMsg}
-              onChange={e => setRetargetMsg(e.target.value)}
-              placeholder="Type your follow-up message…"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 resize-none"
-            />
-            <button
-              onClick={() => setRetargetMsg(campaign.preview || '')}
-              className="text-[11px] text-blue-600 hover:underline mt-1"
-            >
-              Use same message as original
-            </button>
-          </div>
-
-          {done && (
-            <p className={`text-sm text-center font-medium ${done.startsWith('Error') || done.startsWith('Network') ? 'text-red-600' : 'text-green-600'}`}>
-              {done}
-            </p>
-          )}
-
-          <button
-            onClick={handleRetarget}
-            disabled={!retargetMsg.trim() || loading || targetContacts.length === 0}
-            className="w-full py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? 'Starting…' : `Send to ${targetContacts.length} contacts`}
-          </button>
+        <div className="space-y-1.5">
+          {SEGMENTS.map(sg => {
+            const n = counts?.[sg.id]
+            return (
+              <label key={sg.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer ${segment === sg.id ? 'border-green-500 bg-green-50/60' : 'border-gray-200 hover:border-gray-300'} ${n === 0 ? 'opacity-50' : ''}`}>
+                <input type="radio" name="segment" checked={segment === sg.id} onChange={() => setSegment(sg.id)} className="text-green-600 focus:ring-green-500" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800">{sg.label}</p>
+                  <p className="text-[11px] text-gray-400">{sg.hint}</p>
+                </div>
+                <span className="text-sm font-bold text-gray-700">{n ?? '…'}</span>
+              </label>
+            )
+          })}
         </div>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+        <button onClick={openInComposer} disabled={loading || !counts || counts[segment] === 0}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400">
+          {loading ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+          Open {counts?.[segment] ?? ''} contact{counts?.[segment] === 1 ? '' : 's'} in composer
+        </button>
       </div>
     </div>
   )
 }
 
-// ─── Campaign detail panel ────────────────────────────────────────────────────
+// ─── Auto follow-up ───────────────────────────────────────────────────────────
+
+const AUDIENCES: { id: FollowUpAudience; label: string }[] = [
+  { id: 'not_replied', label: "People who didn't reply" },
+  { id: 'not_read', label: "People who didn't read it" },
+  { id: 'all', label: 'Everyone who received it' },
+]
+
+function FollowUpPanel({
+  campaign, nextFollowUpAt, pending, onSaved,
+}: {
+  campaign: Campaign
+  nextFollowUpAt?: string | null
+  pending?: number
+  onSaved: () => void
+}) {
+  const initial: CampaignFollowUp = campaign.followUp ?? { enabled: false, afterDays: 7, audience: 'not_replied' }
+  const [f, setF] = useState<CampaignFollowUp>(initial)
+  const [open, setOpen] = useState(!!campaign.followUp?.enabled)
+  const [saving, setSaving] = useState(false)
+  const [drafting, setDrafting] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  useEffect(() => {
+    setF(campaign.followUp ?? { enabled: false, afterDays: 7, audience: 'not_replied' })
+  }, [campaign.id, campaign.followUp])
+
+  const save = async (next: CampaignFollowUp) => {
+    setSaving(true); setMsg(null)
+    try {
+      const res = await apiFetch(API_ENDPOINTS.campaigns.followUp(campaign.id), { method: 'PUT', body: JSON.stringify(next) })
+      const d = await res.json()
+      if (!d.success) throw new Error(d.error || 'Failed to save')
+      setF(d.data.campaign.followUp ?? next)
+      setMsg({ ok: true, text: next.enabled ? `Auto follow-up on: ${next.afterDays} days after each message.` : 'Auto follow-up switched off.' })
+      onSaved()
+    } catch (e: unknown) {
+      setMsg({ ok: false, text: e instanceof Error ? e.message : 'Failed to save' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const draft = async () => {
+    setDrafting(true); setMsg(null)
+    try {
+      const res = await apiFetch(API_ENDPOINTS.campaigns.followUpGenerate(campaign.id), {
+        method: 'POST', body: JSON.stringify({ instructions: f.instructions ?? '', afterDays: f.afterDays }),
+      })
+      const d = await res.json()
+      if (!d.success) throw new Error(d.error || 'AI could not write a message')
+      setF(prev => ({ ...prev, message: d.data.message }))
+    } catch (e: unknown) {
+      setMsg({ ok: false, text: e instanceof Error ? e.message : 'AI could not write a message' })
+    } finally {
+      setDrafting(false)
+    }
+  }
+
+  return (
+    <div className="mt-3 border border-violet-200 bg-violet-50/40 rounded-xl">
+      <button onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left">
+        <span className="flex items-center gap-2 text-sm font-semibold text-violet-900">
+          <Sparkles size={14} />AI auto follow-up
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${f.enabled ? 'bg-violet-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+            {f.enabled ? `ON · ${f.afterDays} days` : 'OFF'}
+          </span>
+        </span>
+        <span className="text-[11px] text-violet-700">
+          {campaign.followUpSent > 0 && `${campaign.followUpSent} sent`}
+          {f.enabled && nextFollowUpAt && ` · next ${new Date(nextFollowUpAt).toLocaleDateString([], { day: 'numeric', month: 'short' })}`}
+          {f.enabled && !!pending && ` · ${pending} waiting`}
+        </span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-2.5">
+          <p className="text-[11px] text-gray-500">AI sends one follow-up to each matching contact once their message is this many days old. It uses your WhatsApp connection, the same pacing as bulk sends, and counts toward your message quota.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label className="text-xs text-gray-600">Send after
+              <select value={f.afterDays} onChange={e => setF({ ...f, afterDays: Number(e.target.value) })}
+                className="mt-1 w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg bg-white">
+                {FOLLOW_UP_DAYS.map(d => <option key={d} value={d}>{d} days</option>)}
+              </select>
+            </label>
+            <label className="text-xs text-gray-600">Who gets it
+              <select value={f.audience} onChange={e => setF({ ...f, audience: e.target.value as FollowUpAudience })}
+                className="mt-1 w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg bg-white">
+                {AUDIENCES.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <label className="block text-xs text-gray-600">Instructions for the AI (optional)
+            <input value={f.instructions ?? ''} onChange={e => setF({ ...f, instructions: e.target.value })} maxLength={500}
+              placeholder="e.g. mention the offer ends Sunday, keep it short"
+              className="mt-1 w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg bg-white" />
+          </label>
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-600">Follow-up message</span>
+              <button onClick={draft} disabled={drafting} className="flex items-center gap-1 text-[11px] font-semibold text-violet-700 hover:underline disabled:opacity-50">
+                {drafting ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}Write with AI
+              </button>
+            </div>
+            <textarea value={f.message ?? ''} onChange={e => setF({ ...f, message: e.target.value })} rows={3} maxLength={1000}
+              placeholder="Leave empty and AI writes it when the first follow-up is due. {{name}} is filled per contact."
+              className="mt-1 w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg bg-white" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={() => save({ ...f, enabled: true })} disabled={saving}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50">
+              {saving ? 'Saving…' : f.enabled ? 'Save changes' : 'Turn on auto follow-up'}
+            </button>
+            {f.enabled && (
+              <button onClick={() => save({ ...f, enabled: false })} disabled={saving}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 border border-gray-300 hover:bg-white disabled:opacity-50">
+                Turn off
+              </button>
+            )}
+            {msg && <span className={`text-xs ${msg.ok ? 'text-violet-700' : 'text-red-600'}`}>{msg.text}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function CampaignDetailPanel({
   campaign,
   messages,
   onRefresh,
   isRefreshing,
+  nextFollowUpAt,
+  followUpPending,
 }: {
   campaign: Campaign
   messages: CampaignMessage[]
   onRefresh: () => void
   isRefreshing: boolean
+  nextFollowUpAt?: string | null
+  followUpPending?: number
 }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'replied' | 'failed' | 'unread'>('all')
@@ -506,6 +585,8 @@ function CampaignDetailPanel({
             </div>
           ))}
         </div>
+
+        <FollowUpPanel campaign={campaign} nextFollowUpAt={nextFollowUpAt} pending={followUpPending} onSaved={onRefresh} />
 
         {/* Progress bar */}
         {campaign.total > 0 && (
@@ -576,7 +657,6 @@ function CampaignDetailPanel({
       {showRetarget && (
         <RetargetModal
           campaign={campaign}
-          messages={messages}
           onClose={() => setShowRetarget(false)}
         />
       )}
@@ -721,6 +801,8 @@ export function CampaignPage() {
               messages={detail.messages}
               onRefresh={() => loadDetail(selectedId, true)}
               isRefreshing={isRefreshing}
+              nextFollowUpAt={detail.nextFollowUpAt}
+              followUpPending={detail.followUpPending}
             />
           ) : isDetailLoading ? (
             <div className="flex items-center justify-center h-full text-gray-400">

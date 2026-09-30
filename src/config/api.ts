@@ -137,6 +137,10 @@ export const API_ENDPOINTS = {
     list: `${API_BASE_URL}/api/campaigns`,
     get: (id: string) => `${API_BASE_URL}/api/campaigns/${id}`,
     messages: (id: string) => `${API_BASE_URL}/api/campaigns/${id}/messages`,
+    segments: (id: string) => `${API_BASE_URL}/api/campaigns/${id}/segments`,
+    retarget: (id: string) => `${API_BASE_URL}/api/campaigns/${id}/retarget`,
+    followUp: (id: string) => `${API_BASE_URL}/api/campaigns/${id}/follow-up`,
+    followUpGenerate: (id: string) => `${API_BASE_URL}/api/campaigns/${id}/follow-up/generate`,
     markReplyRead: (campaignId: string, msgId: string) =>
       `${API_BASE_URL}/api/campaigns/${campaignId}/messages/${msgId}/read-reply`,
     reply: (campaignId: string, msgId: string) =>

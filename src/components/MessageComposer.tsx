@@ -1,8 +1,10 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Message } from '@/types/message';
 import type { Contact } from '@/types/contact';
+import { FOLLOW_UP_DAYS, type Campaign, type CampaignSendTarget } from '@/types/campaign';
+import { API_ENDPOINTS } from '@/config/api';
 import { MessageSquare, Link, Image as ImageIcon, Upload, X, FileText, Plus, Trash2, Clock, Flag } from 'lucide-react';
 import { apiFetch, API_BASE_URL } from '@/config/api';
 import { Template } from '@/types/template';
@@ -31,7 +33,7 @@ const createEmptySet = (): MessageSet => ({
 interface MessageComposerProps {
   isOpen: boolean;
   onClose: () => void;
-  onSend: (messages: Message[], scheduledAt?: Date, campaignName?: string) => void;
+  onSend: (messages: Message[], scheduledAt?: Date, campaign?: CampaignSendTarget) => void;
   selectedCount: number;
   inline?: boolean;
   isWhatsAppConnected?: boolean;
@@ -39,6 +41,8 @@ interface MessageComposerProps {
   variableKeys?: string[];
   /** Contact used to preview personalised messages. */
   sampleContact?: Contact;
+  /** Preselect "add to existing campaign" (e.g. when retargeting a campaign segment). */
+  presetCampaign?: { id: string; name: string } | null;
 }
 
 const PLACEHOLDER_RE = /\{\{\s*([A-Za-z0-9_]{1,40})\s*\}\}/g;
@@ -61,6 +65,7 @@ export function MessageComposer({
   isWhatsAppConnected,
   variableKeys = [],
   sampleContact,
+  presetCampaign,
 }: MessageComposerProps) {
   const { templates, isLoading: templatesLoading, createTemplate } = useTemplates();
   const [showTemplates, setShowTemplates] = useState(false);
@@ -76,8 +81,27 @@ export function MessageComposer({
   const [scheduledAt, setScheduledAt] = useState('');  // datetime-local string
 
   // Campaign state
-  const [createCampaign, setCreateCampaign] = useState(false);
+  const [campaignMode, setCampaignMode] = useState<'none' | 'new' | 'existing'>('none');
   const [campaignName, setCampaignName] = useState('');
+  const [campaignId, setCampaignId] = useState('');
+  const [followUpDays, setFollowUpDays] = useState(0);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+
+  // Retargeting preselects the campaign the contacts came from.
+  useEffect(() => {
+    if (!presetCampaign) return;
+    setCampaignMode('existing');
+    setCampaignId(presetCampaign.id);
+  }, [presetCampaign]);
+
+  // Load campaigns when "add to existing" is chosen.
+  useEffect(() => {
+    if (campaignMode !== 'existing' || campaigns.length) return;
+    apiFetch(`${API_ENDPOINTS.campaigns.list}?limit=50`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setCampaigns(d.data?.campaigns ?? []); })
+      .catch(() => { /* list stays empty */ });
+  }, [campaignMode, campaigns.length]);
 
   // Preview text for set[0] with template variable resolution
   const previewText = useMemo(() => {
@@ -245,7 +269,10 @@ export function MessageComposer({
     });
 
     const scheduleDate = scheduleEnabled && scheduledAt ? new Date(scheduledAt) : undefined;
-    const campaign = createCampaign && campaignName.trim() ? campaignName.trim() : undefined;
+    let campaign: CampaignSendTarget | undefined;
+    if (campaignMode === 'new' && campaignName.trim()) campaign = { campaignName: campaignName.trim() };
+    if (campaignMode === 'existing' && campaignId) campaign = { campaignId };
+    if (campaign && followUpDays > 0) campaign.followUpDays = followUpDays;
     onSend(messages, scheduleDate, campaign);
 
     // Reset state
@@ -257,8 +284,10 @@ export function MessageComposer({
     setVariableValues({});
     setScheduleEnabled(false);
     setScheduledAt('');
-    setCreateCampaign(false);
+    setCampaignMode('none');
     setCampaignName('');
+    setCampaignId('');
+    setFollowUpDays(0);
     if (!inline) onClose();
   };
 
@@ -567,36 +596,52 @@ export function MessageComposer({
         )}
       </div>
 
-      {/* Campaign toggle */}
+      {/* Campaign */}
       <div className="border border-gray-200 rounded-xl p-4 space-y-3">
-        <label className="flex items-center gap-3 cursor-pointer select-none">
+        <div className="flex items-center gap-2">
+          <Flag size={16} className={campaignMode !== 'none' ? 'text-green-600' : 'text-gray-400'} />
+          <span className="text-sm font-medium text-gray-700">Campaign</span>
+          <span className="text-xs text-gray-400">track delivery, reads and replies · retarget later</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {([
+            { id: 'none', label: 'No campaign' },
+            { id: 'new', label: 'New campaign' },
+            { id: 'existing', label: 'Add to existing' },
+          ] as const).map(o => (
+            <label key={o.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm ${campaignMode === o.id ? 'border-green-500 bg-green-50/60 text-green-800' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+              <input type="radio" name="campaignMode" checked={campaignMode === o.id} onChange={() => setCampaignMode(o.id)} className="text-green-600 focus:ring-green-500" />
+              {o.label}
+            </label>
+          ))}
+        </div>
+        {campaignMode === 'new' && (
           <input
-            type="checkbox"
-            checked={createCampaign}
-            onChange={e => setCreateCampaign(e.target.checked)}
-            className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+            type="text"
+            value={campaignName}
+            onChange={e => setCampaignName(e.target.value)}
+            placeholder="Campaign name, e.g. Summer Sale 2025"
+            maxLength={80}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
-          <div className="flex items-center gap-2">
-            <Flag size={16} className={createCampaign ? 'text-green-600' : 'text-gray-400'} />
-            <span className={`text-sm font-medium ${createCampaign ? 'text-green-700' : 'text-gray-600'}`}>
-              Save as campaign
-            </span>
-          </div>
-        </label>
-
-        {createCampaign && (
-          <div className="pl-1">
-            <label className="block text-xs text-gray-500 mb-1">Campaign name <span className="text-red-400">*</span></label>
-            <input
-              type="text"
-              value={campaignName}
-              onChange={e => setCampaignName(e.target.value)}
-              placeholder="e.g. Summer Sale 2025"
-              maxLength={80}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-            <p className="text-xs text-gray-400 mt-1">Track replies and delivery stats under Campaigns.</p>
-          </div>
+        )}
+        {campaignMode === 'existing' && (
+          <select value={campaignId} onChange={e => setCampaignId(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+            <option value="">Choose a campaign…</option>
+            {presetCampaign && !campaigns.some(c => c.id === presetCampaign.id) && <option value={presetCampaign.id}>{presetCampaign.name}</option>}
+            {campaigns.map(c => <option key={c.id} value={c.id}>{c.name} ({c.sent} sent)</option>)}
+          </select>
+        )}
+        {campaignMode !== 'none' && (
+          <label className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+            <span>AI auto follow-up for people who don't reply:</span>
+            <select value={followUpDays} onChange={e => setFollowUpDays(Number(e.target.value))}
+              className="px-2 py-1 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+              <option value={0}>Off</option>
+              {FOLLOW_UP_DAYS.map(d => <option key={d} value={d}>after {d} days</option>)}
+            </select>
+          </label>
         )}
       </div>
 
@@ -611,7 +656,7 @@ export function MessageComposer({
           <Button
             variant="primary"
             onClick={handleSend}
-            disabled={validSetCount === 0 || (scheduleEnabled && !scheduledAt) || (inline && !isWhatsAppConnected) || (createCampaign && !campaignName.trim())}
+            disabled={validSetCount === 0 || (scheduleEnabled && !scheduledAt) || (inline && !isWhatsAppConnected) || (campaignMode === 'new' && !campaignName.trim()) || (campaignMode === 'existing' && !campaignId)}
             className={scheduleEnabled ? '!bg-blue-600 hover:!bg-blue-700' : ''}
           >
             {scheduleEnabled ? (

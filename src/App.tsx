@@ -9,6 +9,8 @@ import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { readSheet, type SheetData } from '@/lib/fileParser';
 import { ColumnMappingModal } from '@/components/ColumnMappingModal';
+import { validateAndFormatPhone } from '@/lib/validation';
+import { WA_RETARGET_STORAGE_KEY, type CampaignSendTarget, type WaRetargetPayload } from '@/types/campaign';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
 import { Contact } from '@/types/contact';
@@ -43,7 +45,9 @@ function App() {
   const [showScheduledJobs, setShowScheduledJobs] = useState(false);
   const [scheduleToast, setScheduleToast] = useState('');
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
-  const [currentCampaignName, setCurrentCampaignName] = useState<string | undefined>(undefined);
+  const [currentCampaign, setCurrentCampaign] = useState<CampaignSendTarget | undefined>(undefined);
+  // Set when contacts were loaded from a campaign segment (Campaigns → Retarget).
+  const [retargetFrom, setRetargetFrom] = useState<{ id: string; name: string; segment: string; count: number } | null>(null);
   const [bgJobs, setBgJobs] = useState<BgJob[]>([]);
 
   // Draggable panel divider
@@ -84,6 +88,35 @@ function App() {
       } finally {
         sessionStorage.removeItem('temp_leads_whatsapp');
       }
+    }
+  }, [setContacts, setSelection]);
+
+  // Load a campaign segment handed over from Campaigns → Retarget
+  useEffect(() => {
+    const raw = sessionStorage.getItem(WA_RETARGET_STORAGE_KEY);
+    if (!raw) return;
+    sessionStorage.removeItem(WA_RETARGET_STORAGE_KEY);
+    try {
+      const p: WaRetargetPayload = JSON.parse(raw);
+      const stamp = Date.now();
+      const loaded = p.contacts.map((c, i) => {
+        const v = validateAndFormatPhone(c.phone);
+        return {
+          id: `retarget-${i}-${stamp}`,
+          name: c.name || undefined,
+          phone: c.phone,
+          formattedPhone: v.formattedPhone,
+          isValid: v.isValid,
+          validationError: v.error,
+        };
+      });
+      setContacts(loaded);
+      const sel: Record<string, boolean> = {};
+      loaded.forEach(c => { if (c.isValid) sel[c.id] = true; });
+      setSelection(sel);
+      setRetargetFrom({ id: p.campaignId, name: p.campaignName, segment: p.segment, count: loaded.length });
+    } catch (e) {
+      console.error('Failed to load retarget contacts:', e);
     }
   }, [setContacts, setSelection]);
 
@@ -280,7 +313,7 @@ function App() {
     setTimeout(checkWhatsAppStatus, 1000);
   };
 
-  const handleSendMessages = async (messages: Message[], scheduledAt?: Date, campaignName?: string) => {
+  const handleSendMessages = async (messages: Message[], scheduledAt?: Date, campaign?: CampaignSendTarget) => {
     setShowMessageComposer(false);
 
     if (scheduledAt) {
@@ -292,7 +325,7 @@ function App() {
             contacts: selectedContacts.map(c => ({ phone: c.formattedPhone || c.phone, name: c.name || '', vars: c.vars })),
             messages,
             scheduledAt: scheduledAt.toISOString(),
-            campaignName: campaignName || undefined,
+            ...campaign,
           }),
         });
         const json = await res.json();
@@ -312,7 +345,7 @@ function App() {
 
     // Immediate send
     setCurrentMessages(messages);
-    setCurrentCampaignName(campaignName);
+    setCurrentCampaign(campaign);
     setShowSendProgress(true);
   };
 
@@ -806,6 +839,15 @@ function App() {
               </div>
             )}
 
+            {retargetFrom && (
+              <div className="flex-none px-5 py-2 bg-green-50 border-b border-green-100 flex items-center gap-2">
+                <span className="text-xs text-green-800 flex-1">
+                  Re-targeting <b>{retargetFrom.name}</b> ({retargetFrom.segment.replace('_', ' ')}): {retargetFrom.count} contact{retargetFrom.count === 1 ? '' : 's'} loaded. This send is added to that campaign.
+                </span>
+                <button onClick={() => setRetargetFrom(null)} className="text-xs text-green-700 hover:underline">Dismiss</button>
+              </div>
+            )}
+
             {/* Inline composer */}
             <div className="flex-1 overflow-y-auto" data-tour="step-compose">
               <MessageComposer
@@ -817,6 +859,7 @@ function App() {
                 isWhatsAppConnected={isWhatsAppConnected}
                 variableKeys={contactVarKeys}
                 sampleContact={sampleContact}
+                presetCampaign={retargetFrom}
               />
             </div>
           </div>
@@ -1113,6 +1156,7 @@ function App() {
         selectedCount={selectedCount}
         variableKeys={contactVarKeys}
         sampleContact={sampleContact}
+        presetCampaign={retargetFrom}
       />
 
       {pendingSheet && (
@@ -1131,7 +1175,7 @@ function App() {
           onWorkInBackground={handleWorkInBackground}
           contacts={selectedContacts}
           messages={currentMessages}
-          campaignName={currentCampaignName}
+          campaign={currentCampaign}
         />
       )}
 

@@ -5,6 +5,7 @@ import { CheckCircle, XCircle, Loader, Layers, Mail } from 'lucide-react';
 import { SendProgress as SendProgressType } from '@/types/message';
 import { Button } from './ui/Button';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
+import type { CampaignSendTarget } from '@/types/campaign';
 
 interface SendProgressProps {
   isOpen: boolean;
@@ -13,7 +14,8 @@ interface SendProgressProps {
   onWorkInBackground?: (jobId: string) => void;
   contacts: any[];
   messages: any[];
-  campaignName?: string;
+  /** Campaign chosen in the composer (new, existing, or none). */
+  campaign?: CampaignSendTarget;
 }
 
 export function SendProgress({
@@ -23,8 +25,9 @@ export function SendProgress({
   onWorkInBackground,
   contacts,
   messages,
-  campaignName: campaignNameProp,
+  campaign,
 }: SendProgressProps) {
+  const campaignNameProp = campaign?.campaignName;
   const [progress, setProgress] = useState<SendProgressType>({
     total: contacts.length,
     sent: 0,
@@ -38,6 +41,10 @@ export function SendProgress({
   const [campaignName, setCampaignName] = useState(campaignNameProp ?? '');
 
   const hasSentRef = useRef(false);
+  // Campaign the server is tracking this send in, and how many contacts it has finished,
+  // so "Work in background" continues the same campaign with only the remaining contacts.
+  const campaignIdRef = useRef<string>('');
+  const processedRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   // Capture contacts+messages at send-start; parent may clear selection before bg-send fires
   const sentContactsRef = useRef<any[]>(contacts);
@@ -62,13 +69,15 @@ export function SendProgress({
     setBgMode(null);
     setShowNamePrompt(false);
     setCampaignName(campaignNameProp ?? '');
+    campaignIdRef.current = campaign?.campaignId ?? '';
+    processedRef.current = 0;
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
     apiFetch(API_ENDPOINTS.whatsapp.send, {
       method: 'POST',
-      body: JSON.stringify({ contacts, messages, campaignName: campaignNameProp?.trim() || undefined }),
+      body: JSON.stringify({ contacts, messages, ...campaign }),
       signal: controller.signal,
     })
       .then((response) => {
@@ -90,6 +99,8 @@ export function SendProgress({
                   const data = JSON.parse(line.slice(6));
                   if (data.type === 'progress') {
                     setProgress({ ...data.data, errors: data.data.errors || [] });
+                    processedRef.current = (data.data.sent ?? 0) + (data.data.failed ?? 0);
+                    if (data.data.campaignId) campaignIdRef.current = data.data.campaignId;
                   } else if (data.type === 'complete') {
                     setProgress({ ...data.data, errors: data.data.errors || [] });
                     setIsComplete(true);
@@ -129,15 +140,22 @@ export function SendProgress({
   };
 
   const handleWorkInBackground = async () => {
+    if (sentContactsRef.current.length - processedRef.current <= 0) {
+      setShowNamePrompt(false);
+      return; // everything is already sent; nothing to hand over
+    }
     setBgMode('loading');
     setShowNamePrompt(false);
     try {
       const res = await apiFetch(API_ENDPOINTS.whatsapp.sendBg, {
         method: 'POST',
         body: JSON.stringify({
-          contacts: sentContactsRef.current,
+          // Only contacts this send hasn't reached yet; the server stops the live send.
+          contacts: sentContactsRef.current.slice(processedRef.current),
           messages: sentMessagesRef.current,
-          campaignName: campaignName.trim() || undefined,
+          ...(campaignIdRef.current
+            ? { campaignId: campaignIdRef.current }
+            : { campaignName: campaignName.trim() || undefined, followUpDays: campaign?.followUpDays }),
         }),
       });
       const json = await res.json();
@@ -301,7 +319,7 @@ export function SendProgress({
             {!isComplete && !error && !showNamePrompt && (
               <Button
                 variant="secondary"
-                onClick={() => setShowNamePrompt(true)}
+                onClick={() => (campaignIdRef.current ? handleWorkInBackground() : setShowNamePrompt(true))}
                 disabled={bgMode === 'loading'}
                 className="flex items-center gap-2"
               >
