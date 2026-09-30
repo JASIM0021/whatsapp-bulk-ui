@@ -14,6 +14,8 @@ export function ContactsTable({
 }: ContactsTableProps) {
   const allSelected = contacts.length > 0 && contacts.every((c) => selection[c.id]);
   const someSelected = contacts.some((c) => selection[c.id]);
+  // Show up to 3 columns mapped from the uploaded file.
+  const varKeys = Array.from(new Set(contacts.flatMap((c) => Object.keys(c.vars ?? {})))).slice(0, 3);
 
   const handleSelectAll = () => {
     if (allSelected) {
@@ -94,6 +96,9 @@ export function ContactsTable({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Phone Number
                 </th>
+                {varKeys.map(k => (
+                  <th key={k} className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider font-mono">{`{{${k}}}`}</th>
+                ))}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Row
                 </th>
@@ -139,6 +144,11 @@ export function ContactsTable({
                       </p>
                     )}
                   </td>
+                  {varKeys.map(k => (
+                    <td key={k} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 max-w-[180px] truncate" title={contact.vars?.[k]}>
+                      {contact.vars?.[k] || '-'}
+                    </td>
+                  ))}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {contact.row}
                   </td>

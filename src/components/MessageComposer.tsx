@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Message } from '@/types/message';
+import type { Contact } from '@/types/contact';
 import { MessageSquare, Link, Image as ImageIcon, Upload, X, FileText, Plus, Trash2, Clock, Flag } from 'lucide-react';
 import { apiFetch, API_BASE_URL } from '@/config/api';
 import { Template } from '@/types/template';
@@ -34,6 +35,21 @@ interface MessageComposerProps {
   selectedCount: number;
   inline?: boolean;
   isWhatsAppConnected?: boolean;
+  /** {{variables}} available from the uploaded file's columns. */
+  variableKeys?: string[];
+  /** Contact used to preview personalised messages. */
+  sampleContact?: Contact;
+}
+
+const PLACEHOLDER_RE = /\{\{\s*([A-Za-z0-9_]{1,40})\s*\}\}/g;
+
+// personalize mirrors the backend: {{name}}, {{phone}} and file columns, case-insensitive.
+function personalize(text: string, c?: Contact): string {
+  const values: Record<string, string> = {};
+  for (const [k, v] of Object.entries(c?.vars ?? {})) values[k.toLowerCase()] = v;
+  values.name = c?.name || 'John';
+  values.phone = c?.formattedPhone || c?.phone || '919876543210';
+  return text.replace(PLACEHOLDER_RE, (m, key: string) => values[key.toLowerCase()] ?? m);
 }
 
 export function MessageComposer({
@@ -43,6 +59,8 @@ export function MessageComposer({
   selectedCount,
   inline,
   isWhatsAppConnected,
+  variableKeys = [],
+  sampleContact,
 }: MessageComposerProps) {
   const { templates, isLoading: templatesLoading, createTemplate } = useTemplates();
   const [showTemplates, setShowTemplates] = useState(false);
@@ -68,8 +86,25 @@ export function MessageComposer({
     Object.entries(variableValues).forEach(([key, value]) => {
       text = text.replace(new RegExp(`{{${key}}}`, 'g'), value || `{{${key}}}`);
     });
-    return text.replace(/{{name}}/g, 'John');
+    return text;
   }, [selectedTemplate, messageSets, variableValues]);
+
+  // Insert a {{variable}} at the cursor of a message box.
+  const textareaRefs = useRef<Record<number, HTMLTextAreaElement | null>>({});
+  const insertVariable = (index: number, key: string) => {
+    const el = textareaRefs.current[index];
+    const text = messageSets[index]?.text ?? '';
+    const token = `{{${key}}}`;
+    const start = el?.selectionStart ?? text.length;
+    const end = el?.selectionEnd ?? text.length;
+    handleTextChange(index, text.slice(0, start) + token + text.slice(end));
+    requestAnimationFrame(() => {
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(start + token.length, start + token.length);
+    });
+  };
+  const insertableKeys = ['name', 'phone', ...variableKeys.filter(k => k !== 'name' && k !== 'phone')];
 
   const handleTemplateSelect = (template: Template | null) => {
     setSelectedTemplate(template);
@@ -280,6 +315,7 @@ export function MessageComposer({
               variableValues={variableValues}
               onVariableChange={handleVariableChange}
               onCreateTemplate={() => setShowTemplateEditor(true)}
+              perContactKeys={variableKeys}
             />
           )}
         </div>
@@ -316,6 +352,7 @@ export function MessageComposer({
               Message Text *
             </label>
             <textarea
+              ref={(el) => { textareaRefs.current[index] = el; }}
               value={set.text}
               onChange={(e) => handleTextChange(index, e.target.value)}
               placeholder="Enter your message here..."
@@ -323,6 +360,16 @@ export function MessageComposer({
               rows={4}
               maxLength={1000}
             />
+            <div className="flex flex-wrap items-center gap-1 mt-1.5">
+              <span className="text-[11px] text-gray-500 mr-0.5">Insert:</span>
+              {insertableKeys.map(k => (
+                <button key={k} type="button" onClick={() => insertVariable(index, k)}
+                  title={variableKeys.includes(k) ? 'From your uploaded file' : 'Built in'}
+                  className={`px-1.5 py-0.5 rounded text-[11px] font-mono border ${variableKeys.includes(k) ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
+                  {`{{${k}}}`}
+                </button>
+              ))}
+            </div>
             <div className="flex justify-between mt-1">
               {index === 0 && (
                 <p className="text-xs text-gray-500">Messages will be sent with 3-5 second delays between each</p>
@@ -434,11 +481,11 @@ export function MessageComposer({
           {set.text && (
             <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
               <p className="text-xs font-medium text-gray-600 mb-2">
-                {index === 0 && selectedTemplate ? 'Preview ({{name}} shown as "John"):' : 'Preview:'}
+                {sampleContact ? `Preview for ${sampleContact.name || sampleContact.formattedPhone || sampleContact.phone}:` : 'Preview ({{name}} shown as "John"):'}
               </p>
               <div className="bg-white p-3 rounded-lg shadow-sm">
                 <p className="text-sm text-gray-900 whitespace-pre-wrap">
-                  {index === 0 ? previewText : set.text}
+                  {personalize(index === 0 ? previewText : set.text, sampleContact)}
                 </p>
                 {set.link && (
                   <a

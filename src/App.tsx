@@ -7,7 +7,8 @@ import { SendProgress } from '@/components/SendProgress';
 import { Button } from '@/components/ui/Button';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { parseFile } from '@/lib/fileParser';
+import { readSheet, type SheetData } from '@/lib/fileParser';
+import { ColumnMappingModal } from '@/components/ColumnMappingModal';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { Message, SendProgress as SendProgressType } from '@/types/message';
 import { Contact } from '@/types/contact';
@@ -196,11 +197,23 @@ function App() {
     }
   }, []);
 
+  // Uploaded sheet waiting for the user to map its columns.
+  const [pendingSheet, setPendingSheet] = useState<SheetData | null>(null);
+
   const handleFileUpload = async (file: File) => {
     setIsFileUploading(true);
     try {
-      const parsedContacts = await parseFile(file);
-      setContacts(parsedContacts);
+      setPendingSheet(await readSheet(file));
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to read file');
+    } finally {
+      setIsFileUploading(false);
+    }
+  };
+
+  const handleMappedContacts = (parsedContacts: Contact[]) => {
+    setPendingSheet(null);
+    try {
       const autoSelection: Record<string, boolean> = {};
       parsedContacts.forEach((contact) => {
         if (contact.isValid) autoSelection[contact.id] = true;
@@ -209,9 +222,7 @@ function App() {
       // Auto-save valid contacts to the contacts book
       saveContactsToBook(parsedContacts);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to parse file');
-    } finally {
-      setIsFileUploading(false);
+      alert(error instanceof Error ? error.message : 'Failed to import contacts');
     }
   };
 
@@ -278,7 +289,7 @@ function App() {
         const res = await apiFetch(API_ENDPOINTS.schedule.create, {
           method: 'POST',
           body: JSON.stringify({
-            contacts: selectedContacts.map(c => ({ phone: c.formattedPhone || c.phone, name: c.name || '' })),
+            contacts: selectedContacts.map(c => ({ phone: c.formattedPhone || c.phone, name: c.name || '', vars: c.vars })),
             messages,
             scheduledAt: scheduledAt.toISOString(),
             campaignName: campaignName || undefined,
@@ -366,6 +377,9 @@ function App() {
   };
 
   const selectedContacts = contacts.filter((c) => selection[c.id]);
+  // {{variables}} available from the uploaded file, and a contact to preview them with.
+  const contactVarKeys = Array.from(new Set(contacts.flatMap(c => Object.keys(c.vars ?? {}))));
+  const sampleContact = selectedContacts[0] ?? contacts[0];
   const selectedCount = selectedContacts.length;
 
   return (
@@ -801,6 +815,8 @@ function App() {
                 onSend={handleSendMessages}
                 selectedCount={selectedCount}
                 isWhatsAppConnected={isWhatsAppConnected}
+                variableKeys={contactVarKeys}
+                sampleContact={sampleContact}
               />
             </div>
           </div>
@@ -1095,7 +1111,17 @@ function App() {
         onClose={() => setShowMessageComposer(false)}
         onSend={handleSendMessages}
         selectedCount={selectedCount}
+        variableKeys={contactVarKeys}
+        sampleContact={sampleContact}
       />
+
+      {pendingSheet && (
+        <ColumnMappingModal
+          sheet={pendingSheet}
+          onCancel={() => setPendingSheet(null)}
+          onConfirm={handleMappedContacts}
+        />
+      )}
 
       {currentMessages.length > 0 && (
         <SendProgress

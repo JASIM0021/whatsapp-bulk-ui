@@ -20,6 +20,8 @@ interface TemplateSelectorProps {
   variableValues: Record<string, string>;
   onVariableChange: (name: string, value: string) => void;
   onCreateTemplate?: () => void;
+  /** Variables filled per contact from the uploaded file (no manual value needed). */
+  perContactKeys?: string[];
 }
 
 export function TemplateSelector({
@@ -29,6 +31,7 @@ export function TemplateSelector({
   resolvedText,
   variableValues,
   onVariableChange,
+  perContactKeys = [],
   onCreateTemplate,
 }: TemplateSelectorProps) {
   const [categoryFilter, setCategoryFilter] = useState<TemplateCategory | 'All'>('All');
@@ -37,21 +40,23 @@ export function TemplateSelector({
     (t) => categoryFilter === 'All' || t.category === categoryFilter
   );
 
-  // Variables that need filling (exclude 'name' — backend handles it per-contact)
-  const fillableVars = selected
-    ? selected.variables.filter((v) => v !== 'name')
-    : [];
+  // Variables that need filling: not name/phone and not a column from the uploaded file,
+  // which the backend fills per contact.
+  const isPerContact = (v: string) => v === 'name' || v === 'phone' || perContactKeys.includes(v.toLowerCase());
+  const fillableVars = selected ? selected.variables.filter((v) => !isPerContact(v)) : [];
+  const fileVars = selected ? selected.variables.filter((v) => v !== 'name' && isPerContact(v)) : [];
 
   // Reset variable values when template changes
   useEffect(() => {
     if (!selected) return;
-    const vars = selected.variables.filter((v) => v !== 'name');
+    const vars = selected.variables.filter((v) => !isPerContact(v));
     vars.forEach((v) => {
       if (!(v in variableValues)) {
         onVariableChange(v, '');
       }
     });
-  }, [selected, variableValues, onVariableChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, variableValues, onVariableChange, perContactKeys]);
 
   return (
     <div className="space-y-4">
@@ -142,6 +147,11 @@ export function TemplateSelector({
             <span className="font-medium">{'{{name}}'}</span> is automatically replaced with each contact's name.
           </p>
         </div>
+      )}
+      {selected && fileVars.length > 0 && (
+        <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+          Filled per contact from your file: {fileVars.map(v => `{{${v}}}`).join(', ')}
+        </p>
       )}
 
       {/* Live preview */}
