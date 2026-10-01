@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useUrlTab } from '@/hooks/useUrlTab';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '@/config/api';
 import { 
@@ -20,9 +21,12 @@ import {
   Tv
 } from 'lucide-react';
 
+
+const YOUTUBE_TABS = ['trends', 'seo', 'thumbnail'] as const;
 export function YouTubeAgentPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'trends' | 'seo' | 'thumbnail'>('trends');
+  // Active tab lives in ?tab= so it survives reloads.
+  const [activeTab, setActiveTab] = useUrlTab(YOUTUBE_TABS, 'trends');
   const [showTuberCoach, setShowTuberCoach] = useState(() => {
     return localStorage.getItem('showTuberCoach') !== 'false';
   });

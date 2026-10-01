@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { AdminSEOAgentTab } from './AdminSEOAgentTab';
 import { AdminLogsTab } from './AdminLogsTab';
+import { useUrlTab } from '@/hooks/useUrlTab';
 import {
   Users,
   BarChart3,
@@ -87,6 +88,7 @@ interface AdminUser {
 }
 
 type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers' | 'transactions' | 'ai' | 'seoagent' | 'logs' | 'leads';
+const ADMIN_TABS: readonly Tab[] = ['dashboard', 'users', 'leads', 'transactions', 'invoices', 'plans', 'promos', 'email', 'demos', 'deletions', 'services', 'influencers', 'ai', 'seoagent', 'logs'];
 
 interface Invoice {
   id: string;
@@ -4482,7 +4484,8 @@ function AdminLeadsTab() {
 export function AdminPanel() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>('dashboard');
+  // Active tab lives in ?tab= so it survives reloads.
+  const [tab, setTab] = useUrlTab(ADMIN_TABS, 'dashboard');
   const [stats, setStats] = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 

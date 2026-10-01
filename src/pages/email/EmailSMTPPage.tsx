@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Settings2, Wifi, WifiOff, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, HelpCircle, FileText, Upload, X, Code2, KeyRound } from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
+import { EmailAPIPlayground } from './EmailAPIPlayground';
 
 interface SMTPConfig {
   id?: string;
@@ -360,6 +361,8 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
           </button>
         </div>
       </div>
+
+      <EmailAPIPlayground />
     </div>
   );
 }

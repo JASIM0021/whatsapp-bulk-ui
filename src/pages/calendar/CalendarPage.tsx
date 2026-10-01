@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useUrlTab } from '@/hooks/useUrlTab';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -30,8 +31,11 @@ import {
   CustomQuestion
 } from '@/types/calendar';
 
+
+const CALENDAR_TABS = ['events', 'availability', 'bookings', 'google', 'branding', 'embed'] as const;
 export function CalendarPage() {
-  const [activeTab, setActiveTab] = useState<'events' | 'availability' | 'bookings' | 'google' | 'branding' | 'embed'>('events');
+  // Active tab lives in ?tab= so it survives reloads.
+  const [activeTab, setActiveTab] = useUrlTab(CALENDAR_TABS, 'events');
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);

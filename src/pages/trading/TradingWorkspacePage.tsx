@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useUrlTab } from '@/hooks/useUrlTab';
 import { apiFetch, API_ENDPOINTS, safeJsonResponse } from '@/config/api';
 import { encryptToken, decryptToken } from './crypto';
 import { 
@@ -26,9 +27,12 @@ interface StrategyListItem {
   version?: number;
 }
 
+
+const TRADING_TABS = ['strategy', 'backtest', 'trainer', 'bot'] as const;
 export function TradingWorkspacePage() {
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<'strategy' | 'backtest' | 'trainer' | 'bot'>('strategy');
+  // Active tab lives in ?tab= so it survives reloads.
+  const [activeTab, setActiveTab] = useUrlTab(TRADING_TABS, 'strategy');
   const [showBrokerDropdown, setShowBrokerDropdown] = useState(false);
   const [showAgentCoach, setShowAgentCoach] = useState(() => {
     return localStorage.getItem('dhan_agent_coach_dismissed') !== 'true';
