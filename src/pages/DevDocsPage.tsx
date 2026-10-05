@@ -147,7 +147,7 @@ Returns HTTP 202 Accepted with { "success": true, "scheduled": true, "job_id": "
 
 Please help me build a resilient WhatsApp notification service with batching and error handling.`,
 
-  email: `You are helping me integrate with the NexBotix Omnichannel Email Sending API.
+  email: `You are helping me integrate with the NexBotix Email Sending API.
 
 ## Environment Setup
 Add to your .env file:
@@ -157,23 +157,42 @@ Add to your .env file:
 Every request requires:
   X-API-Key: <value of NEXBOTIX_API_KEY>
 
-## Send Transactional & Marketing Email
-POST https://nexbotix.online/api/v1/email/send
+## Send Email (JSON)
+POST https://api.nexbotix.online/api/v1/email/send
 Content-Type: application/json
 {
-  "to": "client@example.com",
-  "subject": "Order Confirmation #1024",
-  "body": "<h1>Thank you for your order!</h1><p>Your items have been shipped.</p>",
-  "isHtml": true
+  "email": "client@example.com",                 // one recipient, OR:
+  "contacts": [{ "email": "a@x.com", "name": "A" }], // up to 50; {{name}} filled per contact
+  "message": {
+    "subject": "Order Confirmation #1024",        // required
+    "bodyHtml": "<p>Hi {{name}}, thanks!</p>",     // required
+    "bodyText": "Hi, thanks!"                      // optional
+  },
+  "attachments": [                                // optional, max 10 files
+    { "filename": "invoice.pdf", "content": "<base64>", "contentType": "application/pdf" },
+    { "url": "https://example.com/brochure.pdf" } // server downloads public http(s) links
+  ],
+  "tracking": false,   // open/click tracking (default off)
+  "attachSig": false,  // append the saved email signature (default off)
+  "sendDeck": false,   // attach the saved company deck (default off)
+  "schedule_at": "2026-12-01T09:00:00Z" // optional, ISO 8601, >= 30s ahead
 }
 
-Response (200 OK):
-{
-  "success": true,
-  "message": "Email queued / sent successfully"
-}
+## Send Email with file uploads (multipart/form-data)
+Fields: email, name, contacts (JSON string), subject, bodyHtml, bodyText,
+tracking, attachSig, sendDeck, schedule_at — or one "payload" field holding the JSON body.
+Files: "attachments" (repeat for several).
 
-Please help me create an email dispatch wrapper with HTML template rendering and error retry logic.`,
+## Limits
+10 files per request, 10 MB each, 15 MB total (10 MB for scheduled sends), 24 MB request.
+Executables/scripts (.exe .bat .js .vbs .ps1 .jar .sh …) are rejected.
+
+## Response (200 OK)
+{ "success": true, "sent": 1, "failed": 0, "total": 1, "tracking": false, "attachments": ["invoice.pdf"] }
+Scheduled (202): { "success": true, "scheduled": true, "job_id": "…", "scheduled_at": "…", "total": 1 }
+Errors (400/401): { "success": false, "error": "…" }
+
+Please help me create an email dispatch wrapper with HTML template rendering, attachments and error retry logic.`,
 
   mcp: `You are helping me connect autonomous AI coding agents (Claude Desktop, Cursor, Windsurf) to the NexBotix Model Context Protocol (MCP) Server.
 
@@ -537,10 +556,11 @@ defer resp.Body.Close()`,
   -H "X-API-Key: nex_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "to": "client@example.com",
-    "subject": "Your Legal Analysis Report",
-    "body": "<h2>Legal Analysis Report</h2><p>Here are the compliance findings requested...</p>",
-    "isHtml": true
+    "contacts": [{ "email": "client@example.com", "name": "Asha" }],
+    "message": {
+      "subject": "Your Legal Analysis Report",
+      "bodyHtml": "<h2>Hi {{name}},</h2><p>Here are the compliance findings you requested.</p>"
+    }
   }'`,
 
     'node-fetch': `const res = await fetch('${BASE}/api/v1/email/send', {
@@ -550,14 +570,15 @@ defer resp.Body.Close()`,
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    to: 'client@example.com',
-    subject: 'Your Legal Analysis Report',
-    body: '<h2>Legal Analysis Report</h2><p>Here are the compliance findings requested...</p>',
-    isHtml: true,
+    contacts: [{ email: 'client@example.com', name: 'Asha' }],
+    message: {
+      subject: 'Your Legal Analysis Report',
+      bodyHtml: '<h2>Hi {{name}},</h2><p>Here are the compliance findings you requested.</p>',
+    },
   }),
 });
 const data = await res.json();
-console.log(data); // { success: true, message: "Email queued / sent successfully" }`,
+console.log(data); // { success: true, sent: 1, failed: 0, total: 1, tracking: false }`,
 
     python: `import os
 import requests
@@ -566,23 +587,87 @@ response = requests.post(
     '${BASE}/api/v1/email/send',
     headers={'X-API-Key': os.environ['NEXBOTIX_API_KEY']},
     json={
-        'to': 'client@example.com',
-        'subject': 'Your Legal Analysis Report',
-        'body': '<h2>Legal Analysis Report</h2><p>Here are the compliance findings requested...</p>',
-        'isHtml': True,
-    }
+        'contacts': [{'email': 'client@example.com', 'name': 'Asha'}],
+        'message': {
+            'subject': 'Your Legal Analysis Report',
+            'bodyHtml': '<h2>Hi {{name}},</h2><p>Here are the compliance findings you requested.</p>',
+        },
+    },
 )
 print(response.json())`,
 
     go: `body, _ := json.Marshal(map[string]any{
-    "to":      "client@example.com",
-    "subject": "Your Legal Analysis Report",
-    "body":    "<h2>Legal Analysis Report</h2><p>Here are the compliance findings requested...</p>",
-    "isHtml":  true,
+    "contacts": []map[string]string{{"email": "client@example.com", "name": "Asha"}},
+    "message": map[string]string{
+        "subject":  "Your Legal Analysis Report",
+        "bodyHtml": "<h2>Hi {{name}},</h2><p>Here are the compliance findings you requested.</p>",
+    },
 })
 req, _ := http.NewRequest("POST", "${BASE}/api/v1/email/send", bytes.NewBuffer(body))
 req.Header.Set("X-API-Key", os.Getenv("NEXBOTIX_API_KEY"))
 req.Header.Set("Content-Type", "application/json")
+resp, _ := http.DefaultClient.Do(req)
+defer resp.Body.Close()`,
+  },
+
+  // Email with attachments: multipart upload, base64 JSON and URLs
+  email_attachments: {
+    curl: `curl -X POST ${BASE}/api/v1/email/send \\
+  -H "X-API-Key: nex_your_key_here" \\
+  -F email=client@example.com \\
+  -F name=Asha \\
+  -F subject="Your invoice" \\
+  -F bodyHtml="<p>Hi {{name}}, your invoice is attached.</p>" \\
+  -F attachSig=true \\
+  -F attachments=@invoice.pdf \\
+  -F attachments=@terms.pdf`,
+
+    'node-fetch': `import { readFile } from 'node:fs/promises';
+
+const res = await fetch('${BASE}/api/v1/email/send', {
+  method: 'POST',
+  headers: { 'X-API-Key': process.env.NEXBOTIX_API_KEY, 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'client@example.com',
+    message: { subject: 'Your invoice', bodyHtml: '<p>Your invoice is attached.</p>' },
+    attachments: [
+      { filename: 'invoice.pdf', content: (await readFile('invoice.pdf')).toString('base64') },
+      { url: 'https://example.com/files/brochure.pdf' },
+    ],
+  }),
+});
+console.log(await res.json()); // { ..., attachments: ["invoice.pdf", "brochure.pdf"] }`,
+
+    python: `import os
+import requests
+
+response = requests.post(
+    '${BASE}/api/v1/email/send',
+    headers={'X-API-Key': os.environ['NEXBOTIX_API_KEY']},
+    data={
+        'email': 'client@example.com',
+        'name': 'Asha',
+        'subject': 'Your invoice',
+        'bodyHtml': '<p>Hi {{name}}, your invoice is attached.</p>',
+    },
+    files=[('attachments', ('invoice.pdf', open('invoice.pdf', 'rb'), 'application/pdf'))],
+)
+print(response.json())`,
+
+    go: `var buf bytes.Buffer
+w := multipart.NewWriter(&buf)
+w.WriteField("email", "client@example.com")
+w.WriteField("subject", "Your invoice")
+w.WriteField("bodyHtml", "<p>Your invoice is attached.</p>")
+fw, _ := w.CreateFormFile("attachments", "invoice.pdf")
+f, _ := os.Open("invoice.pdf")
+io.Copy(fw, f)
+f.Close()
+w.Close()
+
+req, _ := http.NewRequest("POST", "${BASE}/api/v1/email/send", &buf)
+req.Header.Set("X-API-Key", os.Getenv("NEXBOTIX_API_KEY"))
+req.Header.Set("Content-Type", w.FormDataContentType())
 resp, _ := http.DefaultClient.Do(req)
 defer resp.Body.Close()`,
   },
@@ -1619,7 +1704,7 @@ export function DevDocsPage() {
                 <IC>/api/v1/email/send</IC>
               </div>
               <p className="text-xs sm:text-sm text-gray-600">
-                Trigger transactional emails with customizable HTML content, subject line, and recipient headers.
+                Send transactional or bulk HTML emails (up to 50 recipients) with attachments, through your connected mailbox.
               </p>
 
               <CodeExample snippetKey="email_send" defaultTab="curl" />
@@ -1637,32 +1722,78 @@ export function DevDocsPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100 font-normal">
                     <tr>
-                      <td className="px-4 py-2.5 font-mono font-bold text-purple-700">to</td>
+                      <td className="px-4 py-2.5 font-mono font-bold text-purple-700">email</td>
                       <td className="px-4 py-2.5 font-mono text-gray-600">string</td>
-                      <td className="px-4 py-2.5 text-red-600 font-bold">Yes</td>
-                      <td className="px-4 py-2.5 text-gray-600">Recipient email address (e.g. <IC>client@example.com</IC>).</td>
+                      <td className="px-4 py-2.5 text-amber-600 font-bold">One of</td>
+                      <td className="px-4 py-2.5 text-gray-600">A single recipient address. Use <IC>contacts</IC> for several.</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2.5 font-mono font-bold text-purple-700">subject</td>
-                      <td className="px-4 py-2.5 font-mono text-gray-600">string</td>
-                      <td className="px-4 py-2.5 text-red-600 font-bold">Yes</td>
-                      <td className="px-4 py-2.5 text-gray-600">Subject line of the email.</td>
+                      <td className="px-4 py-2.5 font-mono font-bold text-purple-700">contacts</td>
+                      <td className="px-4 py-2.5 font-mono text-gray-600">array</td>
+                      <td className="px-4 py-2.5 text-amber-600 font-bold">One of</td>
+                      <td className="px-4 py-2.5 text-gray-600">Up to 50 <IC>{'{ email, name }'}</IC>. <IC>{'{{name}}'}</IC> is filled per contact.</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2.5 font-mono font-bold text-purple-700">body</td>
+                      <td className="px-4 py-2.5 font-mono font-bold text-purple-700">message.subject</td>
                       <td className="px-4 py-2.5 font-mono text-gray-600">string</td>
                       <td className="px-4 py-2.5 text-red-600 font-bold">Yes</td>
-                      <td className="px-4 py-2.5 text-gray-600">HTML or plain text message content.</td>
+                      <td className="px-4 py-2.5 text-gray-600">Subject line. <IC>{'{{name}}'}</IC> works here too.</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2.5 font-mono text-gray-700">isHtml</td>
+                      <td className="px-4 py-2.5 font-mono font-bold text-purple-700">message.bodyHtml</td>
+                      <td className="px-4 py-2.5 font-mono text-gray-600">string</td>
+                      <td className="px-4 py-2.5 text-red-600 font-bold">Yes</td>
+                      <td className="px-4 py-2.5 text-gray-600">HTML body.</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-gray-700">message.bodyText</td>
+                      <td className="px-4 py-2.5 font-mono text-gray-600">string</td>
+                      <td className="px-4 py-2.5 text-gray-400">Optional</td>
+                      <td className="px-4 py-2.5 text-gray-600">Plain-text fallback.</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-gray-700">attachments</td>
+                      <td className="px-4 py-2.5 font-mono text-gray-600">array</td>
+                      <td className="px-4 py-2.5 text-gray-400">Optional</td>
+                      <td className="px-4 py-2.5 text-gray-600">Up to 10 files: <IC>{'{ filename, content (base64), contentType }'}</IC> or <IC>{'{ url }'}</IC>. Or upload files with multipart/form-data.</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-gray-700">tracking</td>
                       <td className="px-4 py-2.5 font-mono text-gray-600">boolean</td>
                       <td className="px-4 py-2.5 text-gray-400">Optional</td>
-                      <td className="px-4 py-2.5 text-gray-600">Default: <IC>true</IC>. Enable HTML rendering for styled templates.</td>
+                      <td className="px-4 py-2.5 text-gray-600">Default <IC>false</IC>. Adds open & click tracking.</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-gray-700">attachSig</td>
+                      <td className="px-4 py-2.5 font-mono text-gray-600">boolean</td>
+                      <td className="px-4 py-2.5 text-gray-400">Optional</td>
+                      <td className="px-4 py-2.5 text-gray-600">Default <IC>false</IC>. Appends your saved email signature.</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-gray-700">sendDeck</td>
+                      <td className="px-4 py-2.5 font-mono text-gray-600">boolean</td>
+                      <td className="px-4 py-2.5 text-gray-400">Optional</td>
+                      <td className="px-4 py-2.5 text-gray-600">Default <IC>false</IC>. Attaches your saved company deck.</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-gray-700">schedule_at</td>
+                      <td className="px-4 py-2.5 font-mono text-gray-600">string</td>
+                      <td className="px-4 py-2.5 text-gray-400">Optional</td>
+                      <td className="px-4 py-2.5 text-gray-600">ISO 8601 time, at least 30 seconds ahead, to send later.</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
+
+              <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 pt-4">Attachments</h4>
+              <p className="text-xs sm:text-sm text-gray-600">
+                Upload files with <IC>multipart/form-data</IC> (fields: <IC>email</IC>, <IC>name</IC>, <IC>contacts</IC> as JSON, <IC>subject</IC>, <IC>bodyHtml</IC>, <IC>bodyText</IC>, <IC>tracking</IC>, <IC>attachSig</IC>, <IC>sendDeck</IC>, <IC>schedule_at</IC> — or one <IC>payload</IC> field with the JSON body; files in <IC>attachments</IC>), or send base64 / URLs in JSON.
+                Limits: 10 files, 10 MB each, 15 MB total (10 MB when scheduled). Executables and scripts are rejected.
+              </p>
+              <CodeExample snippetKey="email_attachments" defaultTab="curl" />
+              <p className="text-xs sm:text-sm text-gray-600">
+                API emails go out exactly as written: no tracking, signature, deck or send-summary email unless you ask for them. The response lists the attached files in <IC>attachments</IC>.
+              </p>
             </div>
           </div>
         )}

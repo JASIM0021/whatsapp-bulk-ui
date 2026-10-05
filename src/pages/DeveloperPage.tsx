@@ -225,7 +225,7 @@ print(response.json())`;
     "message": { "text": "Hi {{name}}, check out our latest offer!" }
   }'`;
 
-  const emailSendCurl = `curl -X POST https://nexbotix.online/api/v1/email/send \\
+  const emailSendCurl = `curl -X POST https://api.nexbotix.online/api/v1/email/send \\
   -H "X-API-Key: nex_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -237,7 +237,7 @@ print(response.json())`;
     }
   }'`;
 
-  const emailSendJs = `const res = await fetch('https://nexbotix.online/api/v1/email/send', {
+  const emailSendJs = `const res = await fetch('https://api.nexbotix.online/api/v1/email/send', {
   method: 'POST',
   headers: {
     'X-API-Key': 'nex_your_key',
@@ -257,11 +257,8 @@ console.log(data);`;
   const emailSendPython = `import requests
 
 response = requests.post(
-    'https://nexbotix.online/api/v1/email/send',
-    headers={
-        'X-API-Key': 'nex_your_key',
-        'Content-Type': 'application/json'
-    },
+    'https://api.nexbotix.online/api/v1/email/send',
+    headers={'X-API-Key': 'nex_your_key'},
     json={
         'email': 'user@example.com',
         'message': {
@@ -269,6 +266,72 @@ response = requests.post(
             'bodyHtml': '<h1>Hi!</h1><p>Your order has been placed.</p>'
         }
     }
+)
+print(response.json())`;
+
+  // Attachment examples: file upload (multipart), base64 JSON, and URL.
+  const emailAttachCurl = `# Upload files directly (multipart/form-data)
+curl -X POST https://api.nexbotix.online/api/v1/email/send \\
+  -H "X-API-Key: nex_your_key" \\
+  -F email=user@example.com \\
+  -F name=Jo \\
+  -F subject="Your invoice" \\
+  -F bodyHtml="<p>Hi {{name}}, your invoice is attached.</p>" \\
+  -F attachments=@invoice.pdf \\
+  -F attachments=@terms.pdf
+
+# Or send the full JSON in a "payload" field next to the files
+curl -X POST https://api.nexbotix.online/api/v1/email/send \\
+  -H "X-API-Key: nex_your_key" \\
+  -F 'payload={"contacts":[{"email":"a@x.com","name":"A"}],"message":{"subject":"Report","bodyHtml":"<p>Hi {{name}}</p>"},"tracking":true}' \\
+  -F attachments=@report.xlsx`;
+
+  const emailAttachJs = `import { readFile } from 'node:fs/promises';
+
+// Base64 in JSON — works from any language
+const pdf = await readFile('invoice.pdf');
+const res = await fetch('https://api.nexbotix.online/api/v1/email/send', {
+  method: 'POST',
+  headers: { 'X-API-Key': 'nex_your_key', 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'user@example.com',
+    message: { subject: 'Your invoice', bodyHtml: '<p>Invoice attached.</p>' },
+    attachments: [
+      { filename: 'invoice.pdf', content: pdf.toString('base64') },
+      { url: 'https://example.com/files/brochure.pdf' }   // or let us download it
+    ]
+  })
+});
+console.log(await res.json());
+
+// Browser / FormData upload
+const form = new FormData();
+form.append('email', 'user@example.com');
+form.append('subject', 'Your invoice');
+form.append('bodyHtml', '<p>Invoice attached.</p>');
+form.append('attachments', fileInput.files[0]);
+await fetch('https://api.nexbotix.online/api/v1/email/send', {
+  method: 'POST',
+  headers: { 'X-API-Key': 'nex_your_key' },   // don't set Content-Type: the browser adds the boundary
+  body: form
+});`;
+
+  const emailAttachPython = `import requests
+
+response = requests.post(
+    'https://api.nexbotix.online/api/v1/email/send',
+    headers={'X-API-Key': 'nex_your_key'},
+    data={
+        'email': 'user@example.com',
+        'name': 'Jo',
+        'subject': 'Your invoice',
+        'bodyHtml': '<p>Hi {{name}}, your invoice is attached.</p>',
+        'attachSig': 'true',
+    },
+    files=[
+        ('attachments', ('invoice.pdf', open('invoice.pdf', 'rb'), 'application/pdf')),
+        ('attachments', ('terms.pdf', open('terms.pdf', 'rb'), 'application/pdf')),
+    ],
 )
 print(response.json())`;
 
@@ -631,20 +694,43 @@ curl -X POST https://nexbotix.online/api/mcp \\
 
   function renderEmail() {
     const snippets: Record<typeof emailCodeTab, string> = { curl: emailSendCurl, js: emailSendJs, python: emailSendPython };
+    const attachSnippets: Record<typeof emailCodeTab, string> = { curl: emailAttachCurl, js: emailAttachJs, python: emailAttachPython };
     const langs: Record<typeof emailCodeTab, string> = { curl: 'bash', js: 'javascript', python: 'python' };
+    const codeTabs = (
+      <div className="flex gap-1 mb-3">
+        {(['curl', 'js', 'python'] as const).map(t => (
+          <button key={t} onClick={() => setEmailCodeTab(t)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${emailCodeTab === t ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            {t === 'curl' ? 'cURL' : t === 'js' ? 'JavaScript' : 'Python'}
+          </button>
+        ))}
+      </div>
+    );
+    const options: [string, string, string][] = [
+      ['email', 'string', 'One recipient. Use contacts[] instead for several.'],
+      ['contacts', 'array', 'Up to 50 { email, name }. {{name}} is filled per contact.'],
+      ['message.subject', 'string', 'Required.'],
+      ['message.bodyHtml', 'string', 'Required. HTML body; {{name}} is filled per contact.'],
+      ['message.bodyText', 'string', 'Optional plain-text fallback.'],
+      ['attachments', 'array', 'Files to attach — see Attachments below.'],
+      ['tracking', 'boolean', 'Add open & click tracking. Default false.'],
+      ['attachSig', 'boolean', 'Append your saved email signature. Default false.'],
+      ['sendDeck', 'boolean', 'Attach your saved company deck. Default false.'],
+      ['schedule_at', 'string', 'ISO 8601 time, at least 30 seconds ahead, to send later.'],
+    ];
     return (
       <div>
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Email API</h1>
-          <p className="text-gray-500 text-sm">Trigger transactional or bulk emails programmatically. Requires Email service subscription with SMTP configured.</p>
+          <p className="text-gray-500 text-sm">Send transactional or bulk emails, with attachments, through your connected mailbox. Requires the Email service with SMTP, Gmail or Hostinger connected. You can try every option in Email → SMTP → API Playground.</p>
         </div>
 
         <div className="mb-8">
           <EndpointHeader method="POST" path="/api/v1/email/send" description="Send to one or up to 50 email recipients" />
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 text-xs font-mono text-gray-700 space-y-1">
-            <p className="text-gray-400 font-sans text-xs uppercase tracking-wide font-semibold mb-2">Required headers</p>
+            <p className="text-gray-400 font-sans text-xs uppercase tracking-wide font-semibold mb-2">Headers</p>
             <p><span className="text-blue-600">X-API-Key</span>: nex_your_key</p>
-            <p><span className="text-blue-600">Content-Type</span>: application/json</p>
+            <p><span className="text-blue-600">Content-Type</span>: application/json <span className="text-gray-400 font-sans">— or multipart/form-data when uploading files</span></p>
           </div>
 
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Request Body</p>
@@ -658,26 +744,76 @@ curl -X POST https://nexbotix.online/api/mcp \\
     "bodyHtml": "<h1>Hi {{name}}!</h1><p>Your order has been placed.</p>",
     "bodyText": "Hi! Your order has been placed."  // optional fallback
   },
+  "attachments": [                   // optional, max 10
+    { "filename": "invoice.pdf", "content": "<base64>" },
+    { "url": "https://example.com/brochure.pdf" }
+  ],
+  "tracking": false,                 // optional — open/click tracking
+  "attachSig": false,                // optional — your saved signature
+  "sendDeck": false,                 // optional — your saved company deck
   "schedule_at": "2025-12-01T09:00:00Z"  // optional
 }`} />
 
+          <div className="mt-4 border border-gray-200 rounded-xl overflow-hidden">
+            <table className="w-full text-xs">
+              <thead className="bg-gray-50 text-gray-500">
+                <tr><th className="text-left px-3 py-2 font-semibold">Field</th><th className="text-left px-3 py-2 font-semibold">Type</th><th className="text-left px-3 py-2 font-semibold">Description</th></tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {options.map(([f, t, d]) => (
+                  <tr key={f}><td className="px-3 py-2 font-mono text-blue-700 whitespace-nowrap">{f}</td><td className="px-3 py-2 text-gray-500">{t}</td><td className="px-3 py-2 text-gray-700">{d}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-4 mb-2">Response</p>
-          <CodeBlock id="email-res" language="json" code={`{ "success": true, "sent": 1, "failed": 0, "total": 1 }`} />
+          <CodeBlock id="email-res" language="json" code={`{
+  "success": true,
+  "sent": 1,
+  "failed": 0,
+  "total": 1,
+  "tracking": false,
+  "attachments": ["invoice.pdf", "brochure.pdf"]
+}`} />
+          <p className="text-xs text-gray-500 mt-2">Scheduled sends return <code className="font-mono">{'{ "scheduled": true, "job_id", "scheduled_at", "total", "tracking", "attachments" }'}</code> with HTTP 202. Errors return <code className="font-mono">{'{ "success": false, "error": "…" }'}</code> with HTTP 400.</p>
 
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-5 mb-2">Code Examples</p>
-          <div className="flex gap-1 mb-3">
-            {(['curl', 'js', 'python'] as const).map(t => (
-              <button key={t} onClick={() => setEmailCodeTab(t)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${emailCodeTab === t ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                {t === 'curl' ? 'cURL' : t === 'js' ? 'JavaScript' : 'Python'}
-              </button>
-            ))}
-          </div>
+          {codeTabs}
           <CodeBlock id={`email-code-${emailCodeTab}`} language={langs[emailCodeTab]} code={snippets[emailCodeTab]} />
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
-          <strong>Note:</strong> The <code className="font-mono text-blue-900 bg-blue-100 px-1 rounded">{'{{name}}'}</code> placeholder in <code className="font-mono text-blue-900 bg-blue-100 px-1 rounded">bodyHtml</code> is automatically replaced with each contact's name when using the <code className="font-mono text-blue-900 bg-blue-100 px-1 rounded">contacts[]</code> array.
+        <div className="mb-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">Attachments</h2>
+          <p className="text-gray-500 text-sm mb-3">Three ways to attach files — mix them freely in one request:</p>
+          <ul className="text-sm text-gray-700 space-y-1.5 mb-4 list-disc pl-5">
+            <li><strong>File upload</strong> — send <code className="font-mono text-xs">multipart/form-data</code> with files in <code className="font-mono text-xs">attachments</code>. Other fields go as form fields (<code className="font-mono text-xs">email</code>, <code className="font-mono text-xs">name</code>, <code className="font-mono text-xs">subject</code>, <code className="font-mono text-xs">bodyHtml</code>, <code className="font-mono text-xs">bodyText</code>, <code className="font-mono text-xs">contacts</code> as JSON, <code className="font-mono text-xs">tracking</code>, <code className="font-mono text-xs">attachSig</code>, <code className="font-mono text-xs">sendDeck</code>, <code className="font-mono text-xs">schedule_at</code>) — or put the whole JSON body in one <code className="font-mono text-xs">payload</code> field.</li>
+            <li><strong>Base64</strong> — in JSON, <code className="font-mono text-xs">{'{ "filename": "invoice.pdf", "content": "<base64>", "contentType": "application/pdf" }'}</code>. <code className="font-mono text-xs">filename</code> is required; <code className="font-mono text-xs">contentType</code> is detected if left out.</li>
+            <li><strong>URL</strong> — <code className="font-mono text-xs">{'{ "url": "https://…/file.pdf" }'}</code> and we download it. Only public http(s) links; the filename comes from the link unless you set one.</li>
+          </ul>
+          {codeTabs}
+          <CodeBlock id={`email-attach-${emailCodeTab}`} language={langs[emailCodeTab]} code={attachSnippets[emailCodeTab]} />
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-1 text-gray-700">
+              <p className="font-semibold text-gray-900">Limits</p>
+              <p>Up to 10 files per request, 10 MB each</p>
+              <p>15 MB total per email (10 MB for scheduled sends)</p>
+              <p>Whole request up to 24 MB (base64 adds ~33%)</p>
+              <p>Every recipient gets the same attachments</p>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-1 text-gray-700">
+              <p className="font-semibold text-gray-900">Blocked file types</p>
+              <p>Executables and scripts are rejected because mail providers block them: .exe .bat .cmd .com .scr .msi .dll .js .vbs .ps1 .jar .sh .apk and similar.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 space-y-1.5">
+          <p><strong>How API emails differ from bulk sends:</strong> they go out exactly as you write them.</p>
+          <p>• No open/click tracking unless <code className="font-mono text-blue-900 bg-blue-100 px-1 rounded">tracking: true</code></p>
+          <p>• No signature or company deck unless <code className="font-mono text-blue-900 bg-blue-100 px-1 rounded">attachSig: true</code> / <code className="font-mono text-blue-900 bg-blue-100 px-1 rounded">sendDeck: true</code> (whatever your auto-attach settings are)</p>
+          <p>• No send-summary email to your account afterwards</p>
+          <p>• <code className="font-mono text-blue-900 bg-blue-100 px-1 rounded">{'{{name}}'}</code> in the subject and body is replaced with each contact's name</p>
         </div>
       </div>
     );
