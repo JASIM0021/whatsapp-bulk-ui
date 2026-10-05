@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Code2, KeyRound, Send, Loader2, Copy, Check, Eye, EyeOff, Plus, FlaskConical, Paperclip, X } from 'lucide-react';
 import { apiFetch, API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 
@@ -108,10 +108,22 @@ export function EmailAPIPlayground() {
     if (totalBytes > (scheduleAt ? 10 << 20 : MAX_TOTAL_BYTES)) return `Files add up to more than ${scheduleAt ? 10 : 15} MB.`;
     return '';
   })();
+  // Copy the files out right away: the input's FileList is live and is emptied
+  // when the input is reset, before React runs the state update.
   const addFiles = (list: FileList | null) => {
-    if (!list) return;
-    setFiles(prev => [...prev, ...Array.from(list)].slice(0, MAX_FILES + 1));
+    const picked = list ? Array.from(list) : [];
+    if (!picked.length) return;
+    setFiles(prev => [...prev, ...picked].slice(0, MAX_FILES + 1));
   };
+  const removeFile = (i: number) => {
+    setFiles(prev => prev.filter((_, j) => j !== i));
+    setPreviewIdx(null);
+  };
+
+  // Thumbnails for images; object URLs are released when the list changes.
+  const [previewIdx, setPreviewIdx] = useState<number | null>(null);
+  const previews = useMemo(() => files.map(f => (f.type.startsWith('image/') ? URL.createObjectURL(f) : '')), [files]);
+  useEffect(() => () => previews.forEach(u => u && URL.revokeObjectURL(u)), [previews]);
 
   const json = JSON.stringify(body, null, 2);
   const keyInCode = showKey && apiKey ? apiKey : 'YOUR_API_KEY';
@@ -228,18 +240,46 @@ export function EmailAPIPlayground() {
               <Paperclip size={13} />Choose files or drop them here
               <input type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} />
             </label>
-            {files.length > 0 && (
+            {files.some((_, i) => previews[i]) && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {files.map((f, i) => previews[i] && (
+                  <div key={`${f.name}-${i}`} className="relative group w-20">
+                    <button onClick={() => setPreviewIdx(i)} className="block w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 hover:ring-2 hover:ring-indigo-400" title={`Preview ${f.name}`}>
+                      <img src={previews[i]} alt={f.name} className="w-full h-full object-cover" />
+                    </button>
+                    <button onClick={() => removeFile(i)} aria-label={`Remove ${f.name}`}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-white border border-gray-300 text-gray-500 hover:text-red-600 hover:border-red-300 shadow-sm"><X size={11} /></button>
+                    <p className="mt-0.5 text-[10px] text-gray-500 truncate" title={f.name}>{f.name}</p>
+                    <p className="text-[10px] text-gray-400">{fmtSize(f.size)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {files.some((_, i) => !previews[i]) && (
               <ul className="mt-2 space-y-1">
-                {files.map((f, i) => (
+                {files.map((f, i) => !previews[i] && (
                   <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-2 px-2 py-1 bg-gray-50 border border-gray-100 rounded-md text-xs">
                     <span className="truncate text-gray-700">{f.name}</span>
                     <span className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-gray-400">{fmtSize(f.size)}</span>
-                      <button onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500" aria-label={`Remove ${f.name}`}><X size={12} /></button>
+                      <button onClick={() => removeFile(i)} className="text-gray-400 hover:text-red-500" aria-label={`Remove ${f.name}`}><X size={12} /></button>
                     </span>
                   </li>
                 ))}
               </ul>
+            )}
+            {files.length > 0 && <p className="text-[11px] text-gray-500 mt-1">{files.length} file{files.length > 1 ? 's' : ''} · {fmtSize(totalBytes)} — sent as multipart/form-data</p>}
+            {previewIdx !== null && previews[previewIdx] && (
+              <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setPreviewIdx(null)}>
+                <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
+                  <img src={previews[previewIdx]} alt={files[previewIdx].name} className="max-h-[80vh] w-auto mx-auto rounded-lg shadow-xl bg-white" />
+                  <div className="mt-2 flex items-center justify-center gap-3 text-sm text-white">
+                    <span className="truncate">{files[previewIdx].name} · {fmtSize(files[previewIdx].size)}</span>
+                    <button onClick={() => removeFile(previewIdx)} className="px-2.5 py-1 rounded-md bg-red-600 hover:bg-red-700 text-xs font-semibold">Remove</button>
+                    <button onClick={() => setPreviewIdx(null)} className="px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 text-xs font-semibold">Close</button>
+                  </div>
+                </div>
+              </div>
             )}
             <textarea value={fileUrls} onChange={e => setFileUrls(e.target.value)} rows={1}
               placeholder="…or file URLs we download (one per line)"
