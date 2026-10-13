@@ -25,7 +25,7 @@ function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-950/90 backdrop-blur-xl border-b border-gray-800/60">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-nb-bg/85 backdrop-blur-xl border-b border-nb-line">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -93,7 +93,7 @@ function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-gray-950 border-t border-gray-800 px-4 pb-4 pt-2 space-y-1">
+        <div className="md:hidden bg-nb-bg border-t border-nb-line px-4 pb-4 pt-2 space-y-1">
           {navLinks.map((link) => (
             <Link
               key={link.to}
@@ -135,9 +135,9 @@ function Navbar() {
 
 function Footer() {
   return (
-    <footer className="bg-gray-950 border-t border-gray-800/60 text-gray-400 py-16">
+    <footer className="bg-[#070708] border-t border-nb-line text-nb-muted py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
@@ -147,7 +147,7 @@ function Footer() {
               </span>
             </div>
             <p className="text-sm leading-relaxed text-gray-500">
-              The fastest way to reach your customers on WhatsApp. Built for teams who value efficiency.
+              AI employees for WhatsApp, email, lead generation and website chat. From $5 a month.
             </p>
           </div>
 
@@ -161,6 +161,19 @@ function Footer() {
               <li><Link to="/blog" className="text-sm hover:text-white transition-colors">Blog</Link></li>
               <li><Link to="/#how-it-works" className="text-sm hover:text-white transition-colors">How It Works</Link></li>
               <li><Link to="/docs" className="text-sm hover:text-white transition-colors">API Documentation</Link></li>
+            </ul>
+          </div>
+
+          {/* AI employees — internal links to each job section */}
+          <div>
+            <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">AI Employees</p>
+            <ul className="space-y-2.5">
+              <li><Link to="/#job-whatsapp" className="text-sm hover:text-white transition-colors">WhatsApp Marketing</Link></li>
+              <li><Link to="/#job-leads" className="text-sm hover:text-white transition-colors">Lead Generation</Link></li>
+              <li><Link to="/#job-email" className="text-sm hover:text-white transition-colors">Email Outreach</Link></li>
+              <li><Link to="/#job-chatbot" className="text-sm hover:text-white transition-colors">Website Chatbot</Link></li>
+              <li><Link to="/#job-social" className="text-sm hover:text-white transition-colors">Social Media &amp; SEO</Link></li>
+              <li><Link to="/#job-calendar" className="text-sm hover:text-white transition-colors">Booking &amp; Calendar</Link></li>
             </ul>
           </div>
 

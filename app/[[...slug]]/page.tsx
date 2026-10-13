@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import SpaApp from '@/SpaApp';
 import ClientOnlySpa from './ClientOnlySpa';
-import { APP_SEGMENTS, PUBLIC_PAGES, findBlogPost, indexablePaths, type PageSeo } from '@/seo/site';
-import { JsonLd, blogPostingJsonLd, softwareApplicationJsonLd } from '@/seo/jsonld';
+import { APP_SEGMENTS, DEFAULT_OG_IMAGE, PUBLIC_PAGES, findBlogPost, indexablePaths, type PageSeo } from '@/seo/site';
+import { JsonLd, blogPostingJsonLd, demoVideoJsonLd, faqPageJsonLd, publicPageJsonLd, softwareApplicationJsonLd } from '@/seo/jsonld';
+import { BLOG_POSTS } from '@/data/blogPosts';
+import { FAQ } from '@/components/landing/homeContent';
 
 type Props = { params: Promise<{ slug?: string[] }> };
 
@@ -36,8 +38,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       keywords,
       alternates: { canonical: route.path },
-      openGraph: { title, description, url: route.path },
-      twitter: { title, description },
+      // Page-level openGraph/twitter replace the layout's, so restate the image.
+      openGraph: { title, description, url: route.path, images: [DEFAULT_OG_IMAGE] },
+      twitter: { card: 'summary_large_image', title, description, images: [DEFAULT_OG_IMAGE] },
     };
   }
 
@@ -61,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         section: post.category,
         tags: post.tags,
       },
-      twitter: { title, description: post.metaDescription, images: [post.image] },
+      twitter: { card: 'summary_large_image', title, description: post.metaDescription, images: [post.image] },
     };
   }
 
@@ -77,7 +80,8 @@ export default async function Page({ params }: Props) {
   return (
     <>
       <SpaApp location={route.path} />
-      {route.path === '/' && <JsonLd data={softwareApplicationJsonLd} />}
+      {route.path === '/' && <JsonLd data={[softwareApplicationJsonLd, faqPageJsonLd(FAQ), demoVideoJsonLd]} />}
+      {route.kind === 'page' && route.path !== '/' && <JsonLd data={publicPageJsonLd(route.path, route.page, BLOG_POSTS)} />}
       {route.kind === 'post' && <JsonLd data={blogPostingJsonLd(route.post)} />}
     </>
   );

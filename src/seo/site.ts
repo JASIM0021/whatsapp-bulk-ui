@@ -5,7 +5,7 @@ import { BLOG_POSTS, type BlogPost } from '../data/blogPosts';
 
 export const SITE_URL = 'https://nexbotix.online';
 export const SITE_NAME = 'NexBotix';
-export const DEFAULT_OG_IMAGE = '/icon-512.png';
+export const DEFAULT_OG_IMAGE = '/og.png'; // 1200×630
 
 export interface PageSeo {
   title: string;
@@ -62,25 +62,25 @@ export const PUBLIC_PAGES = {
   },
   '/privacy': {
     title: 'Privacy Policy - NexBotix',
-    description: 'Learn how we collect, use, and protect your personal information when you use NexBotix.',
+    description: 'How NexBotix collects, uses, stores and protects your personal data, including connected WhatsApp, email and social accounts, and how to contact us.',
     changeFrequency: 'yearly',
     priority: 0.3,
   },
   '/terms': {
     title: 'Terms & Conditions - NexBotix',
-    description: 'Read the terms and conditions for using NexBotix.',
+    description: 'The terms and conditions for using NexBotix AI employees, WhatsApp and email messaging, subscriptions, acceptable use and account termination.',
     changeFrequency: 'yearly',
     priority: 0.3,
   },
   '/refund': {
     title: 'Refund Policy - NexBotix',
-    description: 'Read the refund policy for NexBotix.',
+    description: 'When NexBotix subscriptions are eligible for a refund, how to request one, and how long refunds take to reach your original payment method.',
     changeFrequency: 'yearly',
     priority: 0.3,
   },
   '/data-deletion': {
     title: 'Data Deletion Request - NexBotix',
-    description: 'Request deletion of your personal data from NexBotix.',
+    description: 'Request deletion of your NexBotix account and personal data, including messages, contacts and connected accounts. Deletion is permanent and cannot be undone.',
     changeFrequency: 'yearly',
     priority: 0.3,
   },

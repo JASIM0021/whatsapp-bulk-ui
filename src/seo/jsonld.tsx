@@ -79,3 +79,103 @@ export function blogPostingJsonLd(post: BlogPost): Json[] {
     },
   ];
 }
+
+export function faqPageJsonLd(faq: { q: string; a: string }[]): Json {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  };
+}
+
+// The homepage demo (public/demo-video.mp4, added 2026-07-08, 45 s).
+export const demoVideoJsonLd: Json = {
+  '@context': 'https://schema.org',
+  '@type': 'VideoObject',
+  name: 'NexBotix demo: sending a WhatsApp campaign with an AI employee',
+  description: 'A WhatsApp campaign in NexBotix, from uploading a contact list to sent messages.',
+  thumbnailUrl: absolute('/demo-video-poster.webp'),
+  contentUrl: absolute('/demo-video.mp4'),
+  uploadDate: '2026-07-08T17:28:38+05:30',
+  duration: 'PT45S',
+};
+
+const PAGE_TYPES: Record<string, string> = {
+  '/about': 'AboutPage',
+  '/contact': 'ContactPage',
+  '/blog': 'CollectionPage',
+};
+
+const crumbName = (path: string, title: string) => title.split(/[|:–-]/)[0].trim() || path;
+
+// WebPage (or a more specific subtype) + BreadcrumbList for every public page
+// except "/", which has its own SoftwareApplication/FAQ/Video graph.
+export function publicPageJsonLd(path: string, page: { title: string; description: string }, posts: BlogPost[] = []): Json[] {
+  const url = absolute(path);
+  const graph: Json[] = [
+    {
+      '@context': 'https://schema.org',
+      '@type': PAGE_TYPES[path] ?? 'WebPage',
+      '@id': `${url}#webpage`,
+      url,
+      name: page.title,
+      description: page.description,
+      inLanguage: 'en',
+      isPartOf: { '@id': `${SITE_URL}/#website` },
+      publisher: { '@id': `${SITE_URL}/#organization` },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: crumbName(path, page.title), item: url },
+      ],
+    },
+  ];
+
+  if (path === '/blog') {
+    graph.push({
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      itemListElement: posts.map((post, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        url: absolute(blogPostPath(post)),
+        name: post.title,
+      })),
+    });
+  }
+
+  if (path === '/pricing') {
+    // Mirrors PricingSection in src/components/landing/HomePage.tsx (monthly prices).
+    const plans: [string, number, string][] = [
+      ['Starter AI Employee', 5, '1 active AI employee, 1,000 agent calls per month'],
+      ['Growth Workforce', 15, 'Up to 3 active AI employees, 5,000 agent calls per month'],
+      ['Scale Workforce', 49, 'Up to 10 active AI employees, 25,000 agent calls per month'],
+    ];
+    graph.push({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: SITE_NAME,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      url: SITE_URL,
+      offers: plans.map(([name, price, description]) => ({
+        '@type': 'Offer',
+        name,
+        description,
+        price,
+        priceCurrency: 'USD',
+        url,
+        priceSpecification: { '@type': 'UnitPriceSpecification', price, priceCurrency: 'USD', unitCode: 'MON' },
+      })),
+    });
+  }
+
+  return graph;
+}
