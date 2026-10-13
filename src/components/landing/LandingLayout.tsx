@@ -8,7 +8,7 @@ function Navbar() {
 
   const navLinks = [
     { to: '/', label: 'Home' },
-    { to: '/#features', label: 'Features' },
+    { to: '/ai-agents', label: 'AI Employees' },
     { to: '/pricing', label: 'Pricing' },
     { to: '/blog', label: 'Blog' },
     { to: '/docs', label: 'API Docs' },
@@ -168,12 +168,13 @@ function Footer() {
           <div>
             <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">AI Employees</p>
             <ul className="space-y-2.5">
-              <li><Link to="/#job-whatsapp" className="text-sm hover:text-white transition-colors">WhatsApp Marketing</Link></li>
-              <li><Link to="/#job-leads" className="text-sm hover:text-white transition-colors">Lead Generation</Link></li>
-              <li><Link to="/#job-email" className="text-sm hover:text-white transition-colors">Email Outreach</Link></li>
-              <li><Link to="/#job-chatbot" className="text-sm hover:text-white transition-colors">Website Chatbot</Link></li>
-              <li><Link to="/#job-social" className="text-sm hover:text-white transition-colors">Social Media &amp; SEO</Link></li>
-              <li><Link to="/#job-calendar" className="text-sm hover:text-white transition-colors">Booking &amp; Calendar</Link></li>
+              <li><Link to="/ai-agents/whatsapp" className="text-sm hover:text-white transition-colors">WhatsApp Marketing</Link></li>
+              <li><Link to="/ai-agents/leads" className="text-sm hover:text-white transition-colors">Lead Generation</Link></li>
+              <li><Link to="/ai-agents/email" className="text-sm hover:text-white transition-colors">Email Outreach</Link></li>
+              <li><Link to="/ai-agents/website-chatbot" className="text-sm hover:text-white transition-colors">Website Chatbot</Link></li>
+              <li><Link to="/ai-agents/social" className="text-sm hover:text-white transition-colors">Social Media</Link></li>
+              <li><Link to="/ai-agents/seo" className="text-sm hover:text-white transition-colors">SEO Agent</Link></li>
+              <li><Link to="/ai-agents/calendar" className="text-sm hover:text-white transition-colors">Booking &amp; Calendar</Link></li>
             </ul>
           </div>
 

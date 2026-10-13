@@ -12,6 +12,15 @@ const CARDS = [
   { file: 'public/og/docs.png', label: 'API docs', title: 'WhatsApp, email, chatbot &amp; MCP API', foot: 'REST API · MCP server · Webhooks' },
   { file: 'public/og/contact.png', label: 'Contact', title: 'Talk to the NexBotix team', foot: 'We reply within 24 hours' },
   { file: 'public/og/check-chatbot.png', label: 'Free tool', title: 'See your AI chatbot live on your website', foot: 'Free demo · No signup needed' },
+  { file: 'public/og/ai-agents.png', label: 'AI employees', title: 'AI employees for every job you keep putting off', foot: 'WhatsApp · Leads · Email · Chat · Social · SEO · Booking' },
+  // Hub pages (/ai-agents/:slug) — keep titles in sync with src/components/landing/hubContent.ts
+  { file: 'public/og/hub-whatsapp.png', label: 'Nexa · WhatsApp', title: 'WhatsApp bulk messaging with AI auto-reply', foot: 'Excel/CSV upload · Scheduling · AI follow-ups' },
+  { file: 'public/og/hub-leads.png', label: 'Scrappy · Leads', title: 'Google Maps lead scraper &amp; AI outreach', foot: 'Google + Bing Maps · Email enrichment · 10 free leads' },
+  { file: 'public/og/hub-email.png', label: 'Mailo · Email', title: 'AI email outreach from your own inbox', foot: 'Gmail · Outlook · SMTP · Opens &amp; clicks' },
+  { file: 'public/og/hub-website-chatbot.png', label: 'Webby · Website chat', title: 'An AI chatbot trained on your website', foot: 'One script tag · Lead capture · Free demo' },
+  { file: 'public/og/hub-social.png', label: 'Pagey &amp; Linko · Social', title: 'AI social media manager for Facebook &amp; LinkedIn', foot: 'Scheduling · AI posts · Approve by email' },
+  { file: 'public/og/hub-seo.png', label: 'Seona · SEO', title: 'An AI SEO agent that writes your blog', foot: 'Core Web Vitals · Auto-fixes · Posts to GitHub' },
+  { file: 'public/og/hub-calendar.png', label: 'Schedula · Booking', title: 'Appointment booking with Google Meet', foot: 'Google Calendar sync · Embeds · Working hours' },
 ];
 
 const browser = await chromium.launch();

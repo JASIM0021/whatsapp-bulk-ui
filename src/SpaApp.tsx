@@ -61,6 +61,8 @@ const CampaignPage = lazy(() => import('@/views/CampaignPage').then(m => ({ defa
 const InfluencerDashboard = lazy(() => import('@/views/influencer/InfluencerDashboard'))
 const DeveloperPage = lazy(() => import('./views/DeveloperPage').then(m => ({ default: m.DeveloperPage })))
 const BlogPage = lazy(() => import('./views/BlogPage'))
+const AgentHubPage = lazy(() => import('./views/AgentHubPage').then(m => ({ default: m.AgentHubPage })))
+const AgentHubIndexPage = lazy(() => import('./views/AgentHubPage').then(m => ({ default: m.AgentHubIndexPage })))
 const BlogPostPage = lazy(() => import('./views/BlogPostPage'))
 const MCPOAuthApprovePage = lazy(() => import('./views/MCPOAuthApprovePage').then(m => ({ default: m.MCPOAuthApprovePage })))
 const CalendarPage = lazy(() => import('./views/calendar/CalendarPage').then(m => ({ default: m.CalendarPage })))
@@ -164,6 +166,8 @@ function AppRoutes() {
         {/* Public landing pages */}
       <Route path="/" element={<LandingLayout><HomePage /></LandingLayout>} />
       <Route path="/pricing" element={<LandingLayout><PricingPage /></LandingLayout>} />
+      <Route path="/ai-agents" element={<LandingLayout><AgentHubIndexPage /></LandingLayout>} />
+      <Route path="/ai-agents/:slug" element={<LandingLayout><AgentHubPage /></LandingLayout>} />
       <Route path="/privacy" element={<LandingLayout><PrivacyPolicy /></LandingLayout>} />
       <Route path="/terms" element={<LandingLayout><TermsConditions /></LandingLayout>} />
       <Route path="/refund" element={<LandingLayout><RefundPolicy /></LandingLayout>} />

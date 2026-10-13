@@ -1,5 +1,7 @@
 import type { BlogPost } from '../data/blogPosts';
 import { SITE_NAME, SITE_URL, PUBLIC_PAGES, blogPostPath } from './site';
+import { HUBS, hubPath, type Hub } from '../components/landing/hubContent';
+import { hubFaq } from '../components/landing/hubExtras';
 
 type Json = Record<string, unknown>;
 
@@ -18,6 +20,11 @@ export const organizationJsonLd: Json = {
   name: SITE_NAME,
   url: SITE_URL,
   logo: absolute('/icon-512.png'),
+  // Each AI employee page, like the competitor's makesOffer list.
+  makesOffer: HUBS.map((h) => ({
+    '@type': 'Offer',
+    itemOffered: { '@type': 'Service', name: h.seoTitle.split(' | ')[0], description: h.seoDescription, url: absolute(hubPath(h)) },
+  })),
 };
 
 export const websiteJsonLd: Json = {
@@ -178,4 +185,32 @@ export function publicPageJsonLd(path: string, page: { title: string; descriptio
   }
 
   return graph;
+}
+
+export function hubJsonLd(hub: Hub, agentNames: string[]): Json[] {
+  const url = absolute(hubPath(hub));
+  const name = hub.seoTitle.split(' | ')[0];
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: `NexBotix ${agentNames.join(' & ')}: ${name}`,
+      description: hub.seoDescription,
+      url,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      offers: { '@type': 'AggregateOffer', priceCurrency: 'USD', lowPrice: 5, highPrice: 15, offerCount: 2, url: absolute('/pricing') },
+      publisher: { '@id': `${SITE_URL}/#organization` },
+    },
+    faqPageJsonLd(hubFaq(hub)),
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'AI Employees', item: absolute('/ai-agents') },
+        { '@type': 'ListItem', position: 3, name: agentNames.join(' & '), item: url },
+      ],
+    },
+  ];
 }

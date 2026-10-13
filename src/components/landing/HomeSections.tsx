@@ -163,7 +163,7 @@ export function MeetTheTeam() {
         </div>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {AGENTS.map((a) => (
-            <article key={a.id} className="group rounded-[20px] border border-nb-line bg-nb-surface p-6 transition-colors hover:border-nb-line2">
+            <article key={a.id} className="group relative rounded-[20px] border border-nb-line bg-nb-surface p-6 transition-colors hover:border-nb-line2">
               <div className="flex items-center gap-4">
                 <Avatar a={a} size={56} />
                 <div>
@@ -172,6 +172,11 @@ export function MeetTheTeam() {
                 </div>
               </div>
               <p className="mt-5 text-[15px] leading-relaxed text-nb-muted">“{a.pitch}”</p>
+              {a.hub && (
+                <Link to={`/ai-agents/${a.hub}`} className="mt-4 inline-flex items-center gap-1 text-[14px] font-semibold text-nb-acc after:absolute after:inset-0">
+                  Meet {a.name} <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
             </article>
           ))}
         </div>
@@ -324,6 +329,8 @@ function JobMock({ id }: { id: string }) {
   );
 }
 
+const JOB_HUB: Record<string, string> = { whatsapp: 'whatsapp', leads: 'leads', email: 'email', chatbot: 'website-chatbot', social: 'social', calendar: 'calendar' };
+
 export function JobsSection() {
   return (
     <section id="features" className="scroll-mt-16 border-t border-nb-line py-24 sm:py-32">
@@ -353,6 +360,9 @@ export function JobsSection() {
                     </li>
                   ))}
                 </ul>
+                <Link to={`/ai-agents/${JOB_HUB[job.id]}`} className="mt-7 inline-flex items-center gap-1 text-[15px] font-semibold text-nb-acc hover:underline">
+                  More about {job.title.toLowerCase()} <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
               <div className={n % 2 ? 'md:order-1' : ''}><JobMock id={job.id} /></div>
             </article>

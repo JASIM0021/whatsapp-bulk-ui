@@ -4,6 +4,7 @@
 
 export interface Agent {
   id: string;
+  hub?: string; // /ai-agents/:hub landing page
   name: string;
   role: string;
   avatar: string;
@@ -11,14 +12,14 @@ export interface Agent {
 }
 
 export const AGENTS: Agent[] = [
-  { id: 'whatsapp', name: 'Nexa', role: 'WhatsApp Marketer', avatar: '/agents/web/whatsapp.webp', pitch: 'I send your WhatsApp campaigns and reply to every customer, day and night.' },
-  { id: 'leads', name: 'Scrappy', role: 'Lead Finder', avatar: '/agents/web/leads.webp', pitch: 'I find businesses on Google Maps that need what you sell, with their contact details.' },
-  { id: 'email', name: 'Mailo', role: 'Email Outreach', avatar: '/agents/web/email.webp', pitch: 'I write and send your email campaigns, then follow up so nobody slips through.' },
-  { id: 'chatbot', name: 'Webby', role: 'Website Chat Agent', avatar: '/agents/web/chatbot.webp', pitch: 'I answer visitors on your website in seconds and turn them into leads.' },
-  { id: 'facebook', name: 'Pagey', role: 'Facebook Manager', avatar: '/agents/web/facebook.webp', pitch: 'I schedule posts to your Facebook Pages and track how they perform.' },
-  { id: 'linkedin', name: 'Linko', role: 'LinkedIn Growth', avatar: '/agents/web/linkedin.webp', pitch: 'I keep your LinkedIn active with AI-written, scheduled posts.' },
-  { id: 'seo', name: 'Seona', role: 'SEO Specialist', avatar: '/agents/web/seo.webp', pitch: 'I watch your rankings and Core Web Vitals and write blog posts that get found.' },
-  { id: 'calendar', name: 'Schedula', role: 'Booking Assistant', avatar: '/agents/web/calendar.webp', pitch: 'I book meetings into your calendar with Google Meet links attached.' },
+  { id: 'whatsapp', hub: 'whatsapp', name: 'Nexa', role: 'WhatsApp Marketer', avatar: '/agents/web/whatsapp.webp', pitch: 'I send your WhatsApp campaigns and reply to every customer, day and night.' },
+  { id: 'leads', hub: 'leads', name: 'Scrappy', role: 'Lead Finder', avatar: '/agents/web/leads.webp', pitch: 'I find businesses on Google Maps that need what you sell, with their contact details.' },
+  { id: 'email', hub: 'email', name: 'Mailo', role: 'Email Outreach', avatar: '/agents/web/email.webp', pitch: 'I write and send your email campaigns, then follow up so nobody slips through.' },
+  { id: 'chatbot', hub: 'website-chatbot', name: 'Webby', role: 'Website Chat Agent', avatar: '/agents/web/chatbot.webp', pitch: 'I answer visitors on your website in seconds and turn them into leads.' },
+  { id: 'facebook', hub: 'social', name: 'Pagey', role: 'Facebook Manager', avatar: '/agents/web/facebook.webp', pitch: 'I schedule posts to your Facebook Pages and track how they perform.' },
+  { id: 'linkedin', hub: 'social', name: 'Linko', role: 'LinkedIn Growth', avatar: '/agents/web/linkedin.webp', pitch: 'I keep your LinkedIn active with AI-written, scheduled posts.' },
+  { id: 'seo', hub: 'seo', name: 'Seona', role: 'SEO Specialist', avatar: '/agents/web/seo.webp', pitch: 'I watch your rankings and Core Web Vitals and write blog posts that get found.' },
+  { id: 'calendar', hub: 'calendar', name: 'Schedula', role: 'Booking Assistant', avatar: '/agents/web/calendar.webp', pitch: 'I book meetings into your calendar with Google Meet links attached.' },
   { id: 'youtube', name: 'Tuber', role: 'YouTube Growth', avatar: '/agents/web/youtube.webp', pitch: 'I spot trending topics, draft scripts and tune your video SEO.' },
 ];
 

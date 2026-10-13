@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import SpaApp from '@/SpaApp';
 import ClientOnlySpa from './ClientOnlySpa';
-import { APP_SEGMENTS, DEFAULT_OG_IMAGE, PUBLIC_PAGES, findBlogPost, indexablePaths, type PageSeo } from '@/seo/site';
-import { JsonLd, blogPostingJsonLd, demoVideoJsonLd, faqPageJsonLd, publicPageJsonLd, softwareApplicationJsonLd } from '@/seo/jsonld';
+import { APP_SEGMENTS, DEFAULT_OG_IMAGE, PUBLIC_PAGES, findBlogPost, findHub, indexablePaths, type PageSeo } from '@/seo/site';
+import { JsonLd, blogPostingJsonLd, demoVideoJsonLd, faqPageJsonLd, hubJsonLd, publicPageJsonLd, softwareApplicationJsonLd } from '@/seo/jsonld';
 import { BLOG_POSTS } from '@/data/blogPosts';
-import { FAQ, PRICING_FAQ } from '@/components/landing/homeContent';
+import { AGENTS, FAQ, PRICING_FAQ } from '@/components/landing/homeContent';
 
 type Props = { params: Promise<{ slug?: string[] }> };
 
@@ -23,6 +23,8 @@ function resolve(slug: string[] | undefined) {
   if (page) return { kind: 'page' as const, path, page };
   const post = findBlogPost(path);
   if (post) return { kind: 'post' as const, path, post };
+  const hub = findHub(path);
+  if (hub) return { kind: 'hub' as const, path, hub };
   if (slug?.length && APP_SEGMENTS.has(slug[0])) return { kind: 'app' as const, path };
   return null;
 }
@@ -40,6 +42,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       keywords,
       alternates: { canonical: route.path },
       // Page-level openGraph/twitter replace the layout's, so restate the image.
+      openGraph: { title, description, url: route.path, images: [image] },
+      twitter: { card: 'summary_large_image', title, description, images: [image] },
+    };
+  }
+
+  if (route.kind === 'hub') {
+    const { seoTitle: title, seoDescription: description, keyword } = route.hub;
+    const image = `/og/hub-${route.hub.slug}.png`;
+    return {
+      title,
+      description,
+      keywords: keyword,
+      alternates: { canonical: route.path },
       openGraph: { title, description, url: route.path, images: [image] },
       twitter: { card: 'summary_large_image', title, description, images: [image] },
     };
@@ -85,6 +100,9 @@ export default async function Page({ params }: Props) {
       {route.kind === 'page' && route.path !== '/' && <JsonLd data={publicPageJsonLd(route.path, route.page, BLOG_POSTS)} />}
       {route.path === '/pricing' && <JsonLd data={faqPageJsonLd(PRICING_FAQ)} />}
       {route.kind === 'post' && <JsonLd data={blogPostingJsonLd(route.post)} />}
+      {route.kind === 'hub' && (
+        <JsonLd data={hubJsonLd(route.hub, route.hub.agentIds.map((id) => AGENTS.find((a) => a.id === id)?.name ?? id))} />
+      )}
     </>
   );
 }

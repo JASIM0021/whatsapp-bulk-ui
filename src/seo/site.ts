@@ -2,6 +2,7 @@
 // app/[[...slug]]/page.tsx (metadata, sitemap) and in the browser by useSEO
 // (so client-side navigation shows the same titles).
 import { BLOG_POSTS, type BlogPost } from '../data/blogPosts';
+import { HUBS, findHubBySlug, hubPath } from '../components/landing/hubContent';
 
 export const SITE_URL = 'https://nexbotix.online';
 export const SITE_NAME = 'NexBotix';
@@ -30,6 +31,13 @@ export const PUBLIC_PAGES = {
     title: 'Pricing: AI Employees from $5/month | NexBotix',
     description: 'Per-agent pricing: Starter $5/mo for 1 AI employee and 1,000 agent calls, Growth $15/mo for 3, Scale $49/mo for 10. Save with yearly billing.',
     changeFrequency: 'monthly',
+    priority: 0.9,
+  },
+  '/ai-agents': {
+    ogImage: '/og/ai-agents.png',
+    title: 'AI Employees for Small Business: WhatsApp, Leads & Email | NexBotix',
+    description: 'Meet the NexBotix AI employees for WhatsApp marketing, lead generation, email outreach, website chat, social media, SEO and appointment booking.',
+    changeFrequency: 'weekly',
     priority: 0.9,
   },
   '/blog': {
@@ -104,9 +112,14 @@ export function findBlogPost(path: string) {
   return match ? BLOG_POSTS.find((p) => p.slug === match[1]) : undefined;
 }
 
+export function findHub(path: string) {
+  const match = /^\/ai-agents\/([^/]+)$/.exec(path);
+  return match ? findHubBySlug(match[1]) : undefined;
+}
+
 // Every path that is server-rendered and listed in the sitemap.
 export function indexablePaths(): string[] {
-  return [...Object.keys(PUBLIC_PAGES), ...BLOG_POSTS.map(blogPostPath)];
+  return [...Object.keys(PUBLIC_PAGES), ...HUBS.map(hubPath), ...BLOG_POSTS.map(blogPostPath)];
 }
 
 // First path segments that belong to the logged-in app (or to login/OAuth

@@ -165,13 +165,17 @@ Found while doing Phase 2 (for the owner):
 - `ultimate_yr` is hidden in the admin plan config, so Ultimate is monthly-only.
 - Landing shows $5 / $15; the backend prices are ₹399 / ₹1,199 per month.
 
-## Phase 3: Agent hub pages
+## Phase 3: Agent hub pages — DONE
 
-- [ ] Validate the seven hub keywords
-- [ ] One page per hub at `/ai-agents/{job}`: pain → meet the agent → four features (H3) → how it works (3 steps) → testimonials → FAQ
-- [ ] SoftwareApplication/Product + FAQPage + BreadcrumbList per hub
-- [ ] Link hubs from header, footer, homepage; list them in Organization `makesOffer`
-- [ ] Add hubs to `llms.txt`
+- [ ] Validate the seven hub keywords with Search Console or a keyword tool (not done: no keyword data source connected; titles target the phrases in the table above)
+- [x] 7 hub pages at `/ai-agents/{slug}` (whatsapp, leads, email, website-chatbot, social, seo, calendar) + `/ai-agents` index
+- [x] Section order: breadcrumb → hero (keyword H1) → "Does this sound familiar?" → meet the agent → 6 features (H3) → how it works → first-day checklist → example day → vs doing it by hand → use cases → long-form guide (7–8 question-shaped H3s with TOC) → what it won't do → FAQ (8–9) → related hubs
+- [x] 1,400–2,200 words each (server HTML); every product claim checked against the app code
+- [x] SoftwareApplication + FAQPage (matches visible FAQ) + BreadcrumbList per hub; Organization `makesOffer` lists all hubs
+- [x] Linked from navbar ("AI Employees"), footer, homepage team cards and job blocks, and each hub's related section
+- [x] `llms.txt` rewritten: hubs, real MCP tool names, accurate trial and pricing (old file claimed a 3-day trial, 99.99% uptime, number rotation)
+- [x] Per-hub Open Graph images (`public/og/hub-*.png`)
+- [ ] Add real customer reviews to each hub once available (Marblism's product pages are ~2,600 words partly because of testimonials)
 
 ## Phase 4: Blog engine and content
 
