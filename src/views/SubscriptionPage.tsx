@@ -73,7 +73,8 @@ function matchBestPlan(sel: Set<string>, cycle: 'monthly' | 'yearly', pricing: L
     if (selArr.length === c.services.length && selArr.every(s => cset.has(s))) {
       const pid = c.planId + suffix;
       const p = pricing?.[pid];
-      return p ? { planId: pid, name: p.name, price: p.amount, isExact: true, savingsPct: c.savingsPct, extras: [] } : null;
+      if (!p) continue; // combo not sold on this billing cycle
+      return { planId: pid, name: p.name, price: p.amount, isExact: true, savingsPct: c.savingsPct, extras: [] };
     }
   }
   // covering combo — cheapest that includes all selected
@@ -82,7 +83,8 @@ function matchBestPlan(sel: Set<string>, cycle: 'monthly' | 'yearly', pricing: L
     if (selArr.every(s => cset.has(s))) {
       const pid = c.planId + suffix;
       const p = pricing?.[pid];
-      return p ? { planId: pid, name: p.name, price: p.amount, isExact: false, savingsPct: c.savingsPct, extras: Array.from(c.services).filter(s => !sel.has(s)) } : null;
+      if (!p) continue;
+      return { planId: pid, name: p.name, price: p.amount, isExact: false, savingsPct: c.savingsPct, extras: Array.from(c.services).filter(s => !sel.has(s)) };
     }
   }
   return null;
@@ -1014,20 +1016,26 @@ export function SubscriptionPage() {
                     const selMatch = Array.from(selectedServices).length === combo.services.length &&
                       combo.services.every(s => selectedServices.has(s));
                     const isCurrent = subscription?.plan === pid && subscription?.isActive;
+                    // Pricing loaded but this combo isn't offered on the chosen cycle (e.g. ultimate_yr hidden by admin)
+                    const notOffered = livePricing !== null && price === undefined;
+                    const dark = combo.highlight && !notOffered;
 
                     return (
                       <button
                         key={combo.planId}
-                        onClick={() => selectCombo(combo.services)}
+                        onClick={() => !notOffered && selectCombo(combo.services)}
+                        disabled={notOffered}
                         className={`relative text-left rounded-2xl border-2 p-5 transition-all focus:outline-none ${
-                          combo.highlight
+                          notOffered
+                            ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                            : combo.highlight
                             ? 'border-gray-900 bg-gray-900 text-white shadow-xl'
                             : selMatch
                             ? 'border-green-500 bg-green-50 shadow-md'
                             : 'border-gray-200 bg-white hover:border-gray-400 hover:shadow-md'
                         }`}
                       >
-                        {combo.highlight && (
+                        {dark && (
                           <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                             <span className="bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">Best Value</span>
                           </div>
@@ -1037,17 +1045,17 @@ export function SubscriptionPage() {
                             <span className="bg-green-600 text-white text-[10px] font-bold px-3 py-1 rounded-full">Current</span>
                           </div>
                         )}
-                        {selMatch && !combo.highlight && (
+                        {selMatch && !dark && (
                           <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
                             <Check className="w-3 h-3 text-white" strokeWidth={3} />
                           </div>
                         )}
-                        <p className={`text-sm font-bold mb-1 ${combo.highlight ? 'text-white' : 'text-gray-900'}`}>{combo.name}</p>
+                        <p className={`text-sm font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>{combo.name}</p>
                         <div className="flex flex-wrap gap-1 mb-3">
                           {combo.services.map(s => {
                             const meta = SVC_META.find(m => m.id === s);
                             return (
-                              <span key={s} className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${combo.highlight ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                              <span key={s} className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${dark ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
                                 {meta?.label ?? s}
                               </span>
                             );
@@ -1055,14 +1063,16 @@ export function SubscriptionPage() {
                         </div>
                         <div className="flex items-end justify-between mt-auto">
                           <div>
-                            <span className={`text-2xl font-extrabold ${combo.highlight ? 'text-white' : 'text-gray-900'}`}>
-                              {price !== undefined ? formatPrice(price) : '—'}
+                            <span className={`text-2xl font-extrabold ${dark ? 'text-white' : 'text-gray-900'}`}>
+                              {price !== undefined ? formatPrice(price) : notOffered ? (billingCycle === 'yearly' ? 'Monthly only' : 'Yearly only') : '—'}
                             </span>
-                            <span className={`text-xs ${combo.highlight ? 'text-white/70' : 'text-gray-400'}`}>/{billingCycle === 'yearly' ? 'yr' : 'mo'}</span>
+                            {!notOffered && <span className={`text-xs ${dark ? 'text-white/70' : 'text-gray-400'}`}>/{billingCycle === 'yearly' ? 'yr' : 'mo'}</span>}
                           </div>
-                          <span className={`text-xs font-bold px-2 py-1 rounded-full ${combo.highlight ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700'}`}>
-                            save {combo.savingsPct}
-                          </span>
+                          {!notOffered && (
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full ${dark ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700'}`}>
+                              save {combo.savingsPct}
+                            </span>
+                          )}
                         </div>
                       </button>
                     );

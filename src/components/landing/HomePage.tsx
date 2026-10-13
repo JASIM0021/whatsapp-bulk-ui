@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Zap,
   BarChart3,
@@ -361,7 +361,7 @@ function AIWorkforceShowcase() {
 /* ─────────────── Visual Flow Studio Showcase ─────────────── */
 function VisualStudioSpotlight() {
   return (
-    <section className="bg-gray-950 py-24 sm:py-32 border-t border-gray-800/60 relative overflow-hidden">
+    <section id="how-it-works" className="scroll-mt-16 bg-gray-950 py-24 sm:py-32 border-t border-gray-800/60 relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-teal-500/5 rounded-full blur-[160px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -786,7 +786,7 @@ function Features() {
   ];
 
   return (
-    <section className="bg-gray-950 py-24 sm:py-32 border-t border-gray-800/60">
+    <section id="features" className="scroll-mt-16 bg-gray-950 py-24 sm:py-32 border-t border-gray-800/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <p className="text-xs font-bold text-emerald-400 tracking-wider uppercase mb-3">All-In-One AI Platform</p>
@@ -855,6 +855,12 @@ export function PricingPage() {
 /* ─────────────── Page ─────────────── */
 export function HomePage() {
   usePageSEO('/');
+
+  // Scroll to /#features etc. on arrival and whenever a link changes the hash.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash) document.querySelector(hash)?.scrollIntoView({ behavior: 'smooth' });
+  }, [hash]);
 
   return (
     <div className="bg-gray-950 text-gray-100 min-h-screen">
