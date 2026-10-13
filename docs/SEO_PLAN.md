@@ -151,13 +151,13 @@ How: the React Router app (`src/SpaApp.tsx`) renders on the server with `StaticR
 
 Open item: `ultimate_yr` plan is hidden in the admin plan config, so Ultimate is monthly-only. Unhide it in admin if yearly Ultimate should be sold.
 
-## Phase 2: Landing page and core pages — IN PROGRESS
+## Phase 2: Landing page and core pages — IN PROGRESS (homepage done)
 
-- [ ] Rebuild `/` to the 13-section anatomy above, one H1, FAQ with FAQPage schema
+- [x] Rebuild `/` to the landing anatomy (17 sections, 2,747 words vs Marblism 2,259), one H1, FAQPage + VideoObject schema
 - [ ] `/pricing` with plan cards and an Offer per plan in JSON-LD
 - [ ] Rewrite `/about` with founder name, location, team, LinkedIn (E-E-A-T)
 - [ ] `/reviews` once there are 10+ real reviews; Trustpilot/G2 in Organization `sameAs`
-- [ ] 1200×630 og:image per page type (`opengraph-image.tsx`)
+- [x] 1200×630 `/og.png` on every public page (per-type images still to do)
 - [ ] Alt text on every content image
 
 ## Phase 3: Agent hub pages

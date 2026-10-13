@@ -3,8 +3,8 @@
 // Copy lives in homeContent.ts.
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Plus, Minus, Play, MessageCircle, MapPin, Mail, Globe, CalendarDays, Star } from 'lucide-react';
-import { AGENTS, JOBS, INTEGRATIONS, FAQ, type Agent } from './homeContent';
+import { ArrowRight, Check, Plus, Minus, Play, MessageCircle, MapPin, Mail, Globe, CalendarDays, Star, Code2 } from 'lucide-react';
+import { AGENTS, JOBS, INTEGRATIONS, FAQ, DAY, INDUSTRIES, COMPARE, DEV_FEATURES, TEAM_NOTE, type Agent } from './homeContent';
 
 const agent = (id: string) => AGENTS.find((a) => a.id === id) as Agent;
 
@@ -479,6 +479,141 @@ export function ClosingCta() {
           Your next customer just messaged you. Who’s replying?
         </h2>
         <div className="mt-10"><PrimaryCta>Hire your AI team</PrimaryCta></div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────── A day with your AI team ───────── */
+
+export function DayWithTeam() {
+  return (
+    <section className="border-t border-nb-line py-24 sm:py-32">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+        <Label>An example day</Label>
+        <h2 className="mt-3 font-display text-4xl font-black tracking-[-0.03em] text-nb-fg sm:text-6xl">A Tuesday with your AI team</h2>
+        <p className="mt-4 text-lg text-nb-muted">
+          You run the business. They handle the messages, the lists and the follow-ups in between. Here is what a normal day can look like.
+        </p>
+        <ol className="relative mt-12 space-y-8 border-l border-nb-line2 pl-8">
+          {DAY.map((d) => {
+            const a = agent(d.agentId);
+            return (
+              <li key={d.time} className="relative">
+                <span className="absolute -left-[41px] top-1 h-4 w-4 rounded-full border-2 border-nb-bg bg-nb-acc" />
+                <p className="font-label text-[12px] uppercase tracking-[0.14em] text-nb-muted2">{d.time} · {a.name}</p>
+                <p className="mt-1.5 text-[17px] leading-relaxed text-nb-fg">{d.text}</p>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+/* ───────── Who it's for ───────── */
+
+export function WhoItsFor() {
+  return (
+    <section className="border-t border-nb-line py-24 sm:py-32">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="max-w-3xl">
+          <Label>Who it’s for</Label>
+          <h2 className="mt-3 font-display text-4xl font-black tracking-[-0.03em] text-nb-fg sm:text-6xl">Built for businesses that live on WhatsApp</h2>
+          <p className="mt-4 text-lg text-nb-muted">If your customers message you, you’re who we built this for.</p>
+        </div>
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {INDUSTRIES.map((i) => (
+            <article key={i.name} className="rounded-[20px] border border-nb-line bg-nb-surface p-7">
+              <h3 className="font-display text-xl font-bold text-nb-fg">{i.name}</h3>
+              <p className="mt-3 text-[15px] leading-relaxed text-nb-muted">{i.text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────── Compare ───────── */
+
+export function CompareSection() {
+  return (
+    <section className="border-t border-nb-line py-24 sm:py-32">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <h2 className="max-w-3xl font-display text-4xl font-black tracking-[-0.03em] text-nb-fg sm:text-6xl">AI employee, new hire or agency?</h2>
+        <p className="mt-4 max-w-3xl text-lg text-nb-muted">
+          People are still best at the relationships. An AI employee takes the repetitive part, the sending, replying and chasing, so you and your team don’t have to.
+        </p>
+        <div className="mt-12 overflow-x-auto rounded-[20px] border border-nb-line">
+          <table className="w-full min-w-[640px] text-left text-[15px]">
+            <thead className="bg-nb-surface font-label text-[12px] uppercase tracking-[0.12em] text-nb-muted2">
+              <tr>
+                <th scope="col" className="px-5 py-4 font-medium"> </th>
+                <th scope="col" className="px-5 py-4 font-medium">New hire</th>
+                <th scope="col" className="px-5 py-4 font-medium">Agency</th>
+                <th scope="col" className="px-5 py-4 font-medium text-nb-acc">NexBotix AI employee</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-nb-line">
+              {COMPARE.map((c) => (
+                <tr key={c.row}>
+                  <th scope="row" className="px-5 py-4 font-semibold text-nb-fg">{c.row}</th>
+                  <td className="px-5 py-4 text-nb-muted">{c.hire}</td>
+                  <td className="px-5 py-4 text-nb-muted">{c.agency}</td>
+                  <td className="px-5 py-4 text-nb-fg">{c.nexbotix}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────── Developers ───────── */
+
+export function DevelopersSection() {
+  return (
+    <section className="border-t border-nb-line py-24 sm:py-32">
+      <div className="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-2">
+        <div>
+          <Label>For developers</Label>
+          <h2 className="mt-3 font-display text-4xl font-black tracking-[-0.03em] text-nb-fg sm:text-5xl">Build on top of your AI team</h2>
+          <p className="mt-4 text-lg text-nb-muted">
+            Everything the AI employees do is available to your own code and AI agents.
+          </p>
+          <Link to="/docs" className="mt-8 inline-flex items-center gap-2 text-[15px] font-semibold text-nb-acc hover:underline">
+            Read the API docs <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {DEV_FEATURES.map((f) => (
+            <article key={f.title} className="rounded-[20px] border border-nb-line bg-nb-surface p-6">
+              <Code2 className="h-5 w-5 text-nb-acc" />
+              <h3 className="mt-4 font-display text-lg font-bold text-nb-fg">{f.title}</h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-nb-muted">{f.text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────── Team note ───────── */
+
+export function TeamNote() {
+  return (
+    <section className="border-t border-nb-line py-24 sm:py-32">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6">
+        <h2 className="font-display text-3xl font-black tracking-[-0.02em] text-nb-fg sm:text-5xl">{TEAM_NOTE.heading}</h2>
+        <div className="mt-8 space-y-5 text-[18px] leading-relaxed text-nb-muted">
+          {TEAM_NOTE.paragraphs.map((t) => <p key={t}>{t}</p>)}
+        </div>
+        <p className="mt-8 font-label text-[13px] text-nb-fg">— {TEAM_NOTE.signoff} · <Link to="/about" className="text-nb-acc hover:underline">About us</Link></p>
       </div>
     </section>
   );

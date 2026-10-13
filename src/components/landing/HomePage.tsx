@@ -5,6 +5,7 @@ import { usePageSEO } from '@/hooks/useSEO';
 import {
   HomeHero, ChannelStrip, StopJuggling, MeetTheTeam, GrowthSystem, JobsSection,
   DemoVideo, FactsSection, IntegrationsSection, FaqSection, ClosingCta,
+  DayWithTeam, WhoItsFor, CompareSection, DevelopersSection, TeamNote,
 } from './HomeSections';
 
 /* ─────────────── AI Workforce Pricing ($5/mo Per Agent) ─────────────── */
@@ -267,11 +268,16 @@ export function HomePage() {
       <MeetTheTeam />
       <GrowthSystem />
       <JobsSection />
+      <DayWithTeam />
       <DemoVideo />
+      <WhoItsFor />
+      <CompareSection />
       <FactsSection />
       <IntegrationsSection />
+      <DevelopersSection />
       <PricingSection />
       <FaqSection />
+      <TeamNote />
       <ClosingCta />
     </div>
   );

@@ -134,3 +134,71 @@ export const FAQ: { q: string; a: string }[] = [
     a: 'API keys and connector credentials, including WhatsApp Business tokens, are stored encrypted with AES-256. You can request deletion of your data at any time from the data deletion page.',
   },
 ];
+
+// "A day with your AI team" — an illustrative day, labelled as such on the page.
+export const DAY: { time: string; agentId: string; text: string }[] = [
+  { time: '6:40 AM', agentId: 'leads', text: 'Scrappy finishes last night’s search: 52 physiotherapy clinics in Bengaluru, with phone numbers and websites.' },
+  { time: '9:30 AM', agentId: 'whatsapp', text: 'Nexa starts the morning campaign to 1,100 past customers, spaced out so it reads like a person typing.' },
+  { time: '10:05 AM', agentId: 'whatsapp', text: 'Forty-one people reply. Nexa answers the questions about price and delivery, and flags three that need you.' },
+  { time: '1:20 PM', agentId: 'email', text: 'Mailo sends the follow-up email to everyone who opened yesterday’s offer but didn’t click.' },
+  { time: '4:45 PM', agentId: 'calendar', text: 'Schedula books two demo calls for Thursday and adds the Google Meet links to your calendar.' },
+  { time: '11:52 PM', agentId: 'chatbot', text: 'A visitor asks about delivery on your website. Webby answers and saves their number as a lead.' },
+];
+
+export const INDUSTRIES: { name: string; text: string }[] = [
+  { name: 'Clinics & dentists', text: 'Send check-up and offer messages to your patient list on WhatsApp, answer “are you open Sunday?” on your website at night, and let patients book a slot themselves.' },
+  { name: 'Real estate', text: 'Broadcast a new listing to every interested buyer in minutes, find local businesses to partner with, and let the website chat qualify enquiries before you call back.' },
+  { name: 'Coaches & educators', text: 'Promote a new batch or webinar on WhatsApp and email, answer the same ten questions automatically, and fill your calendar with discovery calls.' },
+  { name: 'E-commerce & D2C', text: 'Announce sales and restocks on WhatsApp, follow up by email, and answer sizing, delivery and return questions in the website chat.' },
+  { name: 'Agencies', text: 'Build lead lists for clients by niche and city, run their outreach, and plug NexBotix into your own tools through the REST API.' },
+  { name: 'Local services', text: 'Salons, gyms, repair shops and caterers: remind customers you exist, reply to every enquiry fast, and post on Facebook without thinking about it.' },
+];
+
+// Honest comparison — no invented salary figures; our side states real plan facts.
+export const COMPARE: { row: string; hire: string; agency: string; nexbotix: string }[] = [
+  { row: 'Monthly cost', hire: 'A full salary, plus tools', agency: 'A monthly retainer', nexbotix: 'From $5 per AI employee' },
+  { row: 'Hours', hire: 'Office hours, minus leave', agency: 'Business days', nexbotix: '24/7, weekends included' },
+  { row: 'Time to start', hire: 'Weeks of hiring and training', agency: 'Onboarding calls and briefs', nexbotix: 'Sign up and scan a QR code' },
+  { row: 'Replies to a 2 AM website enquiry', hire: 'Next morning', agency: 'Next business day', nexbotix: 'In seconds' },
+  { row: 'Your data and accounts', hire: 'Shared logins', agency: 'Held by the agency', nexbotix: 'Your accounts, encrypted credentials' },
+];
+
+export const DEV_FEATURES: { title: string; text: string }[] = [
+  { title: 'REST API', text: 'Send WhatsApp messages to one contact or up to 50 at once, schedule them, and send email with attachments, from any language.' },
+  { title: 'MCP server', text: 'Connect Claude, Cursor or Windsurf to WhatsApp through the Model Context Protocol and let your AI agent send messages and check status.' },
+  { title: 'Visual flow studio', text: 'Drag and drop triggers, AI steps, conditions and actions to build your own AI employee without writing code.' },
+  { title: 'In-house AI & webhooks', text: 'Route chatbot conversations to your own model or backend through webhooks and cURL connectors, with credentials encrypted.' },
+];
+
+FAQ.push(
+  {
+    q: 'Can I use my existing WhatsApp number?',
+    a: 'Yes. The WhatsApp employee connects to your current number by scanning a QR code, like WhatsApp Web, so customers see the number they already know. For the official Cloud API you connect a number through Meta’s Embedded Signup instead.',
+  },
+  {
+    q: 'What is the difference between bulk sending and the WhatsApp Business Cloud API?',
+    a: 'Bulk sending uses your own WhatsApp account, which is quick to start and suits smaller lists. The WhatsApp Business Cloud API is Meta’s official channel for businesses, uses approved message templates and is the safer choice for large volumes.',
+  },
+  {
+    q: 'Does the website chatbot work on WordPress, Shopify or Wix?',
+    a: 'Yes. You paste one script tag into your site, which works on WordPress, Shopify, Webflow, Wix and hand-coded websites. You can try it on your own site for free on the chatbot demo page before signing up.',
+  },
+  {
+    q: 'Is there an API for developers?',
+    a: 'Yes. There is a REST API for WhatsApp and email, an MCP server for AI tools like Claude and Cursor, and webhooks for your own AI. API keys are created in the Developer Hub and the full reference is in the API docs.',
+  },
+  {
+    q: 'What happens when the free trial ends?',
+    a: 'The free trial includes 10 messages with no time limit. When they are used up, pick a plan to keep sending. API keys created during the trial stop working when it ends, and on a paid plan you only pay for the AI employees you turn on.',
+  },
+);
+
+export const TEAM_NOTE = {
+  heading: 'Why we built NexBotix',
+  paragraphs: [
+    'NexBotix started with a simple problem. Business owners we knew were spending hours every week sending the same WhatsApp message to hundreds of contacts, one by one, and then losing track of who replied.',
+    'We built a tool to send those messages for them. From there the idea grew: replies at night, finding new leads, follow-up emails, a booking link. Each of those jobs became an AI employee.',
+    'We keep NexBotix affordable on purpose. A small business should be able to hire its first AI employee for less than the cost of a lunch, and add more only when it helps.',
+  ],
+  signoff: 'The NexBotix team',
+};
