@@ -40,7 +40,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
+  const [token, setToken] = useState<string | null>(() => (typeof window === 'undefined' ? null : localStorage.getItem('auth_token')));
   const [isLoading, setIsLoading] = useState(true);
 
   // Validate stored token on mount

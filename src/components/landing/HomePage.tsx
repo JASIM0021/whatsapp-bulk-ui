@@ -18,7 +18,7 @@ import {
   Smartphone,
   Calendar,
 } from 'lucide-react';
-import { useSEO } from '@/hooks/useSEO';
+import { usePageSEO } from '@/hooks/useSEO';
 
 /* ─────────────── Hero ─────────────── */
 function Hero() {
@@ -837,14 +837,24 @@ function CTA() {
   );
 }
 
+/* ─────────────── Pricing page (/pricing) ─────────────── */
+export function PricingPage() {
+  usePageSEO('/pricing');
+
+  return (
+    <div className="bg-gray-950 text-gray-100 min-h-screen pt-28">
+      <h1 className="text-center text-sm font-semibold uppercase tracking-widest text-emerald-400">
+        NexBotix Pricing
+      </h1>
+      <PricingSection />
+      <CTA />
+    </div>
+  );
+}
+
 /* ─────────────── Page ─────────────── */
 export function HomePage() {
-  useSEO({
-    title: 'NexBotix — Autonomous AI Employee Workforce & Agent Orchestration from $5/mo',
-    description: 'Hire 24/7 autonomous AI digital employees for Sales, Support, Legal, and Operations starting at $5/month with 1,000 calls included. Build custom multi-agent flows with our visual drag-and-drop studio.',
-    keywords: 'ai employees, digital workers, ai workforce, 5 dollar ai agent, agent orchestration, react flow ai, inhouse ai connector, whatsapp ai agent, claude mcp, website chatbot, nexbotix',
-    url: 'https://nexbotix.online/',
-  });
+  usePageSEO('/');
 
   return (
     <div className="bg-gray-950 text-gray-100 min-h-screen">

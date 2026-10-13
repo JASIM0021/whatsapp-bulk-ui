@@ -97,7 +97,7 @@ export function WhatsappBusinessPage() {
       const json = await res.json();
       if (json.success && json.data) {
         setAccount(json.data.account);
-        const resolvedAppId = json.data.appId || (import.meta.env.VITE_META_WA_APP_ID as string) || '';
+        const resolvedAppId = json.data.appId || process.env.NEXT_PUBLIC_META_WA_APP_ID || '';
         setAppId(resolvedAppId);
         setConfigId(json.data.configId || '');
         if (json.data.account) {
@@ -227,7 +227,7 @@ export function WhatsappBusinessPage() {
 
   // Meta Embedded Signup SDK handler
   const handleLaunchEmbeddedSignup = () => {
-    const effectiveAppId = appId || (import.meta.env.VITE_META_WA_APP_ID as string) || '';
+    const effectiveAppId = appId || process.env.NEXT_PUBLIC_META_WA_APP_ID || '';
     if (!effectiveAppId) {
       alert('Meta App ID is not configured. Please use Manual BYOK or set META_WA_APP_ID in backend .env.');
       return;

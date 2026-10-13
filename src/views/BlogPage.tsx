@@ -1,9 +1,11 @@
+import { usePageSEO } from '@/hooks/useSEO';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Calendar, Clock, ArrowRight, Sparkles, BookOpen, Bot, ShieldCheck } from 'lucide-react';
 import { BLOG_POSTS } from '../data/blogPosts';
 
 export default function BlogPage() {
+  usePageSEO('/blog');
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');

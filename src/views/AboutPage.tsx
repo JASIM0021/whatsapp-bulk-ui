@@ -1,7 +1,9 @@
+import { usePageSEO } from '@/hooks/useSEO';
 import { Link } from 'react-router-dom';
 import { Zap, Bot, CalendarClock, Shield, Users, ArrowRight } from 'lucide-react';
 
 export function AboutPage() {
+  usePageSEO('/about');
   return (
     <div className="bg-gray-950 min-h-screen">
       {/* Header */}

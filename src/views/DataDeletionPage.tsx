@@ -1,14 +1,10 @@
 import { useState } from 'react';
 import { Shield, Trash2, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { useSEO } from '@/hooks/useSEO';
+import { usePageSEO } from '@/hooks/useSEO';
 import { API_ENDPOINTS } from '@/config/api';
 
 export function DataDeletionPage() {
-  useSEO({
-    title: 'Data Deletion Request - NexBotix',
-    description: 'Request deletion of your personal data from NexBotix.',
-    url: 'https://nexbotix.online/data-deletion',
-  });
+  usePageSEO('/data-deletion');
 
   const [form, setForm] = useState({ name: '', email: '', reason: '' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');

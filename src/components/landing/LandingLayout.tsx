@@ -9,7 +9,7 @@ function Navbar() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/#features', label: 'Features' },
-    { to: '/#pricing', label: 'Pricing' },
+    { to: '/pricing', label: 'Pricing' },
     { to: '/blog', label: 'Blog' },
     { to: '/docs', label: 'API Docs' },
     { to: '/contact', label: 'Contact' },
@@ -156,7 +156,8 @@ function Footer() {
             <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">Product</p>
             <ul className="space-y-2.5">
               <li><Link to="/#features" className="text-sm hover:text-white transition-colors">Features</Link></li>
-              <li><Link to="/#pricing" className="text-sm hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link to="/pricing" className="text-sm hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link to="/check-chatbot" className="text-sm hover:text-white transition-colors">Free Chatbot Demo</Link></li>
               <li><Link to="/blog" className="text-sm hover:text-white transition-colors">Blog</Link></li>
               <li><Link to="/#how-it-works" className="text-sm hover:text-white transition-colors">How It Works</Link></li>
               <li><Link to="/docs" className="text-sm hover:text-white transition-colors">API Documentation</Link></li>

@@ -1,11 +1,7 @@
-import { useSEO } from '@/hooks/useSEO';
+import { usePageSEO } from '@/hooks/useSEO';
 
 export function RefundPolicy() {
-  useSEO({
-    title: 'Refund Policy - NexBotix',
-    description: 'Read the refund policy for NexBotix.',
-    url: 'https://nexbotix.online/refund'
-  });
+  usePageSEO('/refund');
 
   return (
 

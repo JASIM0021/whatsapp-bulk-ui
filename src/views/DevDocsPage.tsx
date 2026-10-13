@@ -16,7 +16,7 @@ import {
   Key,
   Terminal,
 } from 'lucide-react';
-import { useSEO } from '@/hooks/useSEO';
+import { usePageSEO } from '@/hooks/useSEO';
 
 // ─── Base URL ─────────────────────────────────────────────────────────────────
 const BASE = typeof window !== 'undefined' ? window.location.origin : 'https://nexbotix.online';
@@ -1210,11 +1210,7 @@ export function DevDocsPage() {
     setSearchParams({ tab: t });
   };
 
-  useSEO({
-    title: 'Developer API Documentation — NexBotix',
-    description:
-      'Complete REST API and MCP documentation for NexBotix WhatsApp messaging, Website Chatbot widgets, In-House AI integration, Omnichannel Email, and Calendar booking.',
-  });
+  usePageSEO('/docs');
 
   const navTabs = [
     { id: 'overview', label: 'Overview & AI Prompt', icon: Bot, badge: 'Quickstart' },

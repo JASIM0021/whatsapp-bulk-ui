@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { PUBLIC_PAGES, SITE_URL, type PageSeo, type PublicPath } from '@/seo/site';
 
 interface SEOProps {
   title: string;
@@ -43,4 +44,16 @@ export function useSEO({ title, description, keywords, image, url }: SEOProps) {
     if (image) setMetaTag('property', 'twitter:image', image);
 
   }, [title, description, keywords, image, url]);
+}
+
+// Applies the registry entry for a public page (see src/seo/site.ts), so
+// client-side navigation shows the same title the server rendered.
+export function usePageSEO(path: PublicPath) {
+  const page: PageSeo = PUBLIC_PAGES[path];
+  useSEO({
+    title: page.title,
+    description: page.description,
+    keywords: page.keywords,
+    url: `${SITE_URL}${path === '/' ? '/' : path}`,
+  });
 }

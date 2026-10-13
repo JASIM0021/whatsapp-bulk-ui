@@ -3,7 +3,7 @@ import { Code2, KeyRound, Send, Loader2, Copy, Check, Eye, EyeOff, Plus, FlaskCo
 import { apiFetch, API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 
 // Public URL shown in code samples; the live test goes through this app's own API base.
-const PUBLIC_API = (import.meta.env.VITE_PUBLIC_API_URL as string | undefined)?.replace(/\/+$/, '') || 'https://api.nexbotix.online';
+const PUBLIC_API = process.env.NEXT_PUBLIC_PUBLIC_API_URL?.replace(/\/+$/, '') || 'https://api.nexbotix.online';
 const SEND_PATH = '/api/v1/email/send';
 const KEY_STORAGE = 'nexbotix_playground_api_key';
 

@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5174', // Match your vite dev port
+    baseURL: 'http://localhost:5174', // Matches the webServer port below
     trace: 'on-first-retry',
   },
   projects: [
@@ -22,7 +22,7 @@ export default defineConfig({
   ],
   // Run your local dev server before starting the tests
   webServer: {
-    command: 'pnpm dev',
+    command: 'pnpm dev --port 5174',
     url: 'http://localhost:5174',
     reuseExistingServer: !process.env.CI,
   },

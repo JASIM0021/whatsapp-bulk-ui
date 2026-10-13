@@ -1,14 +1,14 @@
 // API Base URL Configuration
-// - Development: Uses VITE_BACKEND_URL or localhost
+// - Development: Uses NEXT_PUBLIC_BACKEND_URL or localhost
 // - Production: Regular API calls use relative URLs (proxied through Vercel rewrite)
 //               SSE endpoints connect directly to backend (Vercel proxy doesn't support streaming)
-const isDevelopment = import.meta.env.DEV;
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 
 // Trim any trailing slash from the backend URL to prevent double-slash paths
 // (e.g. "https://api.example.com/" + "/api/send" → "https://api.example.com//api/send"
 //  which triggers a Go 301 redirect that converts POST → GET → 405)
-const rawBackendUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
+const rawBackendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || '').replace(/\/+$/, '');
 
 export const API_BASE_URL = isDevelopment
   ? (rawBackendUrl || 'http://localhost:4000')
@@ -21,7 +21,7 @@ export const SSE_BASE_URL = rawBackendUrl || API_BASE_URL;
 
 // Full backend URL for the website chatbot embed script.
 // The widget is loaded on external websites so it CANNOT use relative URLs.
-// Falls back to the current origin in dev, but MUST be set via VITE_BACKEND_URL in production.
+// Falls back to the current origin in dev, but MUST be set via NEXT_PUBLIC_BACKEND_URL in production.
 export const WIDGET_BASE_URL = rawBackendUrl || (isDevelopment ? 'http://localhost:4000' : (typeof window !== 'undefined' ? window.location.origin : ''));
 
 

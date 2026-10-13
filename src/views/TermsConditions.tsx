@@ -1,11 +1,7 @@
-import { useSEO } from '@/hooks/useSEO';
+import { usePageSEO } from '@/hooks/useSEO';
 
 export function TermsConditions() {
-  useSEO({
-    title: 'Terms & Conditions - NexBotix',
-    description: 'Read the terms and conditions for using NexBotix.',
-    url: 'https://nexbotix.online/terms'
-  });
+  usePageSEO('/terms');
 
   return (
 

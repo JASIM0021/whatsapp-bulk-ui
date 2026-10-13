@@ -1,3 +1,4 @@
+import { usePageSEO } from '@/hooks/useSEO';
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS, apiFetch } from '@/config/api';
@@ -30,6 +31,7 @@ interface Demo {
 interface ChatMsg { role: 'user' | 'bot'; text: string; }
 
 export function CheckChatbotPage() {
+  usePageSEO('/check-chatbot');
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);

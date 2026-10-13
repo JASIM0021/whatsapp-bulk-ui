@@ -1,78 +1,32 @@
-# React + TypeScript + Vite
+# NexBotix web app
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Next.js (App Router) front end for [nexbotix.online](https://nexbotix.online).
 
-Currently, two official plugins are available:
+## Commands
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-
-
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm dev         # http://localhost:3000
+pnpm build       # production build (type-checks too)
+pnpm start       # serve the build
+pnpm typecheck
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## How it is put together
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `app/[[...slug]]/page.tsx` serves every URL.
+  - **Public pages** (listed in `src/seo/site.ts` → `PUBLIC_PAGES`, plus every blog post) are prerendered: the React Router app in `src/SpaApp.tsx` renders on the server with a `StaticRouter` and hydrates in the browser with a `BrowserRouter`.
+  - **App routes** (first segment in `APP_SEGMENTS`) render client-only and are `noindex`.
+  - Anything else returns a real 404 (`app/not-found.tsx`).
+- `src/seo/site.ts` is the single source for titles and descriptions; `usePageSEO()` reads the same entries during client-side navigation.
+- `app/sitemap.ts` and `app/robots.ts` generate `/sitemap.xml` and `/robots.txt`.
+- `/api/*` and `/.well-known/*` are proxied to `https://api.nexbotix.online` (`next.config.ts`).
+- Screen components live in `src/views` (not `src/pages`, which Next.js would treat as the Pages Router).
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Adding a public page
+
+1. Add the route in `src/SpaApp.tsx`.
+2. Add its entry to `PUBLIC_PAGES` in `src/seo/site.ts` and call `usePageSEO('/path')` in the component.
+
+## Environment
+
+The existing `VITE_*` variables still work; `next.config.ts` maps them to `NEXT_PUBLIC_*`.

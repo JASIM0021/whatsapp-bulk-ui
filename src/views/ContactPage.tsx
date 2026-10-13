@@ -1,7 +1,9 @@
+import { usePageSEO } from '@/hooks/useSEO';
 import { useState } from 'react';
 import { Mail, Phone, MessageSquare, Send, CheckCircle, MapPin } from 'lucide-react';
 
 export function ContactPage() {
+  usePageSEO('/contact');
   const [form, setForm] = useState({ email: '', phone: '', query: '' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');

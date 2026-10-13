@@ -1,8 +1,8 @@
+'use client'
+
 import { StrictMode, useEffect, Suspense, lazy } from 'react'
-import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, StaticRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import './index.css'
 import { AuthProvider } from './contexts/AuthContext'
 import { useAuth } from './contexts/AuthContext'
 import { AppProvider } from './contexts/AppContext'
@@ -10,7 +10,7 @@ import { useSetupStatus } from './hooks/useSetupStatus'
 
 // ── Eagerly loaded (needed for first paint) ──
 import { LandingLayout } from './components/landing/LandingLayout'
-import { HomePage } from './components/landing/HomePage'
+import { HomePage, PricingPage } from './components/landing/HomePage'
 import { LoginPage } from './components/auth/LoginPage'
 import { pendingPostAuthRedirect, rememberPostAuthRedirect } from './lib/postAuthRedirect'
 
@@ -25,54 +25,54 @@ function RouteSpinner() {
 
 // ── Lazy-loaded (route-level code splitting) ──
 const App = lazy(() => import('./App.tsx'))
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })))
-const TermsConditions = lazy(() => import('./pages/TermsConditions').then(m => ({ default: m.TermsConditions })))
-const RefundPolicy = lazy(() => import('./pages/RefundPolicy').then(m => ({ default: m.RefundPolicy })))
-const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage').then(m => ({ default: m.SubscriptionPage })))
-const DevDocsPage = lazy(() => import('./pages/DevDocsPage').then(m => ({ default: m.DevDocsPage })))
-const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })))
-const PaymentSuccess = lazy(() => import('./pages/PaymentResult').then(m => ({ default: m.PaymentSuccess })))
-const PaymentFailure = lazy(() => import('./pages/PaymentResult').then(m => ({ default: m.PaymentFailure })))
-const BotSetupPage = lazy(() => import('./pages/BotSetupPage').then(m => ({ default: m.BotSetupPage })))
-const BotDetectionPage = lazy(() => import('./pages/BotDetectionPage').then(m => ({ default: m.BotDetectionPage })))
-const SecurityPage = lazy(() => import('./pages/SecurityPage').then(m => ({ default: m.SecurityPage })))
-const ContactPage = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })))
-const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })))
-const EmailPage = lazy(() => import('./pages/EmailPage').then(m => ({ default: m.EmailPage })))
-const LeadsPage = lazy(() => import('./pages/LeadsPage').then(m => ({ default: m.LeadsPage })))
-const WebsiteChatbotSetupPage = lazy(() => import('./pages/WebsiteChatbotSetupPage').then(m => ({ default: m.WebsiteChatbotSetupPage })))
-const WebsiteChatbotLeadsPage = lazy(() => import('./pages/WebsiteChatbotLeadsPage').then(m => ({ default: m.WebsiteChatbotLeadsPage })))
-const WebsiteChatbotEmbedPage = lazy(() => import('./pages/WebsiteChatbotEmbedPage').then(m => ({ default: m.WebsiteChatbotEmbedPage })))
-const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
-const SessionsPage = lazy(() => import('./pages/SessionsPage').then(m => ({ default: m.SessionsPage })))
-const CheckChatbotPage = lazy(() => import('./pages/CheckChatbotPage').then(m => ({ default: m.CheckChatbotPage })))
-const ChatbotDemoPage = lazy(() => import('./pages/ChatbotDemoPage').then(m => ({ default: m.ChatbotDemoPage })))
+const PrivacyPolicy = lazy(() => import('./views/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })))
+const TermsConditions = lazy(() => import('./views/TermsConditions').then(m => ({ default: m.TermsConditions })))
+const RefundPolicy = lazy(() => import('./views/RefundPolicy').then(m => ({ default: m.RefundPolicy })))
+const SubscriptionPage = lazy(() => import('./views/SubscriptionPage').then(m => ({ default: m.SubscriptionPage })))
+const DevDocsPage = lazy(() => import('./views/DevDocsPage').then(m => ({ default: m.DevDocsPage })))
+const AdminPanel = lazy(() => import('./views/AdminPanel').then(m => ({ default: m.AdminPanel })))
+const PaymentSuccess = lazy(() => import('./views/PaymentResult').then(m => ({ default: m.PaymentSuccess })))
+const PaymentFailure = lazy(() => import('./views/PaymentResult').then(m => ({ default: m.PaymentFailure })))
+const BotSetupPage = lazy(() => import('./views/BotSetupPage').then(m => ({ default: m.BotSetupPage })))
+const BotDetectionPage = lazy(() => import('./views/BotDetectionPage').then(m => ({ default: m.BotDetectionPage })))
+const SecurityPage = lazy(() => import('./views/SecurityPage').then(m => ({ default: m.SecurityPage })))
+const ContactPage = lazy(() => import('./views/ContactPage').then(m => ({ default: m.ContactPage })))
+const AboutPage = lazy(() => import('./views/AboutPage').then(m => ({ default: m.AboutPage })))
+const EmailPage = lazy(() => import('./views/EmailPage').then(m => ({ default: m.EmailPage })))
+const LeadsPage = lazy(() => import('./views/LeadsPage').then(m => ({ default: m.LeadsPage })))
+const WebsiteChatbotSetupPage = lazy(() => import('./views/WebsiteChatbotSetupPage').then(m => ({ default: m.WebsiteChatbotSetupPage })))
+const WebsiteChatbotLeadsPage = lazy(() => import('./views/WebsiteChatbotLeadsPage').then(m => ({ default: m.WebsiteChatbotLeadsPage })))
+const WebsiteChatbotEmbedPage = lazy(() => import('./views/WebsiteChatbotEmbedPage').then(m => ({ default: m.WebsiteChatbotEmbedPage })))
+const DashboardPage = lazy(() => import('./views/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const SessionsPage = lazy(() => import('./views/SessionsPage').then(m => ({ default: m.SessionsPage })))
+const CheckChatbotPage = lazy(() => import('./views/CheckChatbotPage').then(m => ({ default: m.CheckChatbotPage })))
+const ChatbotDemoPage = lazy(() => import('./views/ChatbotDemoPage').then(m => ({ default: m.ChatbotDemoPage })))
 // const BotOnboardingModal = lazy(() => import('./components/onboarding/BotOnboardingModal').then(m => ({ default: m.BotOnboardingModal })))
-const SetupPage = lazy(() => import('./pages/SetupPage').then(m => ({ default: m.SetupPage })))
-const DataDeletionPage = lazy(() => import('./pages/DataDeletionPage').then(m => ({ default: m.DataDeletionPage })))
-const FacebookPage = lazy(() => import('./pages/facebook/FacebookPage').then(m => ({ default: m.FacebookPage })))
-const FacebookCallbackPage = lazy(() => import('./pages/facebook/FacebookCallbackPage').then(m => ({ default: m.FacebookCallbackPage })))
-const LinkedInPage = lazy(() => import('./pages/linkedin/LinkedInPage').then(m => ({ default: m.LinkedInPage })))
-const LinkedInApprovePage = lazy(() => import('./pages/linkedin/LinkedInApprovePage').then(m => ({ default: m.LinkedInApprovePage })))
-const SEOPage = lazy(() => import('./pages/seo/SEOPage').then(m => ({ default: m.SEOPage })))
-const SEOBlogCallbackPage = lazy(() => import('./pages/seo/SEOBlogCallbackPage').then(m => ({ default: m.SEOBlogCallbackPage })))
-const CampaignPage = lazy(() => import('@/pages/CampaignPage').then(m => ({ default: m.CampaignPage })))
-const InfluencerDashboard = lazy(() => import('@/pages/influencer/InfluencerDashboard'))
-const DeveloperPage = lazy(() => import('./pages/DeveloperPage').then(m => ({ default: m.DeveloperPage })))
-const BlogPage = lazy(() => import('./pages/BlogPage'))
-const BlogPostPage = lazy(() => import('./pages/BlogPostPage'))
-const MCPOAuthApprovePage = lazy(() => import('./pages/MCPOAuthApprovePage').then(m => ({ default: m.MCPOAuthApprovePage })))
-const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage').then(m => ({ default: m.CalendarPage })))
-const PublicBookingPage = lazy(() => import('./pages/calendar/PublicBookingPage').then(m => ({ default: m.PublicBookingPage })))
-const PublicEmbedPage = lazy(() => import('./pages/calendar/PublicEmbedPage').then(m => ({ default: m.PublicEmbedPage })))
-const LifeCompanionPage = lazy(() => import('./pages/life_companion/LifeCompanionPage').then(m => ({ default: m.LifeCompanionPage })))
-const TradingWorkspacePage = lazy(() => import('./pages/trading/TradingWorkspacePage').then(m => ({ default: m.TradingWorkspacePage })))
-const FreelancerPage = lazy(() => import('./pages/freelancer/FreelancerPage').then(m => ({ default: m.FreelancerPage })))
-const YouTubeAgentPage = lazy(() => import('./pages/youtube/YouTubeAgentPage').then(m => ({ default: m.YouTubeAgentPage })))
-const AIWorkersPage = lazy(() => import('./pages/agents/AIWorkersPage').then(m => ({ default: m.AIWorkersPage })))
-const AgentStudioPage = lazy(() => import('./pages/agents/AgentStudioPage').then(m => ({ default: m.AgentStudioPage })))
-const CustomConnectorsPage = lazy(() => import('./pages/connectors/CustomConnectorsPage').then(m => ({ default: m.CustomConnectorsPage })))
-const WhatsappBusinessPage = lazy(() => import('./pages/whatsapp_business/WhatsappBusinessPage').then(m => ({ default: m.WhatsappBusinessPage })))
+const SetupPage = lazy(() => import('./views/SetupPage').then(m => ({ default: m.SetupPage })))
+const DataDeletionPage = lazy(() => import('./views/DataDeletionPage').then(m => ({ default: m.DataDeletionPage })))
+const FacebookPage = lazy(() => import('./views/facebook/FacebookPage').then(m => ({ default: m.FacebookPage })))
+const FacebookCallbackPage = lazy(() => import('./views/facebook/FacebookCallbackPage').then(m => ({ default: m.FacebookCallbackPage })))
+const LinkedInPage = lazy(() => import('./views/linkedin/LinkedInPage').then(m => ({ default: m.LinkedInPage })))
+const LinkedInApprovePage = lazy(() => import('./views/linkedin/LinkedInApprovePage').then(m => ({ default: m.LinkedInApprovePage })))
+const SEOPage = lazy(() => import('./views/seo/SEOPage').then(m => ({ default: m.SEOPage })))
+const SEOBlogCallbackPage = lazy(() => import('./views/seo/SEOBlogCallbackPage').then(m => ({ default: m.SEOBlogCallbackPage })))
+const CampaignPage = lazy(() => import('@/views/CampaignPage').then(m => ({ default: m.CampaignPage })))
+const InfluencerDashboard = lazy(() => import('@/views/influencer/InfluencerDashboard'))
+const DeveloperPage = lazy(() => import('./views/DeveloperPage').then(m => ({ default: m.DeveloperPage })))
+const BlogPage = lazy(() => import('./views/BlogPage'))
+const BlogPostPage = lazy(() => import('./views/BlogPostPage'))
+const MCPOAuthApprovePage = lazy(() => import('./views/MCPOAuthApprovePage').then(m => ({ default: m.MCPOAuthApprovePage })))
+const CalendarPage = lazy(() => import('./views/calendar/CalendarPage').then(m => ({ default: m.CalendarPage })))
+const PublicBookingPage = lazy(() => import('./views/calendar/PublicBookingPage').then(m => ({ default: m.PublicBookingPage })))
+const PublicEmbedPage = lazy(() => import('./views/calendar/PublicEmbedPage').then(m => ({ default: m.PublicEmbedPage })))
+const LifeCompanionPage = lazy(() => import('./views/life_companion/LifeCompanionPage').then(m => ({ default: m.LifeCompanionPage })))
+const TradingWorkspacePage = lazy(() => import('./views/trading/TradingWorkspacePage').then(m => ({ default: m.TradingWorkspacePage })))
+const FreelancerPage = lazy(() => import('./views/freelancer/FreelancerPage').then(m => ({ default: m.FreelancerPage })))
+const YouTubeAgentPage = lazy(() => import('./views/youtube/YouTubeAgentPage').then(m => ({ default: m.YouTubeAgentPage })))
+const AIWorkersPage = lazy(() => import('./views/agents/AIWorkersPage').then(m => ({ default: m.AIWorkersPage })))
+const AgentStudioPage = lazy(() => import('./views/agents/AgentStudioPage').then(m => ({ default: m.AgentStudioPage })))
+const CustomConnectorsPage = lazy(() => import('./views/connectors/CustomConnectorsPage').then(m => ({ default: m.CustomConnectorsPage })))
+const WhatsappBusinessPage = lazy(() => import('./views/whatsapp_business/WhatsappBusinessPage').then(m => ({ default: m.WhatsappBusinessPage })))
 
 function GmailCallbackRedirect() {
   const location = useLocation();
@@ -161,6 +161,7 @@ function AppRoutes() {
       <Routes>
         {/* Public landing pages */}
       <Route path="/" element={<LandingLayout><HomePage /></LandingLayout>} />
+      <Route path="/pricing" element={<LandingLayout><PricingPage /></LandingLayout>} />
       <Route path="/privacy" element={<LandingLayout><PrivacyPolicy /></LandingLayout>} />
       <Route path="/terms" element={<LandingLayout><TermsConditions /></LandingLayout>} />
       <Route path="/refund" element={<LandingLayout><RefundPolicy /></LandingLayout>} />
@@ -400,16 +401,26 @@ function AppRoutes() {
   );
 }
 
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
-    </GoogleOAuthProvider>
-  </StrictMode>,
-)
+/**
+ * The whole React Router app. Next.js renders it on the server with a
+ * StaticRouter at the requested path (public pages get real HTML), and the
+ * browser hydrates it with a BrowserRouter so client navigation is unchanged.
+ */
+export default function SpaApp({ location = '/' }: { location?: string }) {
+  const routes = (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  );
+  return (
+    <StrictMode>
+      <GoogleOAuthProvider clientId={googleClientId}>
+        {typeof window === 'undefined'
+          ? <StaticRouter location={location}>{routes}</StaticRouter>
+          : <BrowserRouter>{routes}</BrowserRouter>}
+      </GoogleOAuthProvider>
+    </StrictMode>
+  );
+}
