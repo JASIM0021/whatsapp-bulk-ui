@@ -85,7 +85,7 @@ export function RefundPolicy() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">6. Refund Processing</h2>
             <p className="text-gray-600 leading-relaxed">
-              Approved refunds will be processed to your original payment method within <strong>7–10 business days</strong>, depending on your bank or payment provider. NexBotix uses PayU as its payment processor; refund timelines may vary based on PayU and your bank's processing time. We are not responsible for delays caused by your bank or payment provider.
+              Approved refunds will be processed to your original payment method within <strong>7–10 business days</strong>, depending on your bank or payment provider. NexBotix uses Razorpay as its payment processor; refund timelines may vary based on Razorpay and your bank's processing time. We are not responsible for delays caused by your bank or payment provider.
             </p>
           </section>
 

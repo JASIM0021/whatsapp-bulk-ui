@@ -13,6 +13,7 @@ import { LandingLayout } from './components/landing/LandingLayout'
 import { HomePage, PricingPage } from './components/landing/HomePage'
 import { LoginPage } from './components/auth/LoginPage'
 import { pendingPostAuthRedirect, rememberPostAuthRedirect } from './lib/postAuthRedirect'
+import { WIDGET_BASE_URL } from './config/api'
 
 // Loading spinner for lazy-loaded routes
 function RouteSpinner() {
@@ -147,7 +148,8 @@ function AppRoutes() {
 
   useEffect(() => {
     const s = document.createElement('script');
-    s.src = 'https://www.nexbotix.online/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4';
+    // Load straight from the backend: via the site's /api proxy it returns 403.
+    s.src = `${WIDGET_BASE_URL}/api/website-chatbot/script?apikey=bsk_9db5bdcaf9b80908495b62d7c42223d4`;
     s.async = true;
     document.body.appendChild(s);
     return () => {
