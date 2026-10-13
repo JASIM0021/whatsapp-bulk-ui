@@ -10,11 +10,11 @@ const agent = (id: string) => AGENTS.find((a) => a.id === id) as Agent;
 
 /* ───────── shared bits ───────── */
 
-function Label({ children }: { children: React.ReactNode }) {
+export function Label({ children }: { children: React.ReactNode }) {
   return <p className="font-label text-[12px] uppercase tracking-[0.18em] text-nb-acc">{children}</p>;
 }
 
-function PrimaryCta({ children = 'Get started free' }: { children?: React.ReactNode }) {
+export function PrimaryCta({ children = 'Get started free' }: { children?: React.ReactNode }) {
   return (
     <Link
       to="/signup"
@@ -26,7 +26,7 @@ function PrimaryCta({ children = 'Get started free' }: { children?: React.ReactN
   );
 }
 
-function Avatar({ a, size = 48 }: { a: Agent; size?: number }) {
+export function Avatar({ a, size = 48 }: { a: Agent; size?: number }) {
   return (
     <img
       src={a.avatar}
@@ -447,13 +447,13 @@ export function IntegrationsSection() {
 
 /* ───────── 12. FAQ ───────── */
 
-export function FaqSection() {
+export function FaqSection({ items = FAQ, title = 'Questions?' }: { items?: { q: string; a: string }[]; title?: string }) {
   return (
     <section className="border-t border-nb-line py-24 sm:py-32">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
-        <h2 className="text-center font-display text-4xl font-black tracking-[-0.03em] text-nb-fg sm:text-6xl">Questions?</h2>
+        <h2 className="text-center font-display text-4xl font-black tracking-[-0.03em] text-nb-fg sm:text-6xl">{title}</h2>
         <div className="mt-12 divide-y divide-nb-line border-y border-nb-line">
-          {FAQ.map((f) => (
+          {items.map((f) => (
             <details key={f.q} className="group py-5">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-left text-lg font-semibold text-nb-fg [&::-webkit-details-marker]:hidden">
                 <h3>{f.q}</h3>
@@ -614,6 +614,56 @@ export function TeamNote() {
           {TEAM_NOTE.paragraphs.map((t) => <p key={t}>{t}</p>)}
         </div>
         <p className="mt-8 font-label text-[13px] text-nb-fg">— {TEAM_NOTE.signoff} · <Link to="/about" className="text-nb-acc hover:underline">About us</Link></p>
+      </div>
+    </section>
+  );
+}
+
+/* ───────── Pricing page parts ───────── */
+
+const INCLUDED = [
+  'Your pick of AI employee: WhatsApp, leads, email, website chat, social, SEO or booking',
+  'Personalised bulk campaigns from Excel or CSV',
+  'AI auto-replies on WhatsApp and your website',
+  'Visual drag-and-drop flow studio',
+  'REST API and MCP server for developers',
+  'Free trial with 10 messages before you pay',
+];
+
+export function PricingHero() {
+  return (
+    <section className="relative overflow-hidden pt-16 pb-4 sm:pt-24">
+      <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[800px] -translate-x-1/2 rounded-full bg-nb-acc/15 blur-[140px]" />
+      <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
+        <Label>Pricing</Label>
+        <h1 className="mt-4 text-balance font-display text-[clamp(40px,6vw,80px)] font-black leading-[0.98] tracking-[-0.03em] text-nb-fg">
+          Hire AI employees from $5 a month
+        </h1>
+        <p className="mx-auto mt-6 max-w-2xl text-lg text-nb-muted">
+          Pay per AI employee, not per seat or per message. Start with a free trial, no credit card, and add employees only when they earn their keep.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+export function PricingIncluded() {
+  return (
+    <section className="border-t border-nb-line py-20">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <h2 className="font-display text-3xl font-black tracking-[-0.02em] text-nb-fg sm:text-4xl">Every plan includes</h2>
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+          {INCLUDED.map((t) => (
+            <li key={t} className="flex gap-3 rounded-[16px] border border-nb-line bg-nb-surface p-5 text-[15px] text-nb-fg">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-nb-acc" />{t}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-8 text-[15px] text-nb-muted">
+          Need more than three AI employees, or running outreach for clients?{' '}
+          <Link to="/contact" className="text-nb-acc hover:underline">Talk to us</Link> about a larger plan. Refunds follow our{' '}
+          <Link to="/refund" className="text-nb-acc hover:underline">refund policy</Link>.
+        </p>
       </div>
     </section>
   );

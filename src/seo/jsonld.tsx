@@ -153,10 +153,10 @@ export function publicPageJsonLd(path: string, page: { title: string; descriptio
 
   if (path === '/pricing') {
     // Mirrors PricingSection in src/components/landing/HomePage.tsx (monthly prices).
+    // Scale is sold via /contact (no backend plan), so it is not listed as an Offer.
     const plans: [string, number, string][] = [
       ['Starter AI Employee', 5, '1 active AI employee, 1,000 agent calls per month'],
       ['Growth Workforce', 15, 'Up to 3 active AI employees, 5,000 agent calls per month'],
-      ['Scale Workforce', 49, 'Up to 10 active AI employees, 25,000 agent calls per month'],
     ];
     graph.push({
       '@context': 'https://schema.org',

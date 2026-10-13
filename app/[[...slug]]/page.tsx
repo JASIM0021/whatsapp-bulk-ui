@@ -5,7 +5,7 @@ import ClientOnlySpa from './ClientOnlySpa';
 import { APP_SEGMENTS, DEFAULT_OG_IMAGE, PUBLIC_PAGES, findBlogPost, indexablePaths, type PageSeo } from '@/seo/site';
 import { JsonLd, blogPostingJsonLd, demoVideoJsonLd, faqPageJsonLd, publicPageJsonLd, softwareApplicationJsonLd } from '@/seo/jsonld';
 import { BLOG_POSTS } from '@/data/blogPosts';
-import { FAQ } from '@/components/landing/homeContent';
+import { FAQ, PRICING_FAQ } from '@/components/landing/homeContent';
 
 type Props = { params: Promise<{ slug?: string[] }> };
 
@@ -33,14 +33,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (route.kind === 'page') {
     const { title, description, keywords } = route.page;
+    const image = route.page.ogImage ?? DEFAULT_OG_IMAGE;
     return {
       title,
       description,
       keywords,
       alternates: { canonical: route.path },
       // Page-level openGraph/twitter replace the layout's, so restate the image.
-      openGraph: { title, description, url: route.path, images: [DEFAULT_OG_IMAGE] },
-      twitter: { card: 'summary_large_image', title, description, images: [DEFAULT_OG_IMAGE] },
+      openGraph: { title, description, url: route.path, images: [image] },
+      twitter: { card: 'summary_large_image', title, description, images: [image] },
     };
   }
 
@@ -82,6 +83,7 @@ export default async function Page({ params }: Props) {
       <SpaApp location={route.path} />
       {route.path === '/' && <JsonLd data={[softwareApplicationJsonLd, faqPageJsonLd(FAQ), demoVideoJsonLd]} />}
       {route.kind === 'page' && route.path !== '/' && <JsonLd data={publicPageJsonLd(route.path, route.page, BLOG_POSTS)} />}
+      {route.path === '/pricing' && <JsonLd data={faqPageJsonLd(PRICING_FAQ)} />}
       {route.kind === 'post' && <JsonLd data={blogPostingJsonLd(route.post)} />}
     </>
   );

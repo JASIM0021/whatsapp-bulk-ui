@@ -10,6 +10,7 @@ export const DEFAULT_OG_IMAGE = '/og.png'; // 1200×630
 export interface PageSeo {
   title: string;
   description: string;
+  ogImage?: string; // 1200×630, defaults to DEFAULT_OG_IMAGE
   keywords?: string;
   changeFrequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
   priority: number;
@@ -25,36 +26,42 @@ export const PUBLIC_PAGES = {
     priority: 1,
   },
   '/pricing': {
+    ogImage: '/og/pricing.png',
     title: 'Pricing: AI Employees from $5/month | NexBotix',
     description: 'Per-agent pricing: Starter $5/mo for 1 AI employee and 1,000 agent calls, Growth $15/mo for 3, Scale $49/mo for 10. Save with yearly billing.',
     changeFrequency: 'monthly',
     priority: 0.9,
   },
   '/blog': {
+    ogImage: '/og/blog.png',
     title: 'NexBotix Blog: WhatsApp Automation, AI Agents & MCP Guides',
     description: 'Guides on WhatsApp bulk messaging, AI agents, the Model Context Protocol, website chatbots and AI SEO from the NexBotix team.',
     changeFrequency: 'weekly',
     priority: 0.8,
   },
   '/check-chatbot': {
+    ogImage: '/og/check-chatbot.png',
     title: 'Free AI Chatbot Demo for Your Website | NexBotix',
     description: 'Enter your website URL and get a working AI chatbot demo trained on your business in seconds. No signup needed: try 3 websites free.',
     changeFrequency: 'monthly',
     priority: 0.8,
   },
   '/docs': {
+    ogImage: '/og/docs.png',
     title: 'API Docs: WhatsApp, Email, Chatbot & MCP API | NexBotix',
     description: 'REST API and MCP documentation for NexBotix WhatsApp messaging, website chatbot widgets, in-house AI integration, email and calendar booking.',
     changeFrequency: 'monthly',
     priority: 0.7,
   },
   '/about': {
-    title: 'About NexBotix: Simpler WhatsApp & AI Automation',
-    description: 'NexBotix gives businesses a simpler, affordable way to reach customers on WhatsApp and automate sales and support with AI employees.',
+    ogImage: '/og/about.png',
+    title: 'About NexBotix: AI Employees for WhatsApp-First Businesses',
+    description: 'Why we built NexBotix, the AI employees we offer for WhatsApp, email, leads and website chat, how we build them, and how we protect your data.',
     changeFrequency: 'monthly',
     priority: 0.6,
   },
   '/contact': {
+    ogImage: '/og/contact.png',
     title: 'Contact NexBotix: Sales, Support & Feature Requests',
     description: 'Questions, feature requests or need help with NexBotix? Send us a message and the team replies within 24 hours.',
     changeFrequency: 'yearly',

@@ -202,3 +202,38 @@ export const TEAM_NOTE = {
   ],
   signoff: 'The NexBotix team',
 };
+
+export const PRICING_FAQ: { q: string; a: string }[] = [
+  {
+    q: 'Is there a free trial?',
+    a: 'Yes. Every new account gets a free trial with 10 messages and no time limit. You don’t need a credit card to sign up.',
+  },
+  {
+    q: 'Do I pay per AI employee?',
+    a: 'Yes. Starter covers one active AI employee, Growth covers up to three. You only pay for the AI employees you turn on, and you can add more as you grow.',
+  },
+  {
+    q: 'How much do I save with yearly billing?',
+    a: 'Yearly plans cost less than paying monthly for twelve months. For most plans the yearly price works out to about two months free.',
+  },
+  {
+    q: 'Which currency will I pay in?',
+    a: 'Prices on this page are in US dollars. Inside the app, prices are shown in your local currency where available, including Indian rupees.',
+  },
+  {
+    q: 'How do I pay?',
+    a: 'Payments are processed securely by Razorpay. You choose your plan inside the app and pay in the Razorpay checkout window; NexBotix never sees your card details.',
+  },
+  {
+    q: 'Can I buy extra AI replies or leads?',
+    a: 'Yes. Top-up packs add more managed AI auto-replies or lead credits without changing your plan. You can also bring your own AI key for unlimited bot replies.',
+  },
+  {
+    q: 'What about refunds?',
+    a: 'Refunds follow our refund policy, which explains when a payment is eligible and how long it takes to reach your original payment method.',
+  },
+  {
+    q: 'I need more than three AI employees. What should I do?',
+    a: 'Talk to us. We will set up a plan for larger teams, agencies and higher volumes.',
+  },
+];

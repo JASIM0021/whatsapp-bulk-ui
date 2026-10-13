@@ -151,14 +151,19 @@ How: the React Router app (`src/SpaApp.tsx`) renders on the server with `StaticR
 
 Open item: `ultimate_yr` plan is hidden in the admin plan config, so Ultimate is monthly-only. Unhide it in admin if yearly Ultimate should be sold.
 
-## Phase 2: Landing page and core pages — IN PROGRESS (homepage done)
+## Phase 2: Landing page and core pages — DONE (except /reviews)
 
-- [x] Rebuild `/` to the landing anatomy (17 sections, 2,747 words vs Marblism 2,259), one H1, FAQPage + VideoObject schema
-- [ ] `/pricing` with plan cards and an Offer per plan in JSON-LD
-- [ ] Rewrite `/about` with founder name, location, team, LinkedIn (E-E-A-T)
-- [ ] `/reviews` once there are 10+ real reviews; Trustpilot/G2 in Organization `sameAs`
-- [x] 1200×630 `/og.png` on every public page (per-type images still to do)
-- [ ] Alt text on every content image
+- [x] `/` rebuilt to the landing anatomy: 17 sections, 2,747 words (Marblism: 2,259), one H1, FAQPage + VideoObject schema
+- [x] `/pricing`: new design, plan cards, "every plan includes", comparison, 8-question pricing FAQ; Offer + FAQPage schema
+- [x] `/about`: team story, AI team, principles, security & privacy (team-only, no personal names by choice; unverifiable stats removed)
+- [x] 1200×630 Open Graph image per page type (`public/og/*.png`, regenerate with `node scripts/og-images.mjs`)
+- [x] Alt text on every image across all 21 public pages (audited in the rendered DOM)
+- [ ] `/reviews`: waiting for 10+ real reviews and a Trustpilot/G2/Google profile (then add to Organization `sameAs`)
+
+Found while doing Phase 2 (for the owner):
+- The $49 Scale plan has no backend plan (`ai_agent_scale` missing from `/api/subscription/plans`); its button now goes to /contact and it is left out of the Offer schema.
+- `ultimate_yr` is hidden in the admin plan config, so Ultimate is monthly-only.
+- Landing shows $5 / $15; the backend prices are ₹399 / ₹1,199 per month.
 
 ## Phase 3: Agent hub pages
 

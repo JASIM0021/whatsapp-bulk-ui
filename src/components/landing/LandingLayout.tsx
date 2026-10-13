@@ -193,7 +193,7 @@ function Footer() {
           {/* Get started */}
           <div>
             <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-4">Get Started</p>
-            <p className="text-sm text-gray-400 leading-relaxed mb-4">Start sending bulk messages in under 2 minutes.</p>
+            <p className="text-sm text-gray-400 leading-relaxed mb-4">Start with a free trial. No credit card needed.</p>
             <Link
               to="/login"
               className="inline-block px-5 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors"

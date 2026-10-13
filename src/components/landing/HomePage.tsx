@@ -5,11 +5,13 @@ import { usePageSEO } from '@/hooks/useSEO';
 import {
   HomeHero, ChannelStrip, StopJuggling, MeetTheTeam, GrowthSystem, JobsSection,
   DemoVideo, FactsSection, IntegrationsSection, FaqSection, ClosingCta,
-  DayWithTeam, WhoItsFor, CompareSection, DevelopersSection, TeamNote,
+  DayWithTeam, WhoItsFor, CompareSection, DevelopersSection, TeamNote, PricingHero, PricingIncluded,
 } from './HomeSections';
+import { PRICING_FAQ } from './homeContent';
 
 /* ─────────────── AI Workforce Pricing ($5/mo Per Agent) ─────────────── */
-function PricingSection() {
+// heading=false on /pricing, where PricingHero already carries the H1.
+function PricingSection({ heading = true }: { heading?: boolean }) {
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
 
   const plans = [
@@ -77,9 +79,11 @@ function PricingSection() {
   ];
 
   return (
-    <section className="bg-gray-950 py-24 sm:py-32 border-t border-gray-800/60 relative overflow-hidden" id="pricing">
+    <section className="bg-nb-bg py-24 sm:py-32 border-t border-nb-line relative overflow-hidden" id="pricing">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="text-center max-w-3xl mx-auto mb-14">
+          {heading && (
+            <>
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold mb-3">
             <Sparkles size={13} />
             <span>Transparent Per-Agent Pricing</span>
@@ -90,6 +94,9 @@ function PricingSection() {
           <p className="mt-4 text-base sm:text-lg text-gray-400">
             Pay only for the digital employees you deploy. Every agent comes with allocated call quotas and omni-channel automation.
           </p>
+
+            </>
+          )}
 
           {/* Billing Switch */}
           <div className="mt-8 inline-flex items-center gap-3 bg-gray-900 border border-gray-800 p-1.5 rounded-2xl">
@@ -180,14 +187,15 @@ function PricingSection() {
 
                 {/* CTA Button */}
                 <Link
-                  to={`/signup?plan=${plan.planParam}${billing === 'yearly' ? '_yr' : ''}`}
+                  // Scale has no backend plan yet (no ai_agent_scale in /api/subscription/plans): route to sales.
+                  to={plan.id === 'scale' ? '/contact' : `/signup?plan=${plan.planParam}${billing === 'yearly' ? '_yr' : ''}`}
                   className={`w-full py-3.5 rounded-2xl text-xs font-extrabold text-center transition-all flex items-center justify-center gap-2 ${
                     plan.highlight
                       ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-950/60 active:scale-95'
                       : 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 active:scale-95'
                   }`}
                 >
-                  <span>{plan.ctaText}</span>
+                  <span>{plan.id === 'scale' ? 'Talk to us' : plan.ctaText}</span>
                   <ArrowRight size={14} />
                 </Link>
               </div>
@@ -210,44 +218,21 @@ function PricingSection() {
   );
 }
 
-/* ─────────────── CTA ─────────────── */
-function CTA() {
-  return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 py-24">
-      <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
-          Ready to Deploy Your 24/7 Digital Workforce?
-        </h2>
-        <p className="text-base sm:text-lg text-emerald-100 mb-10 max-w-xl mx-auto">
-          Hire an AI employee from just $5/month. Deploy in less than 2 minutes.
-        </p>
-        <Link
-          to="/signup"
-          className="inline-flex items-center gap-2 px-8 py-4 text-base font-bold text-emerald-950 bg-white rounded-2xl shadow-2xl hover:scale-[1.02] transition-all"
-        >
-          <span>Start for $5/Month</span>
-          <ArrowRight size={18} />
-        </Link>
-      </div>
-    </section>
-  );
-}
-
 /* ─────────────── Pricing page (/pricing) ─────────────── */
 export function PricingPage() {
   usePageSEO('/pricing');
 
   return (
-    <div className="bg-gray-950 text-gray-100 min-h-screen pt-28">
-      <h1 className="text-center text-sm font-semibold uppercase tracking-widest text-emerald-400">
-        NexBotix Pricing
-      </h1>
-      <PricingSection />
-      <CTA />
+    <div className="bg-nb-bg font-sans text-nb-fg">
+      <PricingHero />
+      <PricingSection heading={false} />
+      <PricingIncluded />
+      <CompareSection />
+      <FaqSection items={PRICING_FAQ} title="Pricing questions" />
+      <ClosingCta />
     </div>
   );
 }
-
 
 /* ─────────────── Page ─────────────── */
 // Section order follows docs/SEO_PLAN.md "Landing page anatomy".
