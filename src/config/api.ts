@@ -397,6 +397,11 @@ export const API_ENDPOINTS = {
     delete: (id: string) => `${API_BASE_URL}/api/agents/${id}`,
     test: (id: string) => `${API_BASE_URL}/api/agents/${id}/test`,
     executions: (id: string) => `${API_BASE_URL}/api/agents/${id}/executions`,
+    deploy: (id: string) => `${API_BASE_URL}/api/agents/${id}/deploy`,
+    pause: (id: string) => `${API_BASE_URL}/api/agents/${id}/pause`,
+    validate: `${API_BASE_URL}/api/agents/validate`,
+    // Public URL that external systems POST to; relative in production (proxied).
+    hook: (token: string) => `${API_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/api/agents/hooks/${token}`,
   },
   connectors: {
     list: `${API_BASE_URL}/api/connectors`,

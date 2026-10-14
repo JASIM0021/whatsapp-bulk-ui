@@ -35,6 +35,22 @@ export interface AgentMetrics {
   lastRunAt?: string;
 }
 
+export interface AgentDeployment {
+  whatsapp: boolean;
+  chatbot: boolean;
+  webhook: boolean;
+  schedule: boolean;
+  webhookToken?: string;
+  deployedAt?: string;
+  lastScheduledRunAt?: string;
+}
+
+export interface GraphIssue {
+  nodeId?: string;
+  severity: 'error' | 'warning';
+  message: string;
+}
+
 export interface AIAgent {
   id: string;
   name: string;
@@ -44,6 +60,7 @@ export interface AIAgent {
   description: string;
   avatar: string;
   status: 'draft' | 'active' | 'paused';
+  deployment?: AgentDeployment;
   channels: string[];
   graph: AgentGraph;
   settings?: Record<string, any>;
@@ -71,6 +88,8 @@ export interface AgentExecution {
   id: string;
   agentId: string;
   triggerType: string;
+  mode?: 'live' | 'test';
+  reply?: string;
   status: 'running' | 'success' | 'failed';
   initialPayload?: Record<string, any>;
   finalOutput?: Record<string, any>;
