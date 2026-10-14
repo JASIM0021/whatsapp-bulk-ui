@@ -8,7 +8,7 @@ updatedAt: 2026-10-14
 category: "Marketing & Growth"
 hub: whatsapp
 tags: ["customer support", "WhatsApp AI", "human handoff", "small business"]
-image: /blog/whatsapp_bot_hero.jpg
+image: /blog/og/ai-driven-customer-support-future-whatsapp-marketing.png
 imageAlt: "A customer support conversation on WhatsApp handled by AI with a human ready to step in"
 tldr:
   - "AI is best at fast, factual, repetitive questions: prices, hours, delivery, order steps and booking links."

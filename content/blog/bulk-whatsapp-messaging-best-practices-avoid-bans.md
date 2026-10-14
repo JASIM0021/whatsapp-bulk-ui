@@ -8,7 +8,7 @@ updatedAt: 2026-10-14
 category: "WhatsApp Automation"
 hub: whatsapp
 tags: ["bulk WhatsApp", "WhatsApp ban", "WhatsApp marketing", "best practices"]
-image: /blog/bulk_messaging_hero.jpg
+image: /blog/og/bulk-whatsapp-messaging-best-practices-avoid-bans.png
 imageAlt: "A phone sending a personalised WhatsApp campaign to a contact list"
 featured: true
 tldr:

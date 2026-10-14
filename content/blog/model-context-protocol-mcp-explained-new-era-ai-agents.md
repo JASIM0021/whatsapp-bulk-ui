@@ -7,7 +7,7 @@ publishedAt: 2026-06-27
 updatedAt: 2026-10-14
 category: "AI Agents & MCP"
 tags: ["MCP", "Model Context Protocol", "AI agents", "Claude", "explainer"]
-image: /blog/mcp_whatsapp_hero.jpg
+image: /blog/og/model-context-protocol-mcp-explained-new-era-ai-agents.png
 imageAlt: "Diagram-like illustration of an AI assistant connecting to tools through MCP"
 tldr:
   - "The Model Context Protocol (MCP) is an open standard, introduced by Anthropic, for connecting AI assistants to tools and data."

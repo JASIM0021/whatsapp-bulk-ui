@@ -177,13 +177,18 @@ Found while doing Phase 2 (for the owner):
 - [x] Per-hub Open Graph images (`public/og/hub-*.png`)
 - [ ] Add real customer reviews to each hub once available (Marblism's product pages are ~2,600 words partly because of testimonials)
 
-## Phase 4: Blog engine and content
+## Phase 4: Blog engine and content — IN PROGRESS (engine done, 12 posts live)
 
-- [ ] Move posts from `blogPosts.ts` to MDX or a CMS
-- [ ] Post template: TL;DR, TOC, author box, updated date, FAQ, CTA to hub
-- [ ] Rewrite the existing 10 posts; publish 2 a week
-- [ ] Category pages `/blog/category/{hub}`
-- [ ] Generate RSS from the same data
+- [x] Posts moved to Markdown: `content/blog/*.md` → `scripts/build-blog.mjs` → `src/data/blogPosts.generated.ts` (runs in `pnpm dev` / `pnpm build`)
+- [x] Post template: breadcrumb, H1, team byline with published + updated dates, branded hero card, "Short version" TL;DR, sticky TOC, FAQ, CTA to the matching `/ai-agents` hub, related posts
+- [x] All 10 existing posts rewritten on their existing URLs: fake author personas, invented stats and wrong MCP tool names removed; claims checked against the code
+- [x] Category pages `/blog/category/{slug}` (5) with CollectionPage schema, linked to hubs
+- [x] RSS feed generated at `/rss.xml` from the same data
+- [x] New: `wati-alternatives` and `best-whatsapp-bulk-message-sender`, prices from each vendor’s own page (checked 14 Oct 2026, sources listed in the post)
+- [x] Hero images: branded 1200×630 cards per post (`public/blog/og/`, from `scripts/og-images.mjs`); old AI images with invented stats removed
+- [ ] Keep publishing ~2 posts a week. Next in the queue: aisensy-alternatives, interakt-alternatives, best-ai-chatbot-for-website, how-to-scrape-google-maps-leads, whatsapp-business-api-vs-app, calendly-alternatives
+- [ ] Deepen the rewritten posts (bodies are 570–800 words; target 1,500+ with examples and screenshots)
+- [ ] Re-check competitor prices quarterly and bump `updatedAt`
 
 ## Phase 5: Proof, freshness and AI search
 

@@ -8,7 +8,7 @@ updatedAt: 2026-10-14
 category: "AI Agents & MCP"
 hub: whatsapp
 tags: ["MCP", "Claude Desktop", "Cursor", "WhatsApp API", "AI agents"]
-image: /blog/mcp_whatsapp_hero.jpg
+image: /blog/og/whatsapp-mcp-server-control-whatsapp-from-ai-agents.png
 imageAlt: "An AI agent sending a WhatsApp message through the Model Context Protocol"
 featured: true
 tldr:

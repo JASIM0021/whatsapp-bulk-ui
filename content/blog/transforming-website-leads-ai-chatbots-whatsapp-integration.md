@@ -8,7 +8,7 @@ updatedAt: 2026-10-14
 category: "Marketing & Growth"
 hub: website-chatbot
 tags: ["website chatbot", "lead generation", "WhatsApp follow-up", "conversion"]
-image: /blog/ai_chatbot_hero.jpg
+image: /blog/og/transforming-website-leads-ai-chatbots-whatsapp-integration.png
 imageAlt: "A website chat widget capturing a visitor’s phone number"
 tldr:
   - "Visitors with a question often leave rather than fill in a form or wait for an email reply."

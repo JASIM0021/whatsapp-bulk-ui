@@ -2,6 +2,8 @@
 // Needs the site running locally (for the brand fonts): pnpm build && pnpm start
 // then: node scripts/og-images.mjs [baseUrl=http://localhost:3000]
 import { chromium } from '@playwright/test';
+import fs from 'node:fs';
+import matter from 'gray-matter';
 
 const BASE = process.argv[2] ?? 'http://localhost:3000';
 const CARDS = [
@@ -23,6 +25,14 @@ const CARDS = [
   { file: 'public/og/hub-calendar.png', label: 'Schedula · Booking', title: 'Appointment booking with Google Meet', foot: 'Google Calendar sync · Embeds · Working hours' },
 ];
 
+// One card per blog post: public/blog/og/<slug>.png (set as `image` in the post frontmatter).
+fs.mkdirSync('public/blog/og', { recursive: true });
+for (const file of fs.readdirSync('content/blog').filter((f) => f.endsWith('.md'))) {
+  const { data } = matter(fs.readFileSync(`content/blog/${file}`, 'utf8'));
+  const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  CARDS.push({ file: `public/blog/og/${file.replace(/\.md$/, '')}.png`, label: esc(data.category), title: esc(data.title), foot: 'NexBotix Blog', small: true });
+}
+
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });
 await page.goto(`${BASE}/privacy`, { waitUntil: 'networkidle' }); // loads the site fonts
@@ -37,7 +47,7 @@ for (const card of CARDS) {
       <div style="position:relative;padding:64px 72px">
         <div style="display:flex;align-items:center;gap:14px;font-size:30px;font-weight:700"><img src="/icon-192.png" style="width:52px;height:52px;border-radius:12px"><span>Nex<span style="color:#22c55e">Botix</span></span></div>
         ${label}
-        <div style="margin-top:${c.label ? 16 : 44}px;font-size:72px;font-weight:900;line-height:.98;letter-spacing:-.03em;max-width:1000px">${c.title}</div>
+        <div style="margin-top:${c.label ? 16 : 44}px;font-size:${c.small ? 58 : 72}px;font-weight:900;line-height:1.02;letter-spacing:-.03em;max-width:1000px">${c.title}</div>
         <div style="margin-top:28px;font-family:var(--font-plex-mono),monospace;font-size:22px;color:#a39e95">${c.foot}</div>
         <div style="position:absolute;left:72px;top:520px;display:flex;gap:12px">${avatars}</div>
       </div>

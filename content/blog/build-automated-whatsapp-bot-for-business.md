@@ -8,7 +8,7 @@ updatedAt: 2026-10-14
 category: "WhatsApp Automation"
 hub: whatsapp
 tags: ["WhatsApp bot", "AI auto-reply", "customer support", "small business"]
-image: /blog/whatsapp_bot_hero.jpg
+image: /blog/og/build-automated-whatsapp-bot-for-business.png
 imageAlt: "A WhatsApp chat answered automatically by an AI assistant"
 tldr:
   - "An AI WhatsApp bot answers customers using your business details, so it can handle prices, hours, delivery and booking questions any time of day."

@@ -8,7 +8,7 @@ updatedAt: 2026-10-14
 category: "Developer Guides"
 hub: whatsapp
 tags: ["WhatsApp bot", "testing", "monitoring", "bot detection"]
-image: /blog/whatsapp_bot_hero.jpg
+image: /blog/og/check-whatsapp-bot-monitoring-debugging-testing.png
 imageAlt: "Checking the status of a WhatsApp AI bot on a dashboard"
 tldr:
   - "Test a WhatsApp bot like a customer would: from a different phone, with real questions, edge cases and handoff keywords."

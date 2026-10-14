@@ -8,7 +8,7 @@ updatedAt: 2026-10-14
 category: "WhatsApp Automation"
 hub: whatsapp
 tags: ["e-commerce", "WhatsApp marketing", "D2C", "automation ideas"]
-image: /blog/bulk_messaging_hero.jpg
+image: /blog/og/10-essential-whatsapp-automation-strategies-ecommerce-growth.png
 imageAlt: "An online store’s sale announcement arriving on WhatsApp"
 tldr:
   - "The best WhatsApp automations for stores are timely and personal: restocks, sales, order help, review requests and win-backs."

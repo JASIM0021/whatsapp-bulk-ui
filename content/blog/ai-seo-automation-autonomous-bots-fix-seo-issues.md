@@ -8,7 +8,7 @@ updatedAt: 2026-10-14
 category: "AI SEO & Content"
 hub: seo
 tags: ["AI SEO", "Core Web Vitals", "technical SEO", "blog automation"]
-image: /blog/ai_seo_automation_hero.jpg
+image: /blog/og/ai-seo-automation-autonomous-bots-fix-seo-issues.png
 imageAlt: "An SEO dashboard showing page speed and issues detected automatically"
 tldr:
   - "AI SEO automation replaces one-off audits with continuous monitoring: page speed, SEO issues and trends, checked on every page."

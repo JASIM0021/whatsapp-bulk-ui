@@ -8,7 +8,7 @@ updatedAt: 2026-10-14
 category: "Developer Guides"
 hub: whatsapp
 tags: ["OTP", "WhatsApp API", "verification", "developers"]
-image: /blog/mcp_whatsapp_hero.jpg
+image: /blog/og/step-by-step-guide-automating-otp-delivery-whatsapp-api.png
 imageAlt: "A verification code arriving as a WhatsApp message"
 tldr:
   - "Generate OTPs on your server with a secure random generator, store only a hash, expire them in a few minutes and limit attempts."

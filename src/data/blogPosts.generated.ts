@@ -3,6 +3,200 @@ import type { BlogPost } from './blogPosts';
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    "slug": "best-whatsapp-bulk-message-sender",
+    "title": "Best WhatsApp Bulk Message Senders in 2026: 6 Options Compared Honestly",
+    "metaTitle": "Best WhatsApp Bulk Message Senders in 2026 (6 Compared)",
+    "metaDescription": "The best ways to send bulk WhatsApp messages in 2026: free broadcast lists, AI senders on your own number and Business API platforms, with real pricing and risks.",
+    "excerpt": "There are three ways to send bulk WhatsApp messages, and the right tool depends on which one you need. We compare six options, with prices from each vendor’s own page and the risks spelled out.",
+    "content": "<p>“Bulk WhatsApp sender” covers very different tools. Some are free features inside WhatsApp, some send from your own number, and some are enterprise platforms on Meta’s official API. Picking the wrong type is the most common, and most expensive, mistake.</p>\n<p>This guide explains the three approaches first, then compares six options. <strong>Prices come from each vendor’s own page, checked on 14 October 2026.</strong> NexBotix is our product; we say where others are the better fit.</p>\n<h2 id=\"what-are-the-three-ways-to-send-bulk-whatsapp-messages\">What are the three ways to send bulk WhatsApp messages?</h2>\n<h3 id=\"1-broadcast-lists-in-the-whatsapp-business-app-free\">1. Broadcast lists in the WhatsApp Business app (free)</h3>\n<p>The WhatsApp Business app lets you create broadcast lists and send one message to everyone on a list. It costs nothing. The catch: only people who have <strong>saved your number</strong> receive broadcasts, and each list is limited in size (widely reported as 256 contacts). There is no personalisation, scheduling or automation.</p>\n<p><strong>Good for:</strong> a small shop messaging regular customers.</p>\n<h3 id=\"2-a-sender-tool-on-your-own-number\">2. A sender tool on your own number</h3>\n<p>These tools connect to your existing WhatsApp number, usually by scanning a QR code like WhatsApp Web, and send personalised messages from a spreadsheet. No Meta approval or per-message fees. The trade-off is risk: your personal or business-app number does the sending, so careless campaigns can get it restricted.</p>\n<p><strong>Good for:</strong> small businesses with warm customer lists who want personalisation, scheduling and AI replies without API costs.</p>\n<h3 id=\"3-a-whatsapp-business-api-platform\">3. A WhatsApp Business API platform</h3>\n<p>Platforms built on Meta’s official WhatsApp Business Platform send approved message templates at scale, with team inboxes, chatbots and integrations. Meta charges <strong>per delivered template message</strong> (marketing, utility, authentication) since 1 July 2025, at rates that vary by country; replies inside the 24-hour customer service window are free (<a href=\"https://developers.facebook.com/docs/whatsapp/pricing\" target=\"_blank\" rel=\"noopener\">Meta pricing docs</a>). The platform adds its subscription on top.</p>\n<p><strong>Good for:</strong> large lists, transactional messages and teams.</p>\n<h2 id=\"how-do-the-six-options-compare\">How do the six options compare?</h2>\n<table>\n<thead>\n<tr>\n<th>Option</th>\n<th>Approach</th>\n<th>Published starting price</th>\n<th>Best for</th>\n</tr>\n</thead>\n<tbody><tr>\n<td>WhatsApp Business app broadcasts</td>\n<td>Free app feature</td>\n<td>Free</td>\n<td>Very small lists of saved contacts</td>\n</tr>\n<tr>\n<td><strong>NexBotix</strong></td>\n<td>Own number or Cloud API, with AI</td>\n<td>$5/mo per AI employee</td>\n<td>Small businesses wanting campaigns + AI replies</td>\n</tr>\n<tr>\n<td>Interakt</td>\n<td>Business API</td>\n<td>$21/mo (Shopify listing) + message fees</td>\n<td>Shopify and D2C stores</td>\n</tr>\n<tr>\n<td>AiSensy</td>\n<td>Business API</td>\n<td>Subscription not shown; message credits prepaid</td>\n<td>India-focused marketing at volume</td>\n</tr>\n<tr>\n<td>Gallabox</td>\n<td>Business API</td>\n<td>₹2,399/mo billed annually + message fees</td>\n<td>Teams needing a shared inbox and AI</td>\n</tr>\n<tr>\n<td>WATI</td>\n<td>Business API</td>\n<td>Base price not shown; extra users $24–$69/mo</td>\n<td>Established teams with CRM integrations</td>\n</tr>\n</tbody></table>\n<h2 id=\"1-whatsapp-business-app-broadcast-lists\">1. WhatsApp Business app broadcast lists</h2>\n<p>The simplest option and completely free. Create a list, add contacts and send. Recipients see the message as a normal one-to-one chat.</p>\n<ul>\n<li><strong>Pros:</strong> free, official, no setup.</li>\n<li><strong>Cons:</strong> only reaches people who saved your number, small lists, no names, no scheduling, no automation, replies pile up in your phone.</li>\n<li><strong>Choose it if</strong> you have a few dozen loyal customers and send occasionally.</li>\n</ul>\n<h2 id=\"2-nexbotix-our-product\">2. NexBotix (our product)</h2>\n<p>NexBotix gives you an AI employee, <a href=\"/ai-agents/whatsapp\">Nexa</a>, that runs the campaign end to end. Upload contacts from Excel or CSV, write a message with <code>{{name}}</code> and other fields, attach an image or link, and send now or schedule it. Messages go out with a 3 to 5 second gap. Nexa then answers replies with AI using your business details, follows up with people who didn’t reply and hands chats to a person by keyword.</p>\n<p>You can send from your existing number via QR code, or connect the official WhatsApp Business Cloud API for larger volumes. Plans start at <strong>$5 a month</strong> per AI employee, with a free trial of 10 messages (<a href=\"/pricing\">pricing</a>).</p>\n<ul>\n<li><strong>Pros:</strong> lowest paid entry price here, AI replies and follow-ups included, also does leads, email and website chat.</li>\n<li><strong>Cons:</strong> not a large multi-agent team inbox; sending from your own number carries more risk than the API.</li>\n<li><strong>Choose it if</strong> you’re a small business that wants personalised campaigns and replies handled for you.</li>\n</ul>\n<h2 id=\"3-interakt\">3. Interakt</h2>\n<p>Interakt’s <a href=\"https://apps.shopify.com/interakt-marketing\" target=\"_blank\" rel=\"noopener\">Shopify app listing</a> shows Starter at <strong>$21/month</strong>, Growth $41, Advanced $51 and Premier $99, each with a 14-day free trial, plus WhatsApp conversation charges. Starter includes API setup, notifications and a shared inbox; chatbots and AI agents come in higher tiers.</p>\n<ul>\n<li><strong>Pros:</strong> published prices, strong Shopify fit.</li>\n<li><strong>Cons:</strong> automation depth depends on tier; Meta fees on top.</li>\n<li><strong>Choose it if</strong> you run a Shopify store.</li>\n</ul>\n<h2 id=\"4-aisensy\">4. AiSensy</h2>\n<p>AiSensy’s <a href=\"https://aisensy.com/pricing\" target=\"_blank\" rel=\"noopener\">pricing page</a> offers an Unlimited Users subscription with no cap on monthly active users; the base price wasn’t shown when we checked. Message credits are prepaid, and the page lists Indian rates of ₹1.09 per marketing message and ₹0.145 per utility or authentication message. A chatbot builder costs ₹2,500/month and an AI agent builder ₹1,350/month.</p>\n<ul>\n<li><strong>Pros:</strong> unlimited users, clear Indian message rates.</li>\n<li><strong>Cons:</strong> chatbots and AI are paid add-ons.</li>\n<li><strong>Choose it if</strong> you send marketing campaigns at volume in India.</li>\n</ul>\n<h2 id=\"5-gallabox\">5. Gallabox</h2>\n<p>Gallabox’s <a href=\"https://gallabox.com/pricing\" target=\"_blank\" rel=\"noopener\">pricing page</a> lists Basic at <strong>₹2,399/month billed annually</strong> (₹2,999 quarterly) for 3 users, Essential at ₹5,599 for 6 users and Advanced at ₹13,599 for 10, with WhatsApp, Instagram and a web widget in every plan. Message fees are separate.</p>\n<ul>\n<li><strong>Pros:</strong> transparent pricing, multichannel inbox, AI agents and CRM integration in higher tiers.</li>\n<li><strong>Cons:</strong> a big step up in price between tiers.</li>\n<li><strong>Choose it if</strong> your team handles conversations together in a shared inbox.</li>\n</ul>\n<h2 id=\"6-wati\">6. WATI</h2>\n<p>WATI’s <a href=\"https://www.wati.io/pricing/\" target=\"_blank\" rel=\"noopener\">pricing page</a> lists Growth (3 users, 15,000 broadcasts a month), Pro (5 users, unlimited broadcasts, extra users $24/month) and Business (extra users $69/month, Salesforce). Message charges come from prepaid credits based on WATI’s rate card. Base plan prices weren’t shown in a form we could verify.</p>\n<ul>\n<li><strong>Pros:</strong> mature platform, strong integrations, scales to large teams.</li>\n<li><strong>Cons:</strong> seat costs add up; check base prices directly.</li>\n<li><strong>Choose it if</strong> you’re an established team with CRM workflows. Comparing options? See our <a href=\"/blog/wati-alternatives\">WATI alternatives</a> guide.</li>\n</ul>\n<h2 id=\"how-do-you-pick-the-right-one\">How do you pick the right one?</h2>\n<p>Answer three questions:</p>\n<ol>\n<li><strong>How big is your list?</strong> Under a few hundred warm contacts: broadcasts or a sender on your own number. Thousands, regularly: an API platform.</li>\n<li><strong>Who handles replies?</strong> Just you: pick a tool with AI replies. A team: pick a shared inbox.</li>\n<li><strong>What’s your budget including message fees?</strong> Price your real monthly volume, including Meta’s per-message charges on API platforms.</li>\n</ol>\n<p>Whichever you choose, the rules that keep your number safe are the same; read <a href=\"/blog/bulk-whatsapp-messaging-best-practices-avoid-bans\">how to send bulk WhatsApp messages without getting banned</a> before your first big campaign.</p>\n<h2 id=\"sources\">Sources</h2>\n<p>Checked on 14 October 2026; confirm prices before buying.</p>\n<ul>\n<li><a href=\"https://developers.facebook.com/docs/whatsapp/pricing\" target=\"_blank\" rel=\"noopener\">Meta: WhatsApp Business Platform pricing</a></li>\n<li><a href=\"https://apps.shopify.com/interakt-marketing\" target=\"_blank\" rel=\"noopener\">Interakt on the Shopify App Store</a></li>\n<li><a href=\"https://aisensy.com/pricing\" target=\"_blank\" rel=\"noopener\">AiSensy pricing</a></li>\n<li><a href=\"https://gallabox.com/pricing\" target=\"_blank\" rel=\"noopener\">Gallabox pricing</a></li>\n<li><a href=\"https://www.wati.io/pricing/\" target=\"_blank\" rel=\"noopener\">WATI pricing</a></li>\n</ul>\n",
+    "toc": [
+      {
+        "id": "what-are-the-three-ways-to-send-bulk-whatsapp-messages",
+        "text": "What are the three ways to send bulk WhatsApp messages?"
+      },
+      {
+        "id": "how-do-the-six-options-compare",
+        "text": "How do the six options compare?"
+      },
+      {
+        "id": "1-whatsapp-business-app-broadcast-lists",
+        "text": "1. WhatsApp Business app broadcast lists"
+      },
+      {
+        "id": "2-nexbotix-our-product",
+        "text": "2. NexBotix (our product)"
+      },
+      {
+        "id": "3-interakt",
+        "text": "3. Interakt"
+      },
+      {
+        "id": "4-aisensy",
+        "text": "4. AiSensy"
+      },
+      {
+        "id": "5-gallabox",
+        "text": "5. Gallabox"
+      },
+      {
+        "id": "6-wati",
+        "text": "6. WATI"
+      },
+      {
+        "id": "how-do-you-pick-the-right-one",
+        "text": "How do you pick the right one?"
+      },
+      {
+        "id": "sources",
+        "text": "Sources"
+      }
+    ],
+    "tldr": [
+      "There are three ways to send bulk WhatsApp messages: the free broadcast lists in the WhatsApp Business app, a sender tool on your own number, or a WhatsApp Business API platform.",
+      "Broadcast lists are free but small and only reach people who saved your number; API platforms are the safest for large volumes but add Meta’s per-message fees.",
+      "For small businesses that want personalised campaigns plus AI replies at a low price, a tool like NexBotix (our product) sits in between; for large teams, use an API platform."
+    ],
+    "faq": [
+      {
+        "q": "What is the best free way to send bulk WhatsApp messages?",
+        "a": "Broadcast lists in the WhatsApp Business app. They are free, but each list is limited in size and only people who have saved your number receive the message."
+      },
+      {
+        "q": "Which WhatsApp bulk sender is safest?",
+        "a": "Platforms built on the official WhatsApp Business API, because they use Meta’s approved channel and message templates. Any method still depends on messaging people who expect to hear from you."
+      },
+      {
+        "q": "Do I pay Meta for bulk WhatsApp messages?",
+        "a": "On the WhatsApp Business API, yes: Meta charges per delivered marketing, utility and authentication template message, by country. Broadcast lists in the app and messages sent from your own number through a sender tool don’t carry Meta fees."
+      },
+      {
+        "q": "Can I send bulk WhatsApp messages from Excel?",
+        "a": "Yes. Most sender tools import a spreadsheet of names and numbers. NexBotix accepts .xlsx, .xls and .csv files up to 10 MB and fills in names and other columns automatically."
+      },
+      {
+        "q": "Will a bulk sender get my number banned?",
+        "a": "It can if recipients block or report you, or if sending looks like spam. Send to opted-in contacts, personalise messages, space them out and use the API for large lists."
+      }
+    ],
+    "publishedAt": "2026-10-14",
+    "updatedAt": "2026-10-14",
+    "readTime": "5 min read",
+    "wordCount": 1157,
+    "category": "WhatsApp Automation",
+    "hub": "whatsapp",
+    "tags": [
+      "WhatsApp bulk sender",
+      "bulk WhatsApp",
+      "WhatsApp marketing tools",
+      "WhatsApp Business API"
+    ],
+    "image": "/blog/og/best-whatsapp-bulk-message-sender.png",
+    "imageAlt": "Comparing tools for sending bulk WhatsApp messages",
+    "featured": false
+  },
+  {
+    "slug": "wati-alternatives",
+    "title": "5 WATI Alternatives Compared (2026): Pricing, Features and Who Each One Suits",
+    "metaTitle": "5 WATI Alternatives Compared for 2026: Pricing & Features",
+    "metaDescription": "Comparing WATI alternatives: AiSensy, Interakt, Gallabox, DoubleTick and NexBotix. Real pricing from each vendor’s own page, what each does best, and who it suits.",
+    "excerpt": "WATI is a solid WhatsApp Business API platform, but it isn’t the right fit for everyone. We compared five alternatives using each vendor’s own pricing page, and say plainly where each one wins.",
+    "content": "<p>WATI is one of the best-known WhatsApp Business API platforms, especially in India. It does a lot well: a shared team inbox, broadcasts, chatbots and integrations with tools like HubSpot and Salesforce.</p>\n<p>But it isn’t the right fit for everyone. Some teams find the per-user add-ons add up, some need something simpler, and some want AI to do more of the work. This guide compares five alternatives. <strong>Every price below comes from the vendor’s own pricing page or app listing, checked on 14 October 2026.</strong> Where a vendor doesn’t publish a number, we say so instead of guessing.</p>\n<p><em>Disclosure: NexBotix is our product. We’ve included it because it’s a genuine alternative for some readers, and we say clearly where the others are the better choice.</em></p>\n<h2 id=\"what-does-wati-offer-and-why-do-people-look-elsewhere\">What does WATI offer, and why do people look elsewhere?</h2>\n<p>WATI’s pricing page lists three plans: <strong>Growth</strong>, <strong>Pro</strong> and <strong>Business</strong>. According to that page:</p>\n<ul>\n<li><strong>Growth</strong> includes 3 users, 15,000 broadcasts a month, 1,000 automation triggers and 2 commerce or CRM integrations.</li>\n<li><strong>Pro</strong> includes 5 users, with extra users at <strong>$24 per user per month</strong>, unlimited broadcasts, 2,000 automation triggers and HubSpot.</li>\n<li><strong>Business</strong> includes 5 users, with extra users at <strong>$69 per user per month</strong>, Salesforce and higher limits.</li>\n<li>A Shopify integration is a <strong>$4.99 per month</strong> add-on, and WhatsApp message charges are deducted from prepaid credits based on WATI’s rate card.</li>\n</ul>\n<p>The base plan prices weren’t displayed in a form we could verify, so check them on <a href=\"https://www.wati.io/pricing/\" target=\"_blank\" rel=\"noopener\">WATI’s pricing page</a>.</p>\n<p>The reasons teams look elsewhere usually come down to:</p>\n<ol>\n<li><strong>Seat costs</strong> once a team grows beyond the included users.</li>\n<li><strong>Feature tiers</strong>: some automation and integrations sit in higher plans.</li>\n<li><strong>Fit</strong>: a solo founder or small shop may not need a full team inbox.</li>\n</ol>\n<h2 id=\"what-should-you-compare-before-switching\">What should you compare before switching?</h2>\n<table>\n<thead>\n<tr>\n<th>Factor</th>\n<th>Why it matters</th>\n</tr>\n</thead>\n<tbody><tr>\n<td>Pricing model</td>\n<td>Per user, per plan, per active contact or per AI employee changes your bill as you grow</td>\n</tr>\n<tr>\n<td>WhatsApp message fees</td>\n<td>Meta charges per delivered template message; check the provider’s rate card and any markup</td>\n</tr>\n<tr>\n<td>Team inbox</td>\n<td>Essential for support teams, unnecessary for a solo owner</td>\n</tr>\n<tr>\n<td>Automation and AI</td>\n<td>Chatbot builders, AI agents and how many AI replies are included</td>\n</tr>\n<tr>\n<td>Integrations</td>\n<td>Shopify, CRM and API access for your stack</td>\n</tr>\n<tr>\n<td>Channels</td>\n<td>WhatsApp only, or Instagram and web chat too</td>\n</tr>\n</tbody></table>\n<p>A quick note on Meta’s fees, because they apply to every API-based tool. Since 1 July 2025 Meta charges <strong>per message</strong> rather than per conversation. Marketing, utility and authentication <strong>template</strong> messages are charged on delivery, at rates that depend on the recipient’s country. Non-template replies inside an open customer service window are free, and so are messages within the 72-hour free entry point window after a click-to-WhatsApp ad (<a href=\"https://developers.facebook.com/docs/whatsapp/pricing\" target=\"_blank\" rel=\"noopener\">Meta’s pricing docs</a>).</p>\n<h2 id=\"the-comparison-at-a-glance\">The comparison at a glance</h2>\n<table>\n<thead>\n<tr>\n<th>Tool</th>\n<th>Published starting price</th>\n<th>Pricing model</th>\n<th>Best for</th>\n</tr>\n</thead>\n<tbody><tr>\n<td><strong>AiSensy</strong></td>\n<td>Subscription price not shown; chatbot builder ₹2,500/mo</td>\n<td>Unlimited users, prepaid message credits</td>\n<td>India-focused marketing teams</td>\n</tr>\n<tr>\n<td><strong>Interakt</strong></td>\n<td>$21/mo (Starter, Shopify listing)</td>\n<td>Flat plans + conversation charges</td>\n<td>Shopify and D2C stores</td>\n</tr>\n<tr>\n<td><strong>Gallabox</strong></td>\n<td>₹2,399/mo billed annually (Basic)</td>\n<td>Per plan, users capped per tier</td>\n<td>Support teams needing a shared inbox and AI</td>\n</tr>\n<tr>\n<td><strong>DoubleTick</strong></td>\n<td>Not shown</td>\n<td>Plans (Starter, Pro, Enterprise)</td>\n<td>Small sales teams wanting AI agents built in</td>\n</tr>\n<tr>\n<td><strong>NexBotix</strong></td>\n<td>$5/mo per AI employee</td>\n<td>Per AI employee</td>\n<td>Small businesses wanting AI to run campaigns and replies</td>\n</tr>\n</tbody></table>\n<h2 id=\"1-aisensy\">1. AiSensy</h2>\n<p>AiSensy is an India-focused WhatsApp marketing platform. Its pricing page describes an <strong>Unlimited Users</strong> subscription with “no limit on the number of Monthly Active Users”, billed monthly, quarterly (5% off) or yearly (10% off). The base subscription price wasn’t shown on the page when we checked.</p>\n<p>Published add-ons include a <strong>drag-and-drop chatbot builder at ₹2,500 a month</strong> (₹2,250 billed annually), with 5 chatbots and Shopify chatbot integration, and a <strong>WhatsApp AI Agent builder at ₹1,350 a month</strong> (₹1,215 annually) with 1,000 AI messages a month. Message charges are prepaid credits; for Indian numbers the page lists marketing messages at <strong>₹1.09</strong> and utility and authentication at <strong>₹0.145</strong> each, with the first 1,000 service messages per number per month free.</p>\n<ul>\n<li><strong>Strengths:</strong> unlimited users, transparent per-message rates for India, strong marketing focus.</li>\n<li><strong>Watch out for:</strong> chatbot and AI agent builders are paid add-ons, so the total depends on what you add.</li>\n<li><strong>Best for:</strong> marketing teams in India sending campaigns at volume.</li>\n</ul>\n<p>Source: <a href=\"https://aisensy.com/pricing\" target=\"_blank\" rel=\"noopener\">AiSensy pricing</a>.</p>\n<h2 id=\"2-interakt\">2. Interakt</h2>\n<p>Interakt is popular with Shopify stores. Its own <a href=\"https://apps.shopify.com/interakt-marketing\" target=\"_blank\" rel=\"noopener\">Shopify app listing</a> shows four plans billed in USD, each with a <strong>14-day free trial</strong>:</p>\n<table>\n<thead>\n<tr>\n<th>Plan</th>\n<th>Monthly</th>\n<th>Annual</th>\n</tr>\n</thead>\n<tbody><tr>\n<td>Starter</td>\n<td>$21</td>\n<td>$180/year</td>\n</tr>\n<tr>\n<td>Growth</td>\n<td>$41</td>\n<td>$296/year</td>\n</tr>\n<tr>\n<td>Advanced</td>\n<td>$51</td>\n<td>$468/year</td>\n</tr>\n<tr>\n<td>Premier</td>\n<td>$99</td>\n<td>$839/year</td>\n</tr>\n</tbody></table>\n<p>Starter covers API setup, automated notifications, a shared team inbox and a WhatsApp widget. Growth adds analytics, a basic chatbot and Instagram automation. Advanced adds an advanced chatbot and auto-routing. Premier adds three WhatsApp AI agents and cart reminders. WhatsApp conversation charges are extra.</p>\n<ul>\n<li><strong>Strengths:</strong> clear published pricing, good Shopify fit, low entry price.</li>\n<li><strong>Watch out for:</strong> advanced chatbots and AI agents sit in the higher tiers.</li>\n<li><strong>Best for:</strong> Shopify and D2C brands.</li>\n</ul>\n<h2 id=\"3-gallabox\">3. Gallabox</h2>\n<p>Gallabox publishes its prices clearly on its <a href=\"https://gallabox.com/pricing\" target=\"_blank\" rel=\"noopener\">pricing page</a>:</p>\n<table>\n<thead>\n<tr>\n<th>Plan</th>\n<th>Quarterly billing</th>\n<th>Annual billing</th>\n<th>Users</th>\n<th>AI credits/mo</th>\n</tr>\n</thead>\n<tbody><tr>\n<td>Basic</td>\n<td>₹2,999/mo</td>\n<td>₹2,399/mo</td>\n<td>3</td>\n<td>500</td>\n</tr>\n<tr>\n<td>Essential</td>\n<td>₹6,999/mo</td>\n<td>₹5,599/mo</td>\n<td>6</td>\n<td>2,000</td>\n</tr>\n<tr>\n<td>Advanced</td>\n<td>₹16,999/mo</td>\n<td>₹13,599/mo</td>\n<td>10</td>\n<td>8,000</td>\n</tr>\n</tbody></table>\n<p>Every plan includes WhatsApp, Instagram and a web chat widget, chatbot flows and 20+ integrations. Essential adds AI agents on WhatsApp and Instagram, a full API with two-way CRM integrations and free onboarding. Advanced adds AI voice and appointment booking management. Message fees are billed separately.</p>\n<ul>\n<li><strong>Strengths:</strong> transparent pricing, multichannel inbox, strong AI and CRM features in higher tiers.</li>\n<li><strong>Watch out for:</strong> user caps per plan, and the jump between tiers is significant.</li>\n<li><strong>Best for:</strong> support and sales teams that live in a shared inbox.</li>\n</ul>\n<h2 id=\"4-doubletick\">4. DoubleTick</h2>\n<p>DoubleTick offers <strong>Starter</strong>, <strong>Pro</strong> and <strong>Enterprise</strong> plans. Its <a href=\"https://doubletick.io/pricing\" target=\"_blank\" rel=\"noopener\">pricing page</a> says AI agents are built into every plan, with 24x7 chat support; Pro adds a shared account manager and Enterprise a dedicated one. Prices weren’t shown on the page when we checked, and per-message costs vary by country.</p>\n<ul>\n<li><strong>Strengths:</strong> AI agents included rather than sold separately; account management on higher plans.</li>\n<li><strong>Watch out for:</strong> you’ll need a quote or sign-up to see prices.</li>\n<li><strong>Best for:</strong> small sales teams that want AI help without add-ons.</li>\n</ul>\n<h2 id=\"5-nexbotix-our-product\">5. NexBotix (our product)</h2>\n<p>NexBotix takes a different approach. Instead of a team inbox, it gives you <strong>AI employees</strong>, each owning a job. The WhatsApp employee, <a href=\"/ai-agents/whatsapp\">Nexa</a>, sends personalised campaigns from Excel or CSV, schedules them, follows up with people who didn’t reply and answers replies with AI, handing chats to a person by keyword.</p>\n<p>You can send from your <strong>existing WhatsApp number</strong> connected by QR code, or use the <strong>official WhatsApp Business Cloud API</strong>. Plans start at <strong>$5 a month per AI employee</strong> (Starter, 1,000 agent calls) and $15 for up to three, with a free trial of 10 messages and no card (<a href=\"/pricing\">pricing</a>). The same account includes other AI employees for leads, email, website chat and booking.</p>\n<ul>\n<li><strong>Strengths:</strong> very low entry price, AI that handles the whole campaign and its replies, plus leads, email and website chat in one workspace.</li>\n<li><strong>Watch out for:</strong> it isn’t built around a large multi-agent shared inbox or deep CRM integrations. If that’s what you need, Gallabox or WATI are a better fit. Sending from a personal number also carries more risk than the official API; see our <a href=\"/blog/bulk-whatsapp-messaging-best-practices-avoid-bans\">guide to bulk messaging without bans</a>.</li>\n<li><strong>Best for:</strong> small businesses and solo founders who want campaigns and replies handled without a team.</li>\n</ul>\n<h2 id=\"which-wati-alternative-should-you-choose\">Which WATI alternative should you choose?</h2>\n<ul>\n<li><strong>You run a support team in a shared inbox with a CRM:</strong> Gallabox, or stay on WATI.</li>\n<li><strong>You sell on Shopify and want low, published prices:</strong> Interakt.</li>\n<li><strong>You send high-volume marketing in India and want unlimited users:</strong> AiSensy.</li>\n<li><strong>You want AI agents included in every plan:</strong> DoubleTick.</li>\n<li><strong>You’re a small business that wants AI to send and reply for you:</strong> NexBotix.</li>\n</ul>\n<h2 id=\"how-do-you-switch-from-wati\">How do you switch from WATI?</h2>\n<ol>\n<li><strong>List what you use:</strong> templates, automations, integrations, number of users and monthly message volume.</li>\n<li><strong>Price it on two or three alternatives</strong> using your real volume, including Meta’s message fees.</li>\n<li><strong>Ask about number migration.</strong> Numbers on the WhatsApp Business Platform can usually move between providers; ask the new provider to handle it and confirm what happens to templates and chat history.</li>\n<li><strong>Rebuild your top automations first</strong>, test them on your own number, then move your campaigns.</li>\n<li><strong>Run both for a short overlap</strong> if you can, so customers never hit a dead end.</li>\n</ol>\n<h2 id=\"sources\">Sources</h2>\n<p>All pages checked on 14 October 2026. Prices change often; confirm before buying.</p>\n<ul>\n<li><a href=\"https://www.wati.io/pricing/\" target=\"_blank\" rel=\"noopener\">WATI pricing</a></li>\n<li><a href=\"https://aisensy.com/pricing\" target=\"_blank\" rel=\"noopener\">AiSensy pricing</a></li>\n<li><a href=\"https://apps.shopify.com/interakt-marketing\" target=\"_blank\" rel=\"noopener\">Interakt on the Shopify App Store</a></li>\n<li><a href=\"https://gallabox.com/pricing\" target=\"_blank\" rel=\"noopener\">Gallabox pricing</a></li>\n<li><a href=\"https://doubletick.io/pricing\" target=\"_blank\" rel=\"noopener\">DoubleTick pricing</a></li>\n<li><a href=\"https://developers.facebook.com/docs/whatsapp/pricing\" target=\"_blank\" rel=\"noopener\">Meta: WhatsApp Business Platform pricing</a></li>\n</ul>\n",
+    "toc": [
+      {
+        "id": "what-does-wati-offer-and-why-do-people-look-elsewhere",
+        "text": "What does WATI offer, and why do people look elsewhere?"
+      },
+      {
+        "id": "what-should-you-compare-before-switching",
+        "text": "What should you compare before switching?"
+      },
+      {
+        "id": "the-comparison-at-a-glance",
+        "text": "The comparison at a glance"
+      },
+      {
+        "id": "1-aisensy",
+        "text": "1. AiSensy"
+      },
+      {
+        "id": "2-interakt",
+        "text": "2. Interakt"
+      },
+      {
+        "id": "3-gallabox",
+        "text": "3. Gallabox"
+      },
+      {
+        "id": "4-doubletick",
+        "text": "4. DoubleTick"
+      },
+      {
+        "id": "5-nexbotix-our-product",
+        "text": "5. NexBotix (our product)"
+      },
+      {
+        "id": "which-wati-alternative-should-you-choose",
+        "text": "Which WATI alternative should you choose?"
+      },
+      {
+        "id": "how-do-you-switch-from-wati",
+        "text": "How do you switch from WATI?"
+      },
+      {
+        "id": "sources",
+        "text": "Sources"
+      }
+    ],
+    "tldr": [
+      "Choose by pricing model first: per seat (WATI, Gallabox), flat plans plus message fees (Interakt), unlimited users plus prepaid message credits (AiSensy), or per AI employee (NexBotix).",
+      "For a large support team with CRM integrations, Gallabox or WATI fit best; for Shopify stores on a budget, Interakt; for India-focused marketing at low entry cost, AiSensy.",
+      "If you’re a small business that wants AI to send campaigns and answer replies without a team inbox, NexBotix (our product) starts at $5 a month."
+    ],
+    "faq": [
+      {
+        "q": "What is the cheapest alternative to WATI?",
+        "a": "It depends on your volume and team size. Among plans with published prices, Interakt’s Starter is $21 a month on Shopify and NexBotix starts at $5 a month per AI employee. WhatsApp message fees from Meta are charged on top for API-based tools."
+      },
+      {
+        "q": "Do all WATI alternatives charge WhatsApp message fees?",
+        "a": "Tools built on the official WhatsApp Business API pass on Meta’s per-message charges for marketing, utility and authentication templates. Replies inside the customer service window are free under Meta’s rules."
+      },
+      {
+        "q": "Can I move my WhatsApp number from WATI to another provider?",
+        "a": "Numbers on the WhatsApp Business Platform can usually be moved between providers. Ask the new provider to handle the migration, and check what happens to your approved templates, contacts and chat history before you switch."
+      },
+      {
+        "q": "Is NexBotix a WhatsApp Business API provider like WATI?",
+        "a": "NexBotix supports the official WhatsApp Business Cloud API, and it can also send campaigns from your existing number connected by QR code. Its focus is AI employees that run campaigns and replies, rather than a large multi-agent team inbox."
+      },
+      {
+        "q": "Which WATI alternative is best for Shopify?",
+        "a": "Interakt and AiSensy both have Shopify integrations, and Interakt’s Shopify app lists cart reminders on its Premier plan. WATI offers Shopify as a $4.99 per month add-on."
+      },
+      {
+        "q": "How often do these prices change?",
+        "a": "Often. We checked every vendor’s pricing page on 14 October 2026. Always confirm on the vendor’s site before you buy."
+      }
+    ],
+    "publishedAt": "2026-10-14",
+    "updatedAt": "2026-10-14",
+    "readTime": "7 min read",
+    "wordCount": 1603,
+    "category": "WhatsApp Automation",
+    "hub": "whatsapp",
+    "tags": [
+      "WATI alternatives",
+      "WhatsApp Business API",
+      "AiSensy",
+      "Interakt",
+      "Gallabox",
+      "DoubleTick"
+    ],
+    "image": "/blog/og/wati-alternatives.png",
+    "imageAlt": "Comparison of WATI alternatives for WhatsApp marketing",
+    "featured": true
+  },
+  {
     "slug": "whatsapp-mcp-server-control-whatsapp-from-ai-agents",
     "title": "WhatsApp MCP Server: How to Send WhatsApp Messages from Claude, Cursor and Windsurf",
     "metaTitle": "WhatsApp MCP Server for Claude, Cursor & Windsurf | NexBotix",
@@ -79,7 +273,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "WhatsApp API",
       "AI agents"
     ],
-    "image": "/blog/mcp_whatsapp_hero.jpg",
+    "image": "/blog/og/whatsapp-mcp-server-control-whatsapp-from-ai-agents.png",
     "imageAlt": "An AI agent sending a WhatsApp message through the Model Context Protocol",
     "featured": true
   },
@@ -159,7 +353,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "customer support",
       "small business"
     ],
-    "image": "/blog/whatsapp_bot_hero.jpg",
+    "image": "/blog/og/build-automated-whatsapp-bot-for-business.png",
     "imageAlt": "A WhatsApp chat answered automatically by an AI assistant",
     "featured": false
   },
@@ -227,7 +421,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "monitoring",
       "bot detection"
     ],
-    "image": "/blog/whatsapp_bot_hero.jpg",
+    "image": "/blog/og/check-whatsapp-bot-monitoring-debugging-testing.png",
     "imageAlt": "Checking the status of a WhatsApp AI bot on a dashboard",
     "featured": false
   },
@@ -299,7 +493,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "technical SEO",
       "blog automation"
     ],
-    "image": "/blog/ai_seo_automation_hero.jpg",
+    "image": "/blog/og/ai-seo-automation-autonomous-bots-fix-seo-issues.png",
     "imageAlt": "An SEO dashboard showing page speed and issues detected automatically",
     "featured": false
   },
@@ -395,7 +589,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "WhatsApp marketing",
       "best practices"
     ],
-    "image": "/blog/bulk_messaging_hero.jpg",
+    "image": "/blog/og/bulk-whatsapp-messaging-best-practices-avoid-bans.png",
     "imageAlt": "A phone sending a personalised WhatsApp campaign to a contact list",
     "featured": true
   },
@@ -467,7 +661,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "WhatsApp follow-up",
       "conversion"
     ],
-    "image": "/blog/ai_chatbot_hero.jpg",
+    "image": "/blog/og/transforming-website-leads-ai-chatbots-whatsapp-integration.png",
     "imageAlt": "A website chat widget capturing a visitor’s phone number",
     "featured": false
   },
@@ -555,7 +749,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "verification",
       "developers"
     ],
-    "image": "/blog/mcp_whatsapp_hero.jpg",
+    "image": "/blog/og/step-by-step-guide-automating-otp-delivery-whatsapp-api.png",
     "imageAlt": "A verification code arriving as a WhatsApp message",
     "featured": false
   },
@@ -627,7 +821,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "human handoff",
       "small business"
     ],
-    "image": "/blog/whatsapp_bot_hero.jpg",
+    "image": "/blog/og/ai-driven-customer-support-future-whatsapp-marketing.png",
     "imageAlt": "A customer support conversation on WhatsApp handled by AI with a human ready to step in",
     "featured": false
   },
@@ -723,7 +917,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "D2C",
       "automation ideas"
     ],
-    "image": "/blog/bulk_messaging_hero.jpg",
+    "image": "/blog/og/10-essential-whatsapp-automation-strategies-ecommerce-growth.png",
     "imageAlt": "An online store’s sale announcement arriving on WhatsApp",
     "featured": false
   },
@@ -804,7 +998,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "Claude",
       "explainer"
     ],
-    "image": "/blog/mcp_whatsapp_hero.jpg",
+    "image": "/blog/og/model-context-protocol-mcp-explained-new-era-ai-agents.png",
     "imageAlt": "Diagram-like illustration of an AI assistant connecting to tools through MCP",
     "featured": false
   }
