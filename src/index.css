@@ -49,3 +49,24 @@ body {
 .chat-html p {
   margin: 0.2rem 0;
 }
+
+/* Blog article body (content/blog/*.md → HTML). Marketing palette. */
+.nb-prose { color: #a39e95; font-size: 17px; line-height: 1.75; }
+.nb-prose > * + * { margin-top: 1.1em; }
+.nb-prose h2 { margin-top: 2.2em; color: #f2eee6; font-family: var(--font-archivo), system-ui, sans-serif; font-weight: 900; font-size: clamp(26px, 3vw, 34px); line-height: 1.15; letter-spacing: -0.02em; scroll-margin-top: 90px; }
+.nb-prose h3 { margin-top: 1.8em; color: #f2eee6; font-family: var(--font-archivo), system-ui, sans-serif; font-weight: 700; font-size: 21px; scroll-margin-top: 90px; }
+.nb-prose strong { color: #f2eee6; font-weight: 600; }
+.nb-prose a { color: #22c55e; text-decoration: underline; text-underline-offset: 3px; }
+.nb-prose ul, .nb-prose ol { padding-left: 1.4em; }
+.nb-prose ul { list-style: disc; }
+.nb-prose ol { list-style: decimal; }
+.nb-prose li + li { margin-top: 0.45em; }
+.nb-prose li::marker { color: #22c55e; }
+.nb-prose blockquote { border-left: 3px solid #22c55e; background: #141416; border-radius: 0 14px 14px 0; padding: 1em 1.25em; color: #f2eee6; }
+.nb-prose code { font-family: var(--font-plex-mono), ui-monospace, monospace; font-size: 0.88em; background: #17171a; border: 1px solid #1f1f22; border-radius: 6px; padding: 0.1em 0.4em; color: #f2eee6; }
+.nb-prose pre { background: #070708; border: 1px solid #1f1f22; border-radius: 14px; padding: 1.1em 1.25em; overflow-x: auto; font-size: 14px; line-height: 1.6; }
+.nb-prose pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+.nb-prose table { width: 100%; border-collapse: collapse; font-size: 15px; display: block; overflow-x: auto; }
+.nb-prose th, .nb-prose td { border-bottom: 1px solid #1f1f22; padding: 0.7em 0.9em; text-align: left; vertical-align: top; }
+.nb-prose th { color: #7d7972; font-family: var(--font-plex-mono), ui-monospace, monospace; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; }
+.nb-prose td:first-child { color: #f2eee6; }

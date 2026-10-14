@@ -61,6 +61,7 @@ const CampaignPage = lazy(() => import('@/views/CampaignPage').then(m => ({ defa
 const InfluencerDashboard = lazy(() => import('@/views/influencer/InfluencerDashboard'))
 const DeveloperPage = lazy(() => import('./views/DeveloperPage').then(m => ({ default: m.DeveloperPage })))
 const BlogPage = lazy(() => import('./views/BlogPage'))
+const BlogCategoryPage = lazy(() => import('./views/BlogPage').then(m => ({ default: m.BlogCategoryPage })))
 const AgentHubPage = lazy(() => import('./views/AgentHubPage').then(m => ({ default: m.AgentHubPage })))
 const AgentHubIndexPage = lazy(() => import('./views/AgentHubPage').then(m => ({ default: m.AgentHubIndexPage })))
 const BlogPostPage = lazy(() => import('./views/BlogPostPage'))
@@ -177,8 +178,9 @@ function AppRoutes() {
       <Route path="/data-deletion" element={<LandingLayout><DataDeletionPage /></LandingLayout>} />
 
       {/* Public Blog Platform */}
-      <Route path="/blog" element={<BlogPage />} />
-      <Route path="/blog/:slug" element={<BlogPostPage />} />
+      <Route path="/blog" element={<LandingLayout><BlogPage /></LandingLayout>} />
+      <Route path="/blog/category/:category" element={<LandingLayout><BlogCategoryPage /></LandingLayout>} />
+      <Route path="/blog/:slug" element={<LandingLayout><BlogPostPage /></LandingLayout>} />
 
       {/* Public chatbot demo tool (no auth required) */}
       <Route path="/check-chatbot" element={<CheckChatbotPage />} />

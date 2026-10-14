@@ -1,4 +1,4 @@
-import type { BlogPost } from '../data/blogPosts';
+import { BLOG_AUTHOR, categorySlug, type BlogPost } from '../data/blogPosts';
 import { SITE_NAME, SITE_URL, PUBLIC_PAGES, blogPostPath } from './site';
 import { HUBS, hubPath, type Hub } from '../components/landing/hubContent';
 import { hubFaq } from '../components/landing/hubExtras';
@@ -58,7 +58,7 @@ export const softwareApplicationJsonLd: Json = {
 
 export function blogPostingJsonLd(post: BlogPost): Json[] {
   const url = absolute(blogPostPath(post));
-  return [
+  const graph: Json[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
@@ -66,12 +66,14 @@ export function blogPostingJsonLd(post: BlogPost): Json[] {
       description: post.metaDescription,
       url,
       mainEntityOfPage: { '@type': 'WebPage', '@id': url },
-      image: absolute(post.image),
+      image: { '@type': 'ImageObject', url: absolute(post.image), width: 1200, height: 630 },
       datePublished: post.publishedAt,
-      dateModified: post.publishedAt,
+      dateModified: post.updatedAt,
+      wordCount: post.wordCount,
       keywords: post.tags.join(', '),
       articleSection: post.category,
-      author: { '@type': 'Person', name: post.author.name, jobTitle: post.author.role },
+      // Team byline by choice; credited to the organisation.
+      author: { '@type': 'Organization', name: BLOG_AUTHOR.name, url: absolute(BLOG_AUTHOR.url) },
       publisher: { '@id': `${SITE_URL}/#organization` },
       inLanguage: 'en',
     },
@@ -81,7 +83,37 @@ export function blogPostingJsonLd(post: BlogPost): Json[] {
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
         { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE_URL}/blog` },
-        { '@type': 'ListItem', position: 3, name: post.title, item: url },
+        { '@type': 'ListItem', position: 3, name: post.category, item: absolute(`/blog/category/${categorySlug(post.category)}`) },
+        { '@type': 'ListItem', position: 4, name: post.title, item: url },
+      ],
+    },
+  ];
+  if (post.faq.length) graph.push(faqPageJsonLd(post.faq));
+  return graph;
+}
+
+export function blogCategoryJsonLd(cat: { name: string; slug: string; intro: string }, posts: BlogPost[]): Json[] {
+  const url = absolute(`/blog/category/${cat.slug}`);
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      url,
+      name: `${cat.name} | NexBotix Blog`,
+      description: cat.intro,
+      isPartOf: { '@id': `${SITE_URL}/#website` },
+      mainEntity: {
+        '@type': 'ItemList',
+        itemListElement: posts.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: absolute(blogPostPath(p)), name: p.title })),
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE_URL}/blog` },
+        { '@type': 'ListItem', position: 3, name: cat.name, item: url },
       ],
     },
   ];

@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import SpaApp from '@/SpaApp';
 import ClientOnlySpa from './ClientOnlySpa';
-import { APP_SEGMENTS, DEFAULT_OG_IMAGE, PUBLIC_PAGES, findBlogPost, findHub, indexablePaths, type PageSeo } from '@/seo/site';
-import { JsonLd, blogPostingJsonLd, demoVideoJsonLd, faqPageJsonLd, hubJsonLd, publicPageJsonLd, softwareApplicationJsonLd } from '@/seo/jsonld';
-import { BLOG_POSTS } from '@/data/blogPosts';
+import { APP_SEGMENTS, DEFAULT_OG_IMAGE, PUBLIC_PAGES, findBlogPost, findCategory, findHub, indexablePaths, type PageSeo } from '@/seo/site';
+import { JsonLd, blogCategoryJsonLd, blogPostingJsonLd, demoVideoJsonLd, faqPageJsonLd, hubJsonLd, publicPageJsonLd, softwareApplicationJsonLd } from '@/seo/jsonld';
+import { BLOG_AUTHOR, BLOG_POSTS, categorySlug } from '@/data/blogPosts';
 import { AGENTS, FAQ, PRICING_FAQ } from '@/components/landing/homeContent';
 
 type Props = { params: Promise<{ slug?: string[] }> };
@@ -25,6 +25,8 @@ function resolve(slug: string[] | undefined) {
   if (post) return { kind: 'post' as const, path, post };
   const hub = findHub(path);
   if (hub) return { kind: 'hub' as const, path, hub };
+  const category = findCategory(path);
+  if (category) return { kind: 'category' as const, path, category };
   if (slug?.length && APP_SEGMENTS.has(slug[0])) return { kind: 'app' as const, path };
   return null;
 }
@@ -60,6 +62,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  if (route.kind === 'category') {
+    const title = `${route.category.name} Guides & Articles | NexBotix Blog`;
+    const description = route.category.intro;
+    const image = '/og/blog.png';
+    return {
+      title,
+      description,
+      alternates: { canonical: route.path },
+      openGraph: { title, description, url: route.path, images: [image] },
+      twitter: { card: 'summary_large_image', title, description, images: [image] },
+    };
+  }
+
   if (route.kind === 'post') {
     const { post } = route;
     const title = post.metaTitle || `${post.title} | NexBotix Blog`;
@@ -67,7 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description: post.metaDescription,
       keywords: post.tags,
-      authors: [{ name: post.author.name }],
+      authors: [{ name: BLOG_AUTHOR.name, url: BLOG_AUTHOR.url }],
       alternates: { canonical: route.path },
       openGraph: {
         type: 'article',
@@ -76,7 +91,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         url: route.path,
         images: [post.image],
         publishedTime: post.publishedAt,
-        authors: [post.author.name],
+        modifiedTime: post.updatedAt,
+        authors: [BLOG_AUTHOR.name],
         section: post.category,
         tags: post.tags,
       },
@@ -100,6 +116,9 @@ export default async function Page({ params }: Props) {
       {route.kind === 'page' && route.path !== '/' && <JsonLd data={publicPageJsonLd(route.path, route.page, BLOG_POSTS)} />}
       {route.path === '/pricing' && <JsonLd data={faqPageJsonLd(PRICING_FAQ)} />}
       {route.kind === 'post' && <JsonLd data={blogPostingJsonLd(route.post)} />}
+      {route.kind === 'category' && (
+        <JsonLd data={blogCategoryJsonLd(route.category, BLOG_POSTS.filter((p) => categorySlug(p.category) === route.category.slug))} />
+      )}
       {route.kind === 'hub' && (
         <JsonLd data={hubJsonLd(route.hub, route.hub.agentIds.map((id) => AGENTS.find((a) => a.id === id)?.name ?? id))} />
       )}

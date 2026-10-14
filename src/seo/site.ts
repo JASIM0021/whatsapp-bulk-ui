@@ -1,7 +1,7 @@
 // Single source of truth for public-page SEO. Read on the server by
 // app/[[...slug]]/page.tsx (metadata, sitemap) and in the browser by useSEO
 // (so client-side navigation shows the same titles).
-import { BLOG_POSTS, type BlogPost } from '../data/blogPosts';
+import { BLOG_CATEGORIES, BLOG_POSTS, categorySlug, type BlogPost } from '../data/blogPosts';
 import { HUBS, findHubBySlug, hubPath } from '../components/landing/hubContent';
 
 export const SITE_URL = 'https://nexbotix.online';
@@ -112,6 +112,14 @@ export function findBlogPost(path: string) {
   return match ? BLOG_POSTS.find((p) => p.slug === match[1]) : undefined;
 }
 
+// Category pages with at least one post.
+export const activeCategories = () => BLOG_CATEGORIES.filter((c) => BLOG_POSTS.some((p) => categorySlug(p.category) === c.slug));
+
+export function findCategory(path: string) {
+  const match = /^\/blog\/category\/([^/]+)$/.exec(path);
+  return match ? activeCategories().find((c) => c.slug === match[1]) : undefined;
+}
+
 export function findHub(path: string) {
   const match = /^\/ai-agents\/([^/]+)$/.exec(path);
   return match ? findHubBySlug(match[1]) : undefined;
@@ -119,7 +127,12 @@ export function findHub(path: string) {
 
 // Every path that is server-rendered and listed in the sitemap.
 export function indexablePaths(): string[] {
-  return [...Object.keys(PUBLIC_PAGES), ...HUBS.map(hubPath), ...BLOG_POSTS.map(blogPostPath)];
+  return [
+    ...Object.keys(PUBLIC_PAGES),
+    ...HUBS.map(hubPath),
+    ...activeCategories().map((c) => `/blog/category/${c.slug}`),
+    ...BLOG_POSTS.map(blogPostPath),
+  ];
 }
 
 // First path segments that belong to the logged-in app (or to login/OAuth

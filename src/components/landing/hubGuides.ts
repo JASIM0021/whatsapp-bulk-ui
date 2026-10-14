@@ -326,8 +326,8 @@ export const HUB_GUIDES: Record<string, HubGuide> = {
       {
         q: 'Which SEO issues can be fixed automatically?',
         a: [
-          'Issues that live in the page’s HTML head or markup, like missing or duplicate meta tags, can often be corrected by a script as the page loads. Seona marks these as script-fixable and can inject the fixes on every page.',
-          'Problems like slow servers, heavy images or missing content need changes to your site itself. For those, Seona gives you the specific code or change to make.',
+          'Tags a script can add as the page loads, like a missing viewport tag, canonical tag or Open Graph tags, are fixed automatically. Seona marks these as script-fixable and injects the fixes on every page.',
+          'Missing titles, meta descriptions and image alt text, slow servers, heavy images and thin content need changes to your site itself. For those, Seona gives you the specific code or change to make.',
         ],
       },
       {
