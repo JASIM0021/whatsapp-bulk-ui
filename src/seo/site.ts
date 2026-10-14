@@ -20,16 +20,16 @@ export interface PageSeo {
 // Server-rendered, indexable pages. Every key must also be a route in SpaApp.
 export const PUBLIC_PAGES = {
   '/': {
-    title: 'AI Employees for WhatsApp, Email & Leads from $5/mo | NexBotix',
-    description: 'Hire 24/7 AI employees for sales, support and operations from $5/month. Automate WhatsApp, email, lead generation and website chat with a visual agent studio.',
+    title: 'AI Employees for WhatsApp, Email & Leads from ₹399/mo | NexBotix',
+    description: 'Hire 24/7 AI employees for sales, support and operations from ₹399/month. Automate WhatsApp, email, lead generation and website chat. Start free with 100 credits.',
     keywords: 'ai employees, ai workforce, whatsapp ai agent, whatsapp bulk messaging, claude mcp, website chatbot, lead generation, nexbotix',
     changeFrequency: 'weekly',
     priority: 1,
   },
   '/pricing': {
     ogImage: '/og/pricing.png',
-    title: 'Pricing: AI Employees from $5/month | NexBotix',
-    description: 'Per-agent pricing: Starter $5/mo for 1 AI employee and 1,000 agent calls, Growth $15/mo for 3, Scale $49/mo for 10. Save with yearly billing.',
+    title: 'Pricing: Every AI Employee from ₹399/month | NexBotix',
+    description: 'Credit plans with every AI employee included: Starter ₹399/mo for 2,500 credits, Growth ₹1,199 for 8,000, Pro ₹2,999 for 22,000. Free trial, 100 credits.',
     changeFrequency: 'monthly',
     priority: 0.9,
   },

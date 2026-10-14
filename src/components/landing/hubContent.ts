@@ -27,7 +27,7 @@ export const HUBS: Hub[] = [
     agentIds: ['whatsapp'],
     keyword: 'WhatsApp bulk message sender',
     seoTitle: 'WhatsApp Bulk Message Sender with AI Auto-Reply | NexBotix',
-    seoDescription: 'Send personalised bulk WhatsApp messages from Excel or CSV, schedule campaigns, follow up automatically and let an AI answer every reply, 24/7. From $5/month.',
+    seoDescription: 'Send personalised bulk WhatsApp messages from Excel or CSV, schedule campaigns, follow up automatically and let an AI answer every reply, 24/7. From ₹399/month.',
     h1: 'WhatsApp bulk messaging, with an AI that answers every reply',
     intro: 'Nexa sends your WhatsApp campaigns to hundreds of customers at once, personalised with their names, and then handles the replies for you: day, night and weekends.',
     pains: [
@@ -126,7 +126,7 @@ export const HUBS: Hub[] = [
     agentIds: ['email'],
     keyword: 'AI email outreach tool',
     seoTitle: 'AI Email Outreach & Bulk Email Campaigns | NexBotix',
-    seoDescription: 'Send bulk email campaigns from Gmail, Outlook or SMTP, track opens and clicks, re-target people who didn’t open, and auto-reply with AI. From $5/month.',
+    seoDescription: 'Send bulk email campaigns from Gmail, Outlook or SMTP, track opens and clicks, re-target people who didn’t open, and auto-reply with AI. From ₹399/month.',
     h1: 'Email campaigns from your own inbox, with follow-ups that send themselves',
     intro: 'Mailo sends your email campaigns from Gmail, Outlook or your own domain, shows you who opened and clicked, re-targets everyone else and answers incoming emails with AI.',
     pains: [
@@ -224,7 +224,7 @@ export const HUBS: Hub[] = [
     agentIds: ['facebook', 'linkedin'],
     keyword: 'AI social media manager',
     seoTitle: 'AI Social Media Manager for Facebook & LinkedIn | NexBotix',
-    seoDescription: 'Schedule Facebook Page posts, track analytics and keep LinkedIn active with AI-written posts and AI images you approve by email. From $5 per month.',
+    seoDescription: 'Schedule Facebook Page posts, track analytics and keep LinkedIn active with AI-written posts and AI images you approve by email. From ₹399 per month.',
     h1: 'An AI social media manager for Facebook and LinkedIn',
     intro: 'Pagey runs your Facebook Pages and Linko keeps your LinkedIn active, with posts written by AI, images generated on demand and nothing published that you don’t want.',
     pains: [

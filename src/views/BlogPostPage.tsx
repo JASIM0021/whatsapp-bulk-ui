@@ -145,7 +145,7 @@ export default function BlogPostPage() {
       )}
 
       <section className="border-t border-nb-line py-20 text-center">
-        <h2 className="mx-auto max-w-3xl px-4 font-display text-3xl font-black tracking-[-0.02em] sm:text-5xl">Hire your first AI employee for $5 a month</h2>
+        <h2 className="mx-auto max-w-3xl px-4 font-display text-3xl font-black tracking-[-0.02em] sm:text-5xl">Every AI employee, from ₹399 a month</h2>
         <div className="mt-8"><PrimaryCta>Start your free trial</PrimaryCta></div>
       </section>
     </div>

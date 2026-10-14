@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
-const API_ORIGIN = 'https://api.nexbotix.online';
+// Override with API_PROXY_ORIGIN to point a local build at a local backend.
+const API_ORIGIN = process.env.API_PROXY_ORIGIN || 'https://api.nexbotix.online';
 
 // The .env files and Vercel project still use the old VITE_* names; expose
 // them under NEXT_PUBLIC_* so either name works.

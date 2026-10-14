@@ -147,7 +147,7 @@ function Footer() {
               </span>
             </div>
             <p className="text-sm leading-relaxed text-gray-500">
-              AI employees for WhatsApp, email, lead generation and website chat. From $5 a month.
+              AI employees for WhatsApp, email, lead generation and website chat. Plans from ₹399 a month.
             </p>
           </div>
 

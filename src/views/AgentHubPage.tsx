@@ -57,7 +57,7 @@ export function AgentHubPage() {
             <PrimaryCta>Hire {team.map((a) => a.name).join(' & ')}</PrimaryCta>
             <Link to="/pricing" className="rounded-full border border-nb-line2 px-7 py-3.5 text-[15px] font-semibold hover:bg-white/5">See pricing</Link>
           </div>
-          <p className="mt-5 font-label text-[12px] text-nb-muted2">Free trial · No credit card · From $5 a month</p>
+          <p className="mt-5 font-label text-[12px] text-nb-muted2">Free trial · No credit card · From ₹399 a month</p>
         </div>
       </section>
 
@@ -285,7 +285,7 @@ export function AgentHubIndexPage() {
             AI employees for every job you keep putting off
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-nb-muted">
-            Each NexBotix AI employee owns one job, end to end. Hire one for $5 a month, or build a whole team.
+            Each NexBotix AI employee owns one job, end to end. Every plan includes every AI employee, from ₹399 a month.
           </p>
         </div>
       </section>
@@ -315,7 +315,7 @@ export function AgentHubIndexPage() {
             You don’t need to write prompts. Each employee is set up once with your business details, works in the background on your accounts, and checks with you only when a decision is yours to make.
           </p>
           <ul className="mt-8 space-y-3">
-            {['Works 24/7, including nights and weekends', 'Uses your own WhatsApp, email and social accounts', 'Starts at $5 a month per AI employee'].map((t) => (
+            {['Works 24/7, including nights and weekends', 'Uses your own WhatsApp, email and social accounts', 'Plans from ₹399 a month, every AI employee included'].map((t) => (
               <li key={t} className="flex gap-3 text-[16px]"><Check className="mt-1 h-4 w-4 shrink-0 text-nb-acc" />{t}</li>
             ))}
           </ul>

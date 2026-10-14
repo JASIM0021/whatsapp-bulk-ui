@@ -14,6 +14,7 @@ import { HomePage, PricingPage } from './components/landing/HomePage'
 import { LoginPage } from './components/auth/LoginPage'
 import { pendingPostAuthRedirect, rememberPostAuthRedirect } from './lib/postAuthRedirect'
 import { WIDGET_BASE_URL } from './config/api'
+import { OutOfCreditsBanner } from './components/billing/OutOfCreditsBanner'
 
 // Loading spinner for lazy-loaded routes
 function RouteSpinner() {
@@ -163,6 +164,7 @@ function AppRoutes() {
     <Suspense fallback={<RouteSpinner />}>
       {/* <BotOnboardingModal /> */}
       <SetupGuard />
+      <OutOfCreditsBanner />
       <Routes>
         {/* Public landing pages */}
       <Route path="/" element={<LandingLayout><HomePage /></LandingLayout>} />

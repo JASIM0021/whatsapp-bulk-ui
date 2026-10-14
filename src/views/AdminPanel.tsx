@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
+import { AdminUserCredits, CreditCostsTab } from '@/components/billing/AdminCredits';
+import { isCreditPlan } from '@/lib/plan';
 import { AdminSEOAgentTab } from './AdminSEOAgentTab';
 import { AdminLogsTab } from './AdminLogsTab';
 import { useUrlTab } from '@/hooks/useUrlTab';
@@ -50,6 +52,7 @@ import {
   Database,
   Rocket,
   Terminal,
+  Coins,
 } from 'lucide-react';
 
 /* ─── Types ─── */
@@ -87,8 +90,8 @@ interface AdminUser {
   };
 }
 
-type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers' | 'transactions' | 'ai' | 'seoagent' | 'logs' | 'leads';
-const ADMIN_TABS: readonly Tab[] = ['dashboard', 'users', 'leads', 'transactions', 'invoices', 'plans', 'promos', 'email', 'demos', 'deletions', 'services', 'influencers', 'ai', 'seoagent', 'logs'];
+type Tab = 'dashboard' | 'users' | 'email' | 'invoices' | 'plans' | 'credits' | 'promos' | 'demos' | 'deletions' | 'services' | 'influencers' | 'transactions' | 'ai' | 'seoagent' | 'logs' | 'leads';
+const ADMIN_TABS: readonly Tab[] = ['dashboard', 'users', 'leads', 'transactions', 'invoices', 'plans', 'credits', 'promos', 'email', 'demos', 'deletions', 'services', 'influencers', 'ai', 'seoagent', 'logs'];
 
 interface Invoice {
   id: string;
@@ -121,6 +124,8 @@ interface PlanConfigData {
   isAdminOnly?: boolean;
   displayOrder?: number;
   highlight?: boolean;
+  credits?: number;
+  kind?: string; // 'credit_plan' | 'credit_topup' | '' (legacy)
 }
 
 interface ActivityData {
@@ -323,7 +328,6 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
   const [isEnterprise, setIsEnterprise] = useState(false);
   const [canEditLeadSources, setCanEditLeadSources] = useState(false);
   const [allowedLeadSources, setAllowedLeadSources] = useState<Set<string>>(new Set(['gmap', 'bing']));
-  const [leadBalance, setLeadBalance] = useState<number>(0);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -333,18 +337,13 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
   const [planSaving, setPlanSaving] = useState(false);
   const [planMsg, setPlanMsg] = useState('');
   const [planOptions, setPlanOptions] = useState<PlanConfigData[]>([]);
+  const [showLegacyPlans, setShowLegacyPlans] = useState(false);
 
   // Add-on grant state
   const [grantedServices, setGrantedServices] = useState<Set<string>>(new Set());
   const [svcSaving, setSvcSaving] = useState(false);
   const [svcMsg, setSvcMsg] = useState('');
 
-  // Rank to Top credits state
-  const [rankCredits, setRankCredits] = useState(0);
-  const [rankAmount, setRankAmount] = useState('10');
-  const [rankNote, setRankNote] = useState('');
-  const [rankSaving, setRankSaving] = useState(false);
-  const [rankMsg, setRankMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -353,17 +352,12 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
       setIsEnterprise(user.isEnterprise ?? false);
       setCanEditLeadSources(user.canEditLeadSources ?? false);
       setAllowedLeadSources(new Set(user.allowedLeadSources && user.allowedLeadSources.length > 0 ? user.allowedLeadSources : ['gmap', 'bing']));
-      setLeadBalance(user.leadBalance ?? 0);
       setError('');
       setPlanMsg('');
       setSvcMsg('');
       setPlanToSet(user.subscription?.plan || 'monthly');
       setPlanDays('');
       setGrantedServices(new Set(user.subscription?.enabledServices ?? []));
-      setRankCredits(user.rankCredits ?? 0);
-      setRankAmount('10');
-      setRankNote('');
-      setRankMsg(null);
     }
   }, [user]);
 
@@ -398,7 +392,6 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
           isEnterprise,
           canEditLeadSources,
           allowedLeadSources: Array.from(allowedLeadSources),
-          leadBalance: Number(leadBalance),
         }),
       });
       const data = await res.json();
@@ -426,7 +419,9 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
       });
       const data = await res.json();
       if (data.success) {
-        setPlanMsg(`Plan updated to ${planToSet} (expires ${data.data?.expiryDate})`);
+        setPlanMsg(data.data?.expiryDate
+          ? `Plan updated to ${planToSet} (expires ${data.data.expiryDate})`
+          : `Plan updated: ${planToSet} credits added`);
         onUpdated();
       } else {
         setPlanMsg(data.error || 'Failed to update plan');
@@ -457,34 +452,6 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
       setSvcMsg('Network error');
     } finally {
       setSvcSaving(false);
-    }
-  };
-
-  const handleRankCredits = async (sign: 1 | -1) => {
-    const amount = Math.floor(Number(rankAmount));
-    if (!user || !amount || amount < 1) {
-      setRankMsg({ ok: false, text: 'Enter a whole number of credits (1 or more).' });
-      return;
-    }
-    setRankSaving(true); setRankMsg(null);
-    try {
-      const res = await apiFetch(API_ENDPOINTS.admin.userRankCredits(user.id), {
-        method: 'POST',
-        body: JSON.stringify({ amount: sign * amount, note: rankNote.trim() }),
-      });
-      const data = await res.json();
-      if (!data.success) {
-        setRankMsg({ ok: false, text: data.error || 'Failed to update credits' });
-        return;
-      }
-      setRankCredits(data.data.rankCredits);
-      setRankNote('');
-      setRankMsg({ ok: true, text: `${sign > 0 ? 'Added' : 'Removed'} ${amount} credit${amount === 1 ? '' : 's'}. New balance: ${data.data.rankCredits}.` });
-      onUpdated();
-    } catch {
-      setRankMsg({ ok: false, text: 'Network error' });
-    } finally {
-      setRankSaving(false);
     }
   };
 
@@ -582,18 +549,6 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Lead Credits Balance (Used when not enterprise)
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={leadBalance}
-                onChange={(e) => setLeadBalance(Number(e.target.value))}
-                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
           </div>
 
           {error && (
@@ -611,17 +566,20 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
             <Crown size={14} className="text-amber-500" /> Change Subscription Plan
           </p>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              {planOptions.map(p => {
-                const value = p.plan;
-                const label = p.name || value;
+            {(() => {
+              const planButton = (p: PlanConfigData) => {
+                const label = p.kind === 'credit_plan'
+                  ? `${p.name || p.plan} · ${(p.credits ?? 0).toLocaleString('en-IN')}/mo`
+                  : p.kind === 'credit_topup'
+                    ? `+${(p.credits ?? 0).toLocaleString('en-IN')} credits`
+                    : p.name || p.plan;
                 return (
                   <button
-                    key={value}
+                    key={p.plan}
                     type="button"
-                    onClick={() => setPlanToSet(value)}
-                    className={`py-2 rounded-lg text-xs font-medium border transition-colors ${
-                      planToSet === value
+                    onClick={() => setPlanToSet(p.plan)}
+                    className={`py-2 px-2 rounded-lg text-xs font-medium border transition-colors ${
+                      planToSet === p.plan
                         ? p.isAdminOnly
                           ? 'bg-purple-50 border-purple-400 text-purple-700'
                           : 'bg-amber-50 border-amber-300 text-amber-700'
@@ -631,11 +589,30 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
                     {label}
                   </button>
                 );
-              })}
-              {planOptions.length === 0 && (
-                <p className="col-span-2 text-xs text-gray-400 text-center py-4">Loading plans…</p>
-              )}
-            </div>
+              };
+              const creditPlans = planOptions.filter(p => p.kind === 'credit_plan');
+              const topups = planOptions.filter(p => p.kind === 'credit_topup');
+              const legacy = planOptions.filter(p => !p.kind);
+              if (planOptions.length === 0) return <p className="text-xs text-gray-400 text-center py-4">Loading plans…</p>;
+              return (
+                <>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Credit plans</p>
+                  <div className="grid grid-cols-2 gap-2">{creditPlans.map(planButton)}</div>
+                  {topups.length > 0 && (
+                    <>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Give top-up credits</p>
+                      <div className="grid grid-cols-3 gap-2">{topups.map(planButton)}</div>
+                    </>
+                  )}
+                  {legacy.length > 0 && (
+                    <button type="button" onClick={() => setShowLegacyPlans(v => !v)} className="text-[11px] font-medium text-gray-500 underline">
+                      {showLegacyPlans ? 'Hide' : 'Show'} legacy plans ({legacy.length}, not sold any more)
+                    </button>
+                  )}
+                  {showLegacyPlans && <div className="grid grid-cols-2 gap-2">{legacy.map(planButton)}</div>}
+                </>
+              );
+            })()}
             <div className="flex gap-2 items-center">
               <input
                 type="number"
@@ -655,14 +632,16 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
               </button>
             </div>
             {planMsg && (
-              <p className={`text-xs rounded-lg px-3 py-2 ${planMsg.includes('updated') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+              <p className={`text-xs rounded-lg px-3 py-2 ${planMsg.startsWith('Plan updated') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
                 {planMsg}
               </p>
             )}
           </div>
         </div>
 
-        {/* Add-on Grant Section */}
+        {/* Add-on Grant Section — only meaningful for old per-service plans; credit plans include every service */}
+        {!isCreditPlan(user?.subscription?.plan) && (
+          <>
         <div className="px-6 pb-6 border-t border-gray-100 pt-4">
           <p className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <Zap size={14} className="text-violet-500" /> Grant Add-ons (no payment)
@@ -728,58 +707,11 @@ function EditUserModal({ open, user, onClose, onUpdated }: {
           )}
         </div>
 
-        {/* Rank to Top Credits Section */}
-        <div className="px-6 pb-6 border-t border-gray-100 pt-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-              <Rocket size={14} className="text-emerald-500" /> Rank to Top Credits
-            </p>
-            <span className="text-xs text-gray-500">Balance: <span className="font-bold text-emerald-700">{rankCredits}</span></span>
-          </div>
-          <div className="flex gap-2 mb-2">
-            <input
-              type="number"
-              min={1}
-              step={1}
-              value={rankAmount}
-              onChange={e => setRankAmount(e.target.value)}
-              className="w-24 px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-emerald-500"
-              aria-label="Number of credits"
-            />
-            <input
-              type="text"
-              value={rankNote}
-              onChange={e => setRankNote(e.target.value)}
-              maxLength={200}
-              placeholder="Note (optional), e.g. goodwill, refund"
-              className="flex-1 min-w-0 px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleRankCredits(1)}
-              disabled={rankSaving}
-              className="flex-1 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-            >
-              {rankSaving ? 'Saving…' : 'Add credits'}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRankCredits(-1)}
-              disabled={rankSaving || rankCredits < 1}
-              className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:border-gray-300 disabled:opacity-50 transition-colors"
-            >
-              Remove
-            </button>
-          </div>
-          <p className="mt-2 text-[11px] text-gray-400">1 credit = 1 bot run. Changes are recorded in the user's credit history.</p>
-          {rankMsg && (
-            <p className={`mt-2 text-xs rounded-lg px-3 py-2 ${rankMsg.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
-              {rankMsg.text}
-            </p>
-          )}
-        </div>
+          </>
+        )}
+
+        {/* Credit wallet (replaces the old lead balance and Rank to Top credits) */}
+        {user && <AdminUserCredits userId={user.id} onChanged={onUpdated} />}
       </div>
     </div>
   );
@@ -1492,6 +1424,8 @@ interface PlanFormState {
   displayOrder: string;
   highlight: boolean;
   yearlyDiscount: string;
+  kind: string;
+  credits: string;
 }
 
 const emptyForm = (): PlanFormState => ({
@@ -1508,6 +1442,8 @@ const emptyForm = (): PlanFormState => ({
   displayOrder: '0',
   highlight: false,
   yearlyDiscount: '0',
+  kind: 'credit_plan',
+  credits: '0',
 });
 
 const formFromPlan = (p: PlanConfigData): PlanFormState => ({
@@ -1524,7 +1460,11 @@ const formFromPlan = (p: PlanConfigData): PlanFormState => ({
   displayOrder: String(p.displayOrder ?? 0),
   highlight: !!p.highlight,
   yearlyDiscount: '0',
+  kind: p.kind ?? '',
+  credits: String(p.credits ?? 0),
 });
+
+const KIND_LABELS: Record<string, string> = { credit_plan: 'Credit plan', credit_topup: 'Top-up', '': 'Legacy' };
 
 function PlansTab() {
   const [plans, setPlans] = useState<PlanConfigData[]>([]);
@@ -1539,7 +1479,8 @@ function PlansTab() {
     try {
       const res = await apiFetch(API_ENDPOINTS.admin.plans);
       const data = await res.json();
-      if (data.success) setPlans(data.data || []);
+      const rank = (k?: string) => (k === 'credit_plan' ? 0 : k === 'credit_topup' ? 1 : 2);
+      if (data.success) setPlans(((data.data || []) as PlanConfigData[]).sort((a, b) => rank(a.kind) - rank(b.kind) || (a.displayOrder ?? 0) - (b.displayOrder ?? 0)));
     } catch { /* ignore */ }
     finally { setLoading(false); }
   };
@@ -1567,6 +1508,8 @@ function PlansTab() {
       isAdminOnly: f.isAdminOnly,
       displayOrder: parseInt(f.displayOrder) || 0,
       highlight: f.highlight,
+      kind: f.kind,
+      credits: parseInt(f.credits) || 0,
     };
 
     setSaving(true);
@@ -1689,7 +1632,8 @@ function PlansTab() {
               <th className="px-3 py-2 text-left">Name</th>
               <th className="px-3 py-2 text-right">Price (₹)</th>
               <th className="px-3 py-2 text-right">Days</th>
-              <th className="px-3 py-2 text-right">Msg limit</th>
+              <th className="px-3 py-2 text-left">Type</th>
+              <th className="px-3 py-2 text-right">Credits</th>
               <th className="px-3 py-2 text-left">Services</th>
               <th className="px-3 py-2 text-center">Visible</th>
               <th className="px-3 py-2 text-center">Highlight</th>
@@ -1705,8 +1649,13 @@ function PlansTab() {
                 <td className="px-3 py-2 text-gray-900">{p.name || <span className="text-gray-400 italic">—</span>}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{p.amount.toLocaleString()}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{p.durationDays ?? '-'}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{p.messageLimit === 0 ? '∞' : p.messageLimit.toLocaleString()}</td>
-                <td className="px-3 py-2 text-xs text-gray-600">{(p.services ?? []).join(', ') || <span className="text-gray-400">none</span>}</td>
+                <td className="px-3 py-2 text-xs">
+                  <span className={`rounded-full px-2 py-0.5 font-semibold ${p.kind === 'credit_plan' ? 'bg-emerald-100 text-emerald-800' : p.kind === 'credit_topup' ? 'bg-sky-100 text-sky-800' : 'bg-gray-100 text-gray-500'}`}>{KIND_LABELS[p.kind ?? '']}</span>
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {p.kind ? `${(p.credits ?? 0).toLocaleString()}${p.kind === 'credit_plan' ? '/mo' : ''}` : <span className="text-gray-400" title="Legacy message limit">{p.messageLimit === 0 ? '∞ msgs' : `${p.messageLimit.toLocaleString()} msgs`}</span>}
+                </td>
+                <td className="px-3 py-2 text-xs text-gray-600">{p.kind ? <span className="text-emerald-700">All services</span> : (p.services ?? []).join(', ') || <span className="text-gray-400">none</span>}</td>
                 <td className="px-3 py-2 text-center">
                   <button onClick={() => togglePlan(p, 'isVisible')}
                     className={`w-10 h-5 rounded-full ${p.isVisible ? 'bg-green-500' : 'bg-gray-300'} relative transition-colors`}>
@@ -1781,11 +1730,32 @@ function PlansTab() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Msg limit (0 = ∞)</label>
-                  <input type="number" min="0" step="1" value={editing.form.messageLimit}
-                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, messageLimit: e.target.value } }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
+                  <select value={editing.form.kind}
+                    onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, kind: e.target.value } }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                    <option value="credit_plan">Credit plan (credits every month)</option>
+                    <option value="credit_topup">Top-up (one-time credits)</option>
+                    <option value="">Legacy (per-service, not sold)</option>
+                  </select>
                 </div>
+                {editing.form.kind ? (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      {editing.form.kind === 'credit_plan' ? 'Credits per month' : 'Credits added'}
+                    </label>
+                    <input type="number" min="0" step="1" value={editing.form.credits}
+                      onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, credits: e.target.value } }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Msg limit (0 = ∞)</label>
+                    <input type="number" min="0" step="1" value={editing.form.messageLimit}
+                      onChange={e => setEditing(s => s && ({ ...s, form: { ...s.form, messageLimit: e.target.value } }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Display order</label>
                   <input type="number" step="1" value={editing.form.displayOrder}
@@ -4513,6 +4483,7 @@ export function AdminPanel() {
     { id: 'transactions', label: 'Purchase Logs', icon: Receipt },
     { id: 'invoices', label: 'Invoices', icon: FileText },
     { id: 'plans', label: 'Plans', icon: Settings },
+    { id: 'credits', label: 'Credit costs', icon: Coins },
     { id: 'promos', label: 'Promos', icon: Tag },
     { id: 'email', label: 'Email', icon: Mail },
     { id: 'demos', label: 'Chatbot Demos', icon: Bot },
@@ -4576,6 +4547,7 @@ export function AdminPanel() {
         {tab === 'transactions' && <TransactionsTab />}
         {tab === 'invoices' && <InvoicesTab />}
         {tab === 'plans' && <PlansTab />}
+        {tab === 'credits' && <CreditCostsTab />}
         {tab === 'promos' && <PromosTab />}
         {tab === 'email' && <EmailTab />}
         {tab === 'demos' && <ChatbotDemosTab />}

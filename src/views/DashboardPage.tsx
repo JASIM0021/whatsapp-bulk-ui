@@ -32,7 +32,7 @@ export function DashboardPage() {
     {
       id: 'agents',
       title: 'AI Workforce Marketplace',
-      description: 'Hire ready-to-work AI Digital Employees (Maya, Alex, Sarah, David, Elena) starting at $5/mo with 1,000 calls.',
+      description: 'Hire ready-to-work AI Digital Employees (Maya, Alex, Sarah, David, Elena) included in every credit plan.',
       iconPath: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
       bg: 'bg-emerald-50',
       border: 'border-emerald-200',
@@ -269,7 +269,7 @@ export function DashboardPage() {
         <div className="mb-10 relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-700 to-indigo-800 text-white p-7 sm:p-8 shadow-lg">
           <div className="relative z-10 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-4 border border-white/20">
-              <Zap size={14} className="text-amber-300" /> Autonomous AI Employee Workforce • Starting $5/mo
+              <Zap size={14} className="text-amber-300" /> Autonomous AI Employee Workforce • Every plan includes every employee
             </div>
             <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-snug mb-3">
               Deploy Ready-Made AI Workers or Build Custom Drag-and-Drop Automations

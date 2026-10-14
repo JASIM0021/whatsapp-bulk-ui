@@ -13,7 +13,7 @@ const PRINCIPLES = [
   },
   {
     title: 'Affordable on purpose',
-    text: 'A one-person business should be able to hire its first AI employee for $5 a month, and add more only when they pay for themselves.',
+    text: 'A one-person business should be able to put a whole AI team to work for ₹399 a month, and pay more only when it uses more.',
   },
   {
     title: 'Honest about limits',

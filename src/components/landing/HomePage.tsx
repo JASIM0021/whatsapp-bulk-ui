@@ -7,211 +7,99 @@ import {
   DemoVideo, FactsSection, IntegrationsSection, FaqSection, ClosingCta,
   DayWithTeam, WhoItsFor, CompareSection, DevelopersSection, TeamNote, PricingHero, PricingIncluded,
 } from './HomeSections';
-import { PRICING_FAQ } from './homeContent';
+import { PRICING_FAQ, CREDIT_PLANS, CREDIT_TOPUPS, CREDIT_COSTS, TRIAL_CREDITS, inr } from './homeContent';
 
-/* ─────────────── AI Workforce Pricing ($5/mo Per Agent) ─────────────── */
+/* ─────────────── Credit pricing ─────────────── */
 // heading=false on /pricing, where PricingHero already carries the H1.
 function PricingSection({ heading = true }: { heading?: boolean }) {
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
-
-  const plans = [
-    {
-      id: 'starter',
-      name: 'Starter AI Employee',
-      priceMonthly: 5,
-      priceYearly: 49,
-      tagline: 'Ideal for small businesses hiring their first 24/7 AI worker',
-      agentQuota: '1 Active AI Employee',
-      callQuota: '1,000 AI Agent Calls / mo',
-      features: [
-        '1 Active AI Digital Employee',
-        '1,000 Autonomous Agent Calls/mo',
-        'Visual Drag-and-Drop Studio access',
-        'WhatsApp, Chatbot & Email integration',
-        'Nexbot Calendar meeting booking',
-        'Predefined marketplace worker templates',
-      ],
-      highlight: false,
-      ctaText: 'Hire for $5/mo',
-      planParam: 'ai_agent',
-    },
-    {
-      id: 'growth',
-      name: 'Growth Workforce',
-      priceMonthly: 15,
-      priceYearly: 149,
-      tagline: 'Deploy a multi-agent workforce across your sales & support operations',
-      agentQuota: 'Up to 3 Active AI Employees',
-      callQuota: '5,000 AI Agent Calls / mo',
-      features: [
-        'Up to 3 Active AI Digital Employees',
-        '5,000 Autonomous Agent Calls/mo',
-        'In-House AI & Custom cURL Connectors',
-        'Multi-Agent Intent Routing',
-        'AES-256 Encrypted Credential Vault',
-        'Real-time execution sandbox & audit logs',
-      ],
-      highlight: true,
-      badge: 'MOST POPULAR',
-      ctaText: 'Deploy Workforce',
-      planParam: 'ai_agent_growth',
-    },
-    {
-      id: 'scale',
-      name: 'Scale Workforce',
-      priceMonthly: 49,
-      priceYearly: 479,
-      tagline: 'Full enterprise autonomy for high-volume lead & support workflows',
-      agentQuota: 'Up to 10 Active AI Employees',
-      callQuota: '25,000 AI Agent Calls / mo',
-      features: [
-        'Up to 10 Active AI Digital Employees',
-        '25,000 Autonomous Agent Calls/mo',
-        'Unlimited In-House AI & Webhook triggers',
-        'Dedicated execution queue & zero rate limits',
-        'Custom model fine-tuning & RAG integration',
-        'Priority 24/7 enterprise support & SLA',
-      ],
-      highlight: false,
-      ctaText: 'Scale With AI',
-      planParam: 'ai_agent_scale',
-    },
+  const examples = (credits: number) => [
+    `${Math.floor(credits).toLocaleString('en-IN')} WhatsApp messages`,
+    `or ${Math.floor(credits / 2).toLocaleString('en-IN')} leads`,
+    `or ${Math.floor(credits / 50).toLocaleString('en-IN')} SEO blog posts`,
   ];
 
   return (
     <section className="bg-nb-bg py-24 sm:py-32 border-t border-nb-line relative overflow-hidden" id="pricing">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="text-center max-w-3xl mx-auto mb-14">
-          {heading && (
-            <>
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold mb-3">
-            <Sparkles size={13} />
-            <span>Transparent Per-Agent Pricing</span>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        {heading && (
+          <div className="max-w-3xl">
+            <p className="font-label text-[12px] uppercase tracking-[0.18em] text-nb-acc">Pricing</p>
+            <h2 className="mt-3 font-display text-4xl font-black tracking-[-0.03em] text-nb-fg sm:text-6xl">One plan. Every AI employee.</h2>
+            <p className="mt-4 text-lg text-nb-muted">
+              Plans give you credits every month and every AI employee is included. Simple tasks use few credits; heavy AI work uses more.
+            </p>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-            Hire AI Workers Starting at Just $5/Month
-          </h2>
-          <p className="mt-4 text-base sm:text-lg text-gray-400">
-            Pay only for the digital employees you deploy. Every agent comes with allocated call quotas and omni-channel automation.
-          </p>
+        )}
 
-            </>
-          )}
-
-          {/* Billing Switch */}
-          <div className="mt-8 inline-flex items-center gap-3 bg-gray-900 border border-gray-800 p-1.5 rounded-2xl">
-            <button
-              onClick={() => setBilling('monthly')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                billing === 'monthly'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Monthly Billing
+        <div className={`${heading ? 'mt-10' : ''} inline-flex rounded-full border border-nb-line2 bg-nb-surface p-1 text-sm`}>
+          {(['monthly', 'yearly'] as const).map(b => (
+            <button key={b} onClick={() => setBilling(b)}
+              className={`rounded-full px-5 py-2 font-semibold transition-colors ${billing === b ? 'bg-nb-acc text-nb-on-acc' : 'text-nb-muted hover:text-nb-fg'}`}>
+              {b === 'monthly' ? 'Monthly' : 'Yearly · 2 months free'}
             </button>
-            <button
-              onClick={() => setBilling('yearly')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                billing === 'yearly'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <span>Annual Billing</span>
-              <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded-full border border-emerald-500/30">
-                2 Months Free
-              </span>
-            </button>
-          </div>
+          ))}
         </div>
 
-        {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {plans.map(plan => {
-            const price = billing === 'yearly' ? plan.priceYearly : plan.priceMonthly;
-
-            return (
-              <div
-                key={plan.id}
-                className={`relative rounded-3xl p-8 transition-all flex flex-col justify-between ${
-                  plan.highlight
-                    ? 'bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 border-2 border-emerald-500 shadow-2xl shadow-emerald-950/60 scale-105'
-                    : 'bg-gray-900/70 border border-gray-800 hover:border-gray-700'
-                }`}
-              >
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[10px] font-extrabold px-3.5 py-1 rounded-full uppercase tracking-wider shadow-lg">
-                      {plan.badge}
-                    </span>
-                  </div>
-                )}
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-bold text-white">{plan.name}</h3>
-                  </div>
-
-                  <p className="text-xs text-gray-400 mb-6 leading-relaxed">{plan.tagline}</p>
-
-                  {/* Price */}
-                  <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-gray-800">
-                    <span className="text-4xl sm:text-5xl font-black text-white">${price}</span>
-                    <span className="text-xs text-gray-400 font-medium">/{billing === 'yearly' ? 'year' : 'month'}</span>
-                  </div>
-
-                  {/* Quotas */}
-                  <div className="space-y-2 mb-6 bg-gray-950/60 p-3.5 rounded-2xl border border-gray-800">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Workforce Size:</span>
-                      <span className="font-bold text-emerald-400">{plan.agentQuota}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Monthly Call Limit:</span>
-                      <span className="font-bold text-white">{plan.callQuota}</span>
-                    </div>
-                  </div>
-
-                  {/* Features */}
-                  <div className="space-y-3 mb-8">
-                    <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">What's Included:</span>
-                    {plan.features.map((feat, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-xs text-gray-300">
-                        <Check size={14} className="text-emerald-400 shrink-0 mt-0.5" />
-                        <span>{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* CTA Button */}
-                <Link
-                  // Scale has no backend plan yet (no ai_agent_scale in /api/subscription/plans): route to sales.
-                  to={plan.id === 'scale' ? '/contact' : `/signup?plan=${plan.planParam}${billing === 'yearly' ? '_yr' : ''}`}
-                  className={`w-full py-3.5 rounded-2xl text-xs font-extrabold text-center transition-all flex items-center justify-center gap-2 ${
-                    plan.highlight
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-950/60 active:scale-95'
-                      : 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 active:scale-95'
-                  }`}
-                >
-                  <span>{plan.id === 'scale' ? 'Talk to us' : plan.ctaText}</span>
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            );
-          })}
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {CREDIT_PLANS.map(p => (
+            <article key={p.id} className={`relative flex flex-col rounded-[24px] border p-7 ${p.highlight ? 'border-nb-acc/60 bg-nb-acc/[0.07]' : 'border-nb-line bg-nb-surface'}`}>
+              {p.highlight && <span className="absolute -top-3 left-7 rounded-full bg-nb-acc px-3 py-0.5 font-label text-[11px] font-medium uppercase tracking-wider text-nb-on-acc">Most popular</span>}
+              <h3 className="font-display text-2xl font-bold text-nb-fg">{p.name}</h3>
+              <p className="mt-1 text-[14px] text-nb-muted">{p.blurb}</p>
+              <p className="mt-6 font-display text-5xl font-black tracking-[-0.03em] text-nb-fg">
+                {inr(billing === 'monthly' ? p.monthly : p.yearly)}
+                <span className="ml-1 text-base font-normal text-nb-muted">/{billing === 'monthly' ? 'month' : 'year'}</span>
+              </p>
+              <p className="mt-4 font-label text-[13px] text-nb-acc">{p.credits.toLocaleString('en-IN')} credits every month</p>
+              <ul className="mt-4 flex-1 space-y-2.5 text-[15px] text-nb-muted">
+                {examples(p.credits).map(e => <li key={e} className="flex gap-2.5"><Check className="mt-1 h-4 w-4 shrink-0 text-nb-acc" />{e}</li>)}
+                <li className="flex gap-2.5"><Check className="mt-1 h-4 w-4 shrink-0 text-nb-acc" />Every AI employee and service included</li>
+                <li className="flex gap-2.5"><Check className="mt-1 h-4 w-4 shrink-0 text-nb-acc" />Top up any time; top-ups never expire</li>
+              </ul>
+              <Link to={`/signup?plan=${p.id}${billing === 'yearly' ? '_yr' : ''}`}
+                className={`mt-7 flex items-center justify-center gap-2 rounded-full py-3.5 text-[15px] font-bold transition-colors ${p.highlight ? 'bg-nb-acc text-nb-on-acc hover:bg-nb-acc-hover' : 'border border-nb-line2 text-nb-fg hover:bg-white/5'}`}>
+                Start with {p.name} <ArrowRight className="h-4 w-4" />
+              </Link>
+            </article>
+          ))}
         </div>
 
-        {/* Admin note */}
-        <div className="mt-12 text-center">
-          <p className="text-xs text-gray-500">
-            Need custom call limits or dedicated on-premise AI connectors? Fully customizable from the Admin Panel or via{' '}
-            <Link to="/docs" className="text-emerald-400 underline hover:text-emerald-300">
-              Developer Documentation
-            </Link>
-            .
-          </p>
+        <div className="mt-6 flex flex-col gap-4 rounded-[20px] border border-nb-line bg-nb-dim p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-display text-lg font-bold text-nb-fg">Try it free with {TRIAL_CREDITS} credits</p>
+            <p className="text-[14px] text-nb-muted">No credit card. Need more later? Top-ups: {CREDIT_TOPUPS.map(t => `${t.credits.toLocaleString('en-IN')} for ${inr(t.price)}`).join(' · ')}.</p>
+          </div>
+          <Link to="/signup" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-nb-acc px-6 py-3 text-[15px] font-bold text-nb-on-acc hover:bg-nb-acc-hover">
+            Start free <Sparkles className="h-4 w-4" />
+          </Link>
+        </div>
+        <p className="mt-4 text-[13px] text-nb-muted2">Prices in Indian rupees; shown in your local currency at checkout where available.</p>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────── What uses credits ─────────────── */
+function CreditCostsSection() {
+  return (
+    <section className="border-t border-nb-line py-20">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+        <h2 className="font-display text-3xl font-black tracking-[-0.02em] text-nb-fg sm:text-4xl">What uses credits</h2>
+        <p className="mt-3 text-[16px] text-nb-muted">
+          1 credit is about ₹0.20. Replies from your own AI key or in-house AI don’t use credits.
+        </p>
+        <div className="mt-8 overflow-hidden rounded-[20px] border border-nb-line">
+          <table className="w-full text-[15px]">
+            <tbody className="divide-y divide-nb-line">
+              {CREDIT_COSTS.map(c => (
+                <tr key={c.label}>
+                  <td className="px-5 py-3 text-nb-fg">{c.label}</td>
+                  <td className="px-5 py-3 text-right font-label text-[14px] text-nb-acc">{c.credits === 0 ? 'Free' : `${c.credits} credit${c.credits === 1 ? '' : 's'}`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -226,6 +114,7 @@ export function PricingPage() {
     <div className="bg-nb-bg font-sans text-nb-fg">
       <PricingHero />
       <PricingSection heading={false} />
+      <CreditCostsSection />
       <PricingIncluded />
       <CompareSection />
       <FaqSection items={PRICING_FAQ} title="Pricing questions" />

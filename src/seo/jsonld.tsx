@@ -2,6 +2,7 @@ import { BLOG_AUTHOR, categorySlug, type BlogPost } from '../data/blogPosts';
 import { SITE_NAME, SITE_URL, PUBLIC_PAGES, blogPostPath } from './site';
 import { HUBS, hubPath, type Hub } from '../components/landing/hubContent';
 import { hubFaq } from '../components/landing/hubExtras';
+import { CREDIT_PLANS } from '../components/landing/homeContent';
 
 type Json = Record<string, unknown>;
 
@@ -47,9 +48,9 @@ export const softwareApplicationJsonLd: Json = {
   operatingSystem: 'Web',
   offers: {
     '@type': 'AggregateOffer',
-    priceCurrency: 'USD',
-    lowPrice: 5,
-    highPrice: 49,
+    priceCurrency: 'INR',
+    lowPrice: 399,
+    highPrice: 2999,
     offerCount: 3,
     url: `${SITE_URL}/pricing`,
   },
@@ -191,12 +192,10 @@ export function publicPageJsonLd(path: string, page: { title: string; descriptio
   }
 
   if (path === '/pricing') {
-    // Mirrors PricingSection in src/components/landing/HomePage.tsx (monthly prices).
-    // Scale is sold via /contact (no backend plan), so it is not listed as an Offer.
-    const plans: [string, number, string][] = [
-      ['Starter AI Employee', 5, '1 active AI employee, 1,000 agent calls per month'],
-      ['Growth Workforce', 15, 'Up to 3 active AI employees, 5,000 agent calls per month'],
-    ];
+    // Monthly credit plans (CREDIT_PLANS in homeContent.ts, mirrored from the backend seeds).
+    const plans: [string, number, string][] = CREDIT_PLANS.map((p) => [
+      p.name, p.monthly, `${p.credits.toLocaleString('en-IN')} credits every month; every AI employee included`,
+    ]);
     graph.push({
       '@context': 'https://schema.org',
       '@type': 'SoftwareApplication',
@@ -209,9 +208,9 @@ export function publicPageJsonLd(path: string, page: { title: string; descriptio
         name,
         description,
         price,
-        priceCurrency: 'USD',
+        priceCurrency: 'INR',
         url,
-        priceSpecification: { '@type': 'UnitPriceSpecification', price, priceCurrency: 'USD', unitCode: 'MON' },
+        priceSpecification: { '@type': 'UnitPriceSpecification', price, priceCurrency: 'INR', unitCode: 'MON' },
       })),
     });
   }
@@ -231,7 +230,7 @@ export function hubJsonLd(hub: Hub, agentNames: string[]): Json[] {
       url,
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web',
-      offers: { '@type': 'AggregateOffer', priceCurrency: 'USD', lowPrice: 5, highPrice: 15, offerCount: 2, url: absolute('/pricing') },
+      offers: { '@type': 'AggregateOffer', priceCurrency: 'INR', lowPrice: 399, highPrice: 2999, offerCount: 3, url: absolute('/pricing') },
       publisher: { '@id': `${SITE_URL}/#organization` },
     },
     faqPageJsonLd(hubFaq(hub)),

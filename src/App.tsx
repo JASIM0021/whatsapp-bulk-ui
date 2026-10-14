@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { formatCredits, planLabel } from '@/lib/plan';
 import { FileUpload } from '@/components/FileUpload';
 import { ContactsTable } from '@/components/ContactsTable';
 import { MessageComposer } from '@/components/MessageComposer';
@@ -567,20 +568,18 @@ function App() {
               }`}
             >
               <Crown size={11} />
-              <span>{(() => {
-                const plan = user?.subscription?.plan || ''
-                if (plan === 'free' || plan === 'trial') return 'Trial'
-                if (plan.includes('yearly')) return 'Yearly'
-                if (plan.includes('monthly')) return 'Monthly'
-                if (plan.includes('chatbot')) return 'Chatbot'
-                return plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : 'Free'
-              })()}</span>
+              <span>{planLabel(user?.subscription?.plan)}</span>
+              {user?.subscription?.creditMode && user.subscription.credits && !user.subscription.credits.unlimited && (
+                <span className={`font-normal ${user.subscription.credits.total < 50 ? 'text-red-600 font-bold' : 'opacity-70'}`}>
+                  · {formatCredits(user.subscription.credits.total)}
+                </span>
+              )}
               {user?.subscription?.isActive && (user?.subscription?.plan === 'free' || user?.subscription?.plan === 'trial') && (
                 <span className={`font-normal ${user.subscription.messagesUsed >= user.subscription.messageLimit - 10 ? 'text-red-600 font-bold' : 'opacity-70'}`}>
                   · {user.subscription.messagesUsed}/{user.subscription.messageLimit}
                 </span>
               )}
-              {user?.subscription?.isActive && user?.subscription?.plan !== 'free' && user?.subscription?.plan !== 'trial' && user?.subscription?.daysLeft > 0 && user?.subscription?.daysLeft <= 90 && (
+              {user?.subscription?.isActive && !user?.subscription?.creditMode && user?.subscription?.plan !== 'free' && user?.subscription?.plan !== 'trial' && user?.subscription?.daysLeft > 0 && user?.subscription?.daysLeft <= 90 && (
                 <span className={`font-normal ${user.subscription.daysLeft <= 7 ? 'text-red-600 font-bold' : 'opacity-70'}`}>
                   · {user.subscription.daysLeft}d
                 </span>
@@ -914,8 +913,10 @@ function App() {
                       <div className="text-left">
                         <p className="text-sm font-medium text-gray-800">Subscription</p>
                          <p className="text-xs text-gray-500 capitalize">
-                          {user?.subscription?.plan === 'free' || user?.subscription?.plan === 'trial' ? 'Trial' : user?.subscription?.plan || 'Free'}
-                          {user?.subscription?.isActive && (user.subscription.plan === 'free' || user.subscription.plan === 'trial')
+                          {planLabel(user?.subscription?.plan)}
+                          {user?.subscription?.creditMode && user.subscription.credits
+                            ? ` · ${user.subscription.credits.unlimited ? 'unlimited' : formatCredits(user.subscription.credits.total)}`
+                            : user?.subscription?.isActive && (user.subscription.plan === 'free' || user.subscription.plan === 'trial')
                             ? ` · ${user.subscription.messagesUsed}/${user.subscription.messageLimit} msgs`
                             : user?.subscription?.isActive
                               ? ` · ${user?.subscription?.daysLeft}d left`

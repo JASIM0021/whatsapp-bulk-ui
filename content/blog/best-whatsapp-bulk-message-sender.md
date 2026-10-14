@@ -55,7 +55,7 @@ Platforms built on Meta’s official WhatsApp Business Platform send approved me
 | Option | Approach | Published starting price | Best for |
 | --- | --- | --- | --- |
 | WhatsApp Business app broadcasts | Free app feature | Free | Very small lists of saved contacts |
-| **NexBotix** | Own number or Cloud API, with AI | $5/mo per AI employee | Small businesses wanting campaigns + AI replies |
+| **NexBotix** | Own number or Cloud API, with AI | ₹399/mo for 2,500 credits | Small businesses wanting campaigns + AI replies |
 | Interakt | Business API | $21/mo (Shopify listing) + message fees | Shopify and D2C stores |
 | AiSensy | Business API | Subscription not shown; message credits prepaid | India-focused marketing at volume |
 | Gallabox | Business API | ₹2,399/mo billed annually + message fees | Teams needing a shared inbox and AI |
@@ -73,7 +73,7 @@ The simplest option and completely free. Create a list, add contacts and send. R
 
 NexBotix gives you an AI employee, [Nexa](/ai-agents/whatsapp), that runs the campaign end to end. Upload contacts from Excel or CSV, write a message with `{{name}}` and other fields, attach an image or link, and send now or schedule it. Messages go out with a 3 to 5 second gap. Nexa then answers replies with AI using your business details, follows up with people who didn’t reply and hands chats to a person by keyword.
 
-You can send from your existing number via QR code, or connect the official WhatsApp Business Cloud API for larger volumes. Plans start at **$5 a month** per AI employee, with a free trial of 10 messages ([pricing](/pricing)).
+You can send from your existing number via QR code, or connect the official WhatsApp Business Cloud API for larger volumes. Plans start at **₹399 a month** for 2,500 credits (1 credit per WhatsApp message, every AI employee included), with a free trial of 100 credits ([pricing](/pricing)).
 
 - **Pros:** lowest paid entry price here, AI replies and follow-ups included, also does leads, email and website chat.
 - **Cons:** not a large multi-agent team inbox; sending from your own number carries more risk than the API.

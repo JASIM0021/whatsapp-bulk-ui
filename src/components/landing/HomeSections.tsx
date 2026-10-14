@@ -71,7 +71,7 @@ export function HomeHero() {
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-nb-muted sm:text-xl">
           Get an AI team that sends your WhatsApp campaigns, finds new leads, replies to every chat and books
-          meetings. Day and night, from $5 a month.
+          meetings. Day and night, from ₹399 a month.
         </p>
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <PrimaryCta />
@@ -410,7 +410,7 @@ export function DemoVideo() {
 const FACTS = [
   ['24/7', 'Nights and weekends included'],
   ['9', 'AI employees, one workspace'],
-  ['$5', 'Per month to start'],
+  ['₹399', 'Per month, every AI employee'],
   ['API + MCP', 'Plug into your code and AI tools'],
 ];
 
@@ -632,12 +632,12 @@ export function TeamNote() {
 /* ───────── Pricing page parts ───────── */
 
 const INCLUDED = [
-  'Your pick of AI employee: WhatsApp, leads, email, website chat, social, SEO or booking',
+  'Every AI employee: WhatsApp, leads, email, website chat, social, SEO and booking',
   'Personalised bulk campaigns from Excel or CSV',
   'AI auto-replies on WhatsApp and your website',
   'Visual drag-and-drop flow studio',
   'REST API and MCP server for developers',
-  'Free trial with 10 messages before you pay',
+  'Free trial with 100 credits before you pay',
 ];
 
 export function PricingHero() {
@@ -647,10 +647,10 @@ export function PricingHero() {
       <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
         <Label>Pricing</Label>
         <h1 className="mt-4 text-balance font-display text-[clamp(40px,6vw,80px)] font-black leading-[0.98] tracking-[-0.03em] text-nb-fg">
-          Hire AI employees from $5 a month
+          Every AI employee, from ₹399 a month
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-nb-muted">
-          Pay per AI employee, not per seat or per message. Start with a free trial, no credit card, and add employees only when they earn their keep.
+          Every plan includes every AI employee. You get credits each month, simple tasks use few and heavy AI work uses more. Start free with 100 credits, no credit card.
         </p>
       </div>
     </section>
@@ -670,7 +670,7 @@ export function PricingIncluded() {
           ))}
         </ul>
         <p className="mt-8 text-[15px] text-nb-muted">
-          Need more than three AI employees, or running outreach for clients?{' '}
+          Need more than 22,000 credits a month, or running outreach for clients?{' '}
           <Link to="/contact" className="text-nb-acc hover:underline">Talk to us</Link> about a larger plan. Refunds follow our{' '}
           <Link to="/refund" className="text-nb-acc hover:underline">refund policy</Link>.
         </p>

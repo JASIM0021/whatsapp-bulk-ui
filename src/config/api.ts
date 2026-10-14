@@ -74,6 +74,12 @@ export const API_ENDPOINTS = {
     update: (id: number) => `${API_BASE_URL}/api/templates/${id}`,
     delete: (id: number) => `${API_BASE_URL}/api/templates/${id}`,
   },
+  credits: {
+    me: `${API_BASE_URL}/api/credits`,
+    costs: `${API_BASE_URL}/api/credits/costs`,
+    adminCosts: `${API_BASE_URL}/api/admin/credits/costs`,
+    adminUser: (id: string) => `${API_BASE_URL}/api/admin/users/${id}/credits`,
+  },
   subscription: {
     status: `${API_BASE_URL}/api/subscription`,
     initiate: `${API_BASE_URL}/api/payment/initiate`,
@@ -426,7 +432,13 @@ export const apiFetch = (url: string, options: RequestInit = {}): Promise<Respon
     finalUrl = `${API_BASE_URL}${url}`;
   }
 
-  return fetch(finalUrl, { ...options, headers });
+  return fetch(finalUrl, { ...options, headers }).then((res) => {
+    // 402 = out of credits: let the app-wide banner offer a top-up.
+    if (res.status === 402 && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nexbotix:out-of-credits'));
+    }
+    return res;
+  });
 };
 
 /**

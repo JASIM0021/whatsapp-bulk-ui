@@ -1,6 +1,6 @@
 # NexBotix
 
-> NexBotix (https://nexbotix.online) is an AI employees platform for small and growing businesses. Each AI employee is a named agent that owns one job: sending WhatsApp campaigns and answering replies, finding local business leads, running email outreach, answering website visitors, posting to Facebook and LinkedIn, monitoring SEO and booking meetings. Plans start at $5 per month per AI employee, with a free trial (10 messages, no credit card).
+> NexBotix (https://nexbotix.online) is an AI employees platform for small and growing businesses. Each AI employee is a named agent that owns one job: sending WhatsApp campaigns and answering replies, finding local business leads, running email outreach, answering website visitors, posting to Facebook and LinkedIn, monitoring SEO and booking meetings. Pricing is credit-based: every plan includes every AI employee, and each action uses credits (1 per WhatsApp message or AI reply, 2 per lead, 50 per SEO blog post). Plans start at ₹399 a month for 2,500 credits, with a free trial of 100 credits (no credit card).
 
 ## AI Employees
 
@@ -16,7 +16,7 @@
 
 - [Homepage](https://nexbotix.online/): Overview of the AI team, use cases and FAQ.
 - [All AI employees](https://nexbotix.online/ai-agents)
-- [Pricing](https://nexbotix.online/pricing): Starter $5/month (1 AI employee, 1,000 agent calls), Growth $15/month (up to 3). Yearly billing costs less.
+- [Pricing](https://nexbotix.online/pricing): Starter ₹399/month (2,500 credits), Growth ₹1,199 (8,000), Pro ₹2,999 (22,000); yearly = 10× monthly. Top-ups: 1,000 credits for ₹199, never expire.
 - [Free AI chatbot demo](https://nexbotix.online/check-chatbot): Try a chatbot trained on your own website, no signup (3 websites, up to 50 replies each).
 - [API documentation](https://nexbotix.online/docs): REST API, MCP server and webhooks.
 - [Blog](https://nexbotix.online/blog): Guides on WhatsApp automation, AI agents and MCP.

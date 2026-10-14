@@ -112,7 +112,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'How much does NexBotix cost?',
-    a: 'AI workforce plans start at $5 per month for one AI employee with 1,000 agent calls. Growth is $15 per month for up to 3 employees and Scale is $49 per month for up to 10. Yearly billing costs less, and you can start with a free trial with no credit card.',
+    a: 'Plans start at ₹399 a month for 2,500 credits. Growth is ₹1,199 for 8,000 credits and Pro is ₹2,999 for 22,000. Every plan includes every AI employee; actions use credits, for example 1 per WhatsApp message and 2 per lead. Yearly billing gives two months free, and the free trial includes 100 credits with no credit card.',
   },
   {
     q: 'Will sending bulk WhatsApp messages get my number banned?',
@@ -157,7 +157,7 @@ export const INDUSTRIES: { name: string; text: string }[] = [
 
 // Honest comparison — no invented salary figures; our side states real plan facts.
 export const COMPARE: { row: string; hire: string; agency: string; nexbotix: string }[] = [
-  { row: 'Monthly cost', hire: 'A full salary, plus tools', agency: 'A monthly retainer', nexbotix: 'From $5 per AI employee' },
+  { row: 'Monthly cost', hire: 'A full salary, plus tools', agency: 'A monthly retainer', nexbotix: 'From ₹399 a month, every AI employee' },
   { row: 'Hours', hire: 'Office hours, minus leave', agency: 'Business days', nexbotix: '24/7, weekends included' },
   { row: 'Time to start', hire: 'Weeks of hiring and training', agency: 'Onboarding calls and briefs', nexbotix: 'Sign up and scan a QR code' },
   { row: 'Replies to a 2 AM website enquiry', hire: 'Next morning', agency: 'Next business day', nexbotix: 'In seconds' },
@@ -190,7 +190,7 @@ FAQ.push(
   },
   {
     q: 'What happens when the free trial ends?',
-    a: 'The free trial includes 10 messages with no time limit. When they are used up, pick a plan to keep sending. API keys created during the trial stop working when it ends, and on a paid plan you only pay for the AI employees you turn on.',
+    a: 'The free trial includes 100 credits with no time limit. When they are used up, choose a plan or buy a top-up to keep going. API keys created during the trial stop working when it ends.',
   },
 );
 
@@ -207,34 +207,79 @@ export const TEAM_NOTE = {
 export const PRICING_FAQ: { q: string; a: string }[] = [
   {
     q: 'Is there a free trial?',
-    a: 'Yes. Every new account gets a free trial with 10 messages and no time limit. You don’t need a credit card to sign up.',
+    a: 'Yes. Every new account gets 100 free credits with no time limit, enough for 100 WhatsApp messages or 50 leads. You don’t need a credit card to sign up.',
   },
   {
-    q: 'Do I pay per AI employee?',
-    a: 'Yes. Starter covers one active AI employee, Growth covers up to three. You only pay for the AI employees you turn on, and you can add more as you grow.',
+    q: 'How do credits work?',
+    a: 'Each plan gives you credits every month, and every AI employee is included. Each action uses credits: a WhatsApp message or AI reply uses 1, a lead uses 2, an SEO blog post uses 50. Plan credits reset every month; top-up credits never expire and are used after plan credits.',
   },
   {
     q: 'How much do I save with yearly billing?',
-    a: 'Yearly plans cost less than paying monthly for twelve months. For most plans the yearly price works out to about two months free.',
+    a: 'Yearly plans cost ten times the monthly price, so you get two months free, and you still receive your credits every month.',
   },
   {
     q: 'Which currency will I pay in?',
-    a: 'Prices on this page are in US dollars. Inside the app, prices are shown in your local currency where available, including Indian rupees.',
+    a: 'Prices on this page are in Indian rupees. At checkout, prices are shown in your local currency where available.',
   },
   {
     q: 'How do I pay?',
     a: 'Payments are processed securely by Razorpay. You choose your plan inside the app and pay in the Razorpay checkout window; NexBotix never sees your card details.',
   },
   {
-    q: 'Can I buy extra AI replies or leads?',
-    a: 'Yes. Top-up packs add more managed AI auto-replies or lead credits without changing your plan. You can also bring your own AI key for unlimited bot replies.',
+    q: 'What if I run out of credits?',
+    a: 'Buy a top-up any time: 1,000 credits for ₹199, 5,000 for ₹899 or 10,000 for ₹1,699. Top-up credits never expire. Bringing your own AI key makes WhatsApp bot replies free.',
   },
   {
     q: 'What about refunds?',
     a: 'Refunds follow our refund policy, which explains when a payment is eligible and how long it takes to reach your original payment method.',
   },
   {
-    q: 'I need more than three AI employees. What should I do?',
+    q: 'I need more than 22,000 credits a month. What should I do?',
     a: 'Talk to us. We will set up a plan for larger teams, agencies and higher volumes.',
   },
 ];
+
+// ── Credit pricing (mirror of the backend seeds in
+// whatsapp-bulk-server-go/internal/service/subscription_credits.go and
+// DefaultCreditCosts in credits.go — keep in sync; the app reads live values).
+
+export interface CreditPlan {
+  id: string;
+  name: string;
+  monthly: number; // INR per month
+  yearly: number; // INR per year (10× monthly = 2 months free)
+  credits: number; // credits every month
+  highlight?: boolean;
+  blurb: string;
+}
+
+export const CREDIT_PLANS: CreditPlan[] = [
+  { id: 'credits_starter', name: 'Starter', monthly: 399, yearly: 3990, credits: 2500, blurb: 'For a solo business getting its first AI employees to work.' },
+  { id: 'credits_growth', name: 'Growth', monthly: 1199, yearly: 11990, credits: 8000, highlight: true, blurb: 'For growing teams running campaigns, leads and chat every day.' },
+  { id: 'credits_pro', name: 'Pro', monthly: 2999, yearly: 29990, credits: 22000, blurb: 'For high volume: agencies and businesses messaging thousands.' },
+];
+
+export const CREDIT_TOPUPS = [
+  { id: 'credits_topup_1000', credits: 1000, price: 199 },
+  { id: 'credits_topup_5000', credits: 5000, price: 899 },
+  { id: 'credits_topup_10000', credits: 10000, price: 1699 },
+];
+
+export const TRIAL_CREDITS = 100;
+
+export const CREDIT_COSTS: { label: string; credits: number }[] = [
+  { label: 'WhatsApp message sent', credits: 1 },
+  { label: 'WhatsApp, email or website chat AI reply', credits: 1 },
+  { label: 'Email sent (per recipient)', credits: 1 },
+  { label: 'Lead found and enriched', credits: 2 },
+  { label: 'Facebook post published', credits: 2 },
+  { label: 'LinkedIn AI post', credits: 5 },
+  { label: 'AI script, idea or answer (YouTube, Quora, Medium)', credits: 10 },
+  { label: 'Website crawl to train the chatbot', credits: 10 },
+  { label: 'AI image', credits: 20 },
+  { label: 'SEO AI blog post', credits: 50 },
+  { label: 'SEO Rank-to-Top run', credits: 250 },
+  { label: 'Calendar booking', credits: 0 },
+];
+
+export const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;

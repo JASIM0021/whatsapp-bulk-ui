@@ -7,8 +7,8 @@ import matter from 'gray-matter';
 
 const BASE = process.argv[2] ?? 'http://localhost:3000';
 const CARDS = [
-  { file: 'public/og.png', label: '', title: 'AI employees for WhatsApp, email &amp; lead generation', foot: 'From $5/month · Free trial · No credit card' },
-  { file: 'public/og/pricing.png', label: 'Pricing', title: 'Hire AI employees from $5 a month', foot: 'Pay per AI employee · Free trial · Yearly plans save more' },
+  { file: 'public/og.png', label: '', title: 'AI employees for WhatsApp, email &amp; lead generation', foot: 'From ₹399/month · 100 free credits · No credit card' },
+  { file: 'public/og/pricing.png', label: 'Pricing', title: 'Every AI employee, from ₹399 a month', foot: 'Credit plans · 100 free credits · Yearly = 2 months free' },
   { file: 'public/og/about.png', label: 'About', title: 'AI employees for businesses that live on WhatsApp', foot: 'Why we built NexBotix' },
   { file: 'public/og/blog.png', label: 'Blog', title: 'WhatsApp automation, AI agents &amp; MCP guides', foot: 'Practical guides from the NexBotix team' },
   { file: 'public/og/docs.png', label: 'API docs', title: 'WhatsApp, email, chatbot &amp; MCP API', foot: 'REST API · MCP server · Webhooks' },

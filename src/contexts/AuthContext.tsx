@@ -12,6 +12,8 @@ interface SubscriptionInfo {
   botRepliesUsed?: number;
   botRepliesLimit?: number;
   isBYOKActive?: boolean;
+  creditMode?: boolean;
+  credits?: { plan: number; topup: number; total: number; monthlyGrant: number; periodEnd?: string; unlimited: boolean };
   isEnterprise?: boolean;
   enabledServices?: string[];
 }

@@ -11,12 +11,12 @@ image: /blog/og/wati-alternatives.png
 imageAlt: "Comparison of WATI alternatives for WhatsApp marketing"
 featured: true
 tldr:
-  - "Choose by pricing model first: per seat (WATI, Gallabox), flat plans plus message fees (Interakt), unlimited users plus prepaid message credits (AiSensy), or per AI employee (NexBotix)."
+  - "Choose by pricing model first: per seat (WATI, Gallabox), flat plans plus message fees (Interakt), unlimited users plus prepaid message credits (AiSensy), or monthly credits with every AI employee included (NexBotix)."
   - "For a large support team with CRM integrations, Gallabox or WATI fit best; for Shopify stores on a budget, Interakt; for India-focused marketing at low entry cost, AiSensy."
-  - "If you’re a small business that wants AI to send campaigns and answer replies without a team inbox, NexBotix (our product) starts at $5 a month."
+  - "If you’re a small business that wants AI to send campaigns and answer replies without a team inbox, NexBotix (our product) starts at ₹399 a month for 2,500 credits."
 faq:
   - q: "What is the cheapest alternative to WATI?"
-    a: "It depends on your volume and team size. Among plans with published prices, Interakt’s Starter is $21 a month on Shopify and NexBotix starts at $5 a month per AI employee. WhatsApp message fees from Meta are charged on top for API-based tools."
+    a: "It depends on your volume and team size. Among plans with published prices, Interakt’s Starter is $21 a month on Shopify and NexBotix starts at ₹399 a month for 2,500 credits. WhatsApp message fees from Meta are charged on top for API-based tools."
   - q: "Do all WATI alternatives charge WhatsApp message fees?"
     a: "Tools built on the official WhatsApp Business API pass on Meta’s per-message charges for marketing, utility and authentication templates. Replies inside the customer service window are free under Meta’s rules."
   - q: "Can I move my WhatsApp number from WATI to another provider?"
@@ -56,7 +56,7 @@ The reasons teams look elsewhere usually come down to:
 
 | Factor | Why it matters |
 | --- | --- |
-| Pricing model | Per user, per plan, per active contact or per AI employee changes your bill as you grow |
+| Pricing model | Per user, per plan, per active contact or per credit changes your bill as you grow |
 | WhatsApp message fees | Meta charges per delivered template message; check the provider’s rate card and any markup |
 | Team inbox | Essential for support teams, unnecessary for a solo owner |
 | Automation and AI | Chatbot builders, AI agents and how many AI replies are included |
@@ -73,7 +73,7 @@ A quick note on Meta’s fees, because they apply to every API-based tool. Since
 | **Interakt** | $21/mo (Starter, Shopify listing) | Flat plans + conversation charges | Shopify and D2C stores |
 | **Gallabox** | ₹2,399/mo billed annually (Basic) | Per plan, users capped per tier | Support teams needing a shared inbox and AI |
 | **DoubleTick** | Not shown | Plans (Starter, Pro, Enterprise) | Small sales teams wanting AI agents built in |
-| **NexBotix** | $5/mo per AI employee | Per AI employee | Small businesses wanting AI to run campaigns and replies |
+| **NexBotix** | ₹399/mo for 2,500 credits | Monthly credits, every AI employee included | Small businesses wanting AI to run campaigns and replies |
 
 ## 1. AiSensy
 
@@ -132,9 +132,9 @@ DoubleTick offers **Starter**, **Pro** and **Enterprise** plans. Its [pricing pa
 
 NexBotix takes a different approach. Instead of a team inbox, it gives you **AI employees**, each owning a job. The WhatsApp employee, [Nexa](/ai-agents/whatsapp), sends personalised campaigns from Excel or CSV, schedules them, follows up with people who didn’t reply and answers replies with AI, handing chats to a person by keyword.
 
-You can send from your **existing WhatsApp number** connected by QR code, or use the **official WhatsApp Business Cloud API**. Plans start at **$5 a month per AI employee** (Starter, 1,000 agent calls) and $15 for up to three, with a free trial of 10 messages and no card ([pricing](/pricing)). The same account includes other AI employees for leads, email, website chat and booking.
+You can send from your **existing WhatsApp number** connected by QR code, or use the **official WhatsApp Business Cloud API**. Plans start at **₹399 a month for 2,500 credits** (Starter), with Growth at ₹1,199 for 8,000 credits; every plan includes every AI employee, and the free trial gives 100 credits with no card ([pricing](/pricing)). The same account includes other AI employees for leads, email, website chat and booking.
 
-- **Strengths:** very low entry price, AI that handles the whole campaign and its replies, plus leads, email and website chat in one workspace.
+- **Strengths:** low entry price, AI that handles the whole campaign and its replies, plus leads, email and website chat in one plan.
 - **Watch out for:** it isn’t built around a large multi-agent shared inbox or deep CRM integrations. If that’s what you need, Gallabox or WATI are a better fit. Sending from a personal number also carries more risk than the official API; see our [guide to bulk messaging without bans](/blog/bulk-whatsapp-messaging-best-practices-avoid-bans).
 - **Best for:** small businesses and solo founders who want campaigns and replies handled without a team.
 
