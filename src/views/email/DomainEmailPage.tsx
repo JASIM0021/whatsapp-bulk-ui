@@ -85,6 +85,15 @@ export function DomainEmailPage({ isPaid }: { isPaid?: boolean }) {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
+  const formatDKIMRecordValue = (val: string) => {
+    if (!val) return 'Generating key...';
+    const clean = val.trim();
+    if (clean.startsWith('v=DKIM1')) {
+      return clean;
+    }
+    return `v=DKIM1; h=sha256; k=rsa; p=${clean}`;
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -623,7 +632,7 @@ export function DomainEmailPage({ isPaid }: { isPaid?: boolean }) {
                                 Host: <span className="font-bold text-gray-900 font-mono">mail._domainkey</span> (DKIM Signature)
                               </p>
                               <p className="text-xs font-mono font-semibold text-gray-900 mt-0.5 truncate max-w-md sm:max-w-xl">
-                                {d.dkimPublicKey ? `v=DKIM1; h=sha256; k=rsa; p=${d.dkimPublicKey}` : 'Generating key...'}
+                                {formatDKIMRecordValue(d.dkimPublicKey)}
                               </p>
                             </div>
                           </div>
@@ -641,7 +650,7 @@ export function DomainEmailPage({ isPaid }: { isPaid?: boolean }) {
                             )}
                             <button
                               onClick={() =>
-                                copyToClipboard(`dkim-${d.id}`, `v=DKIM1; h=sha256; k=rsa; p=${d.dkimPublicKey}`)
+                                copyToClipboard(`dkim-${d.id}`, formatDKIMRecordValue(d.dkimPublicKey))
                               }
                               className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
                             >
