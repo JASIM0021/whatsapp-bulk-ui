@@ -181,6 +181,15 @@ export const API_ENDPOINTS = {
     campaignRecipients: (id: string) => `${API_BASE_URL}/api/email/campaigns/${id}/recipients`,
     campaignRetarget: (id: string) => `${API_BASE_URL}/api/email/campaigns/${id}/retarget`,
     analyticsOverview: `${API_BASE_URL}/api/email/analytics/overview`,
+    domains: `${API_BASE_URL}/api/email/domains`,
+    domain: (id: string) => `${API_BASE_URL}/api/email/domains/${id}`,
+    verifyDomain: (id: string) => `${API_BASE_URL}/api/email/domains/${id}/verify`,
+    domainRecords: (id: string) => `${API_BASE_URL}/api/email/domains/${id}/records`,
+    mailboxes: `${API_BASE_URL}/api/email/mailboxes`,
+    mailbox: (id: string) => `${API_BASE_URL}/api/email/mailboxes/${id}`,
+    mailboxPassword: (id: string) => `${API_BASE_URL}/api/email/mailboxes/${id}/password`,
+    mailboxConnectSMTP: (id: string) => `${API_BASE_URL}/api/email/mailboxes/${id}/connect-smtp`,
+    mailboxQuota: `${API_BASE_URL}/api/email/mailboxes/quota`,
   },
   // ── Facebook (Omnichannel) ────────────────────────────────────────────
   facebook: {

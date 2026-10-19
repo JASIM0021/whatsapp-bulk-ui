@@ -15,28 +15,31 @@ import { EmailInboxPage } from './email/EmailInboxPage';
 import { EmailSentPage } from './email/EmailSentPage';
 import { EmailOverviewPage } from './email/EmailOverviewPage';
 import { EmailCampaignsPage } from './email/EmailCampaignsPage';
+import { DomainEmailPage } from './email/DomainEmailPage';
+import { Globe } from 'lucide-react';
 
-type Tab = 'overview' | 'inbox' | 'compose' | 'campaigns' | 'schedule' | 'sent' | 'templates' | 'bot' | 'smtp';
+type Tab = 'overview' | 'inbox' | 'compose' | 'campaigns' | 'schedule' | 'sent' | 'templates' | 'bot' | 'smtp' | 'domains';
 
 // Tabs shown in the mobile bottom bar; the rest live in the drawer.
 const MOBILE_TABS: Tab[] = ['overview', 'inbox', 'compose', 'campaigns'];
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
-  { id: 'overview',  label: 'Home',      icon: <LayoutDashboard size={20} />, desc: 'KPIs & tracking' },
-  { id: 'inbox',     label: 'Inbox',     icon: <Mail size={20} />,         desc: 'Check messages' },
-  { id: 'compose',   label: 'Send',      icon: <Send size={20} />,         desc: 'Bulk campaigns' },
-  { id: 'campaigns', label: 'Campaigns', icon: <Megaphone size={20} />,    desc: 'Opens, clicks, re-target' },
-  { id: 'schedule',  label: 'Scheduled', icon: <CalendarClock size={20} />, desc: 'Queued jobs'     },
-  { id: 'sent',      label: 'Sent',      icon: <History size={20} />,       desc: 'Sent history'   },
-  { id: 'templates', label: 'Templates', icon: <FileText size={20} />,      desc: 'HTML library'   },
-  { id: 'bot',       label: 'Bot',       icon: <Bot size={20} />,           desc: 'Auto-reply AI'  },
-  { id: 'smtp',      label: 'SMTP',      icon: <Settings size={20} />,      desc: 'Connection'     },
+  { id: 'overview',  label: 'Home',         icon: <LayoutDashboard size={20} />, desc: 'KPIs & tracking' },
+  { id: 'inbox',     label: 'Inbox',        icon: <Mail size={20} />,            desc: 'Check messages' },
+  { id: 'compose',   label: 'Send',         icon: <Send size={20} />,            desc: 'Bulk campaigns' },
+  { id: 'campaigns', label: 'Campaigns',    icon: <Megaphone size={20} />,       desc: 'Opens, clicks, re-target' },
+  { id: 'schedule',  label: 'Scheduled',    icon: <CalendarClock size={20} />,    desc: 'Queued jobs'     },
+  { id: 'sent',      label: 'Sent',         icon: <History size={20} />,          desc: 'Sent history'   },
+  { id: 'templates', label: 'Templates',    icon: <FileText size={20} />,         desc: 'HTML library'   },
+  { id: 'bot',       label: 'Bot',          icon: <Bot size={20} />,              desc: 'Auto-reply AI'  },
+  { id: 'smtp',      label: 'SMTP',         icon: <Settings size={20} />,         desc: 'Connection'     },
+  { id: 'domains',   label: 'Domain Email', icon: <Globe size={20} />,            desc: 'Custom mailboxes' },
 ];
 
 const TAB_IDS = NAV_ITEMS.map(n => n.id);
 
 const TAB_LABELS: Record<Tab, string> = {
-  overview: 'Email Home', campaigns: 'Campaigns', inbox: 'Inbox Messages', compose: 'Send Email', schedule: 'Scheduled', sent: 'Sent Emails', templates: 'Templates', bot: 'Email Bot', smtp: 'SMTP Setup',
+  overview: 'Email Home', campaigns: 'Campaigns', inbox: 'Inbox Messages', compose: 'Send Email', schedule: 'Scheduled', sent: 'Sent Emails', templates: 'Templates', bot: 'Email Bot', smtp: 'SMTP Setup', domains: 'Custom Domain Email',
 };
 
 export function EmailPage() {
@@ -209,6 +212,7 @@ export function EmailPage() {
           {tab === 'templates' && <EmailTemplatePage isPaid={isPaid} />}
           {tab === 'bot'       && <EmailBotPage isPaid={isPaid} />}
           {tab === 'smtp'      && <EmailSMTPPage isPaid={isPaid} />}
+          {tab === 'domains'   && <DomainEmailPage isPaid={isPaid} />}
         </div>
 
         {/* ── Mobile Bottom Tab Bar (hidden on desktop) ─────────── */}
