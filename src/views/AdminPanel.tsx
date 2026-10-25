@@ -906,6 +906,8 @@ function UsersTab() {
                         {u.subscription?.isActive
                           ? u.subscription.plan === 'free'
                             ? `${u.subscription.messagesUsed}/${u.subscription.messageLimit} msgs`
+                            : u.subscription.plan === 'trial' || u.subscription.plan === 'credit_trial'
+                            ? `${u.subscription.daysLeft}d (${u.subscription.messagesUsed || 0}/${u.subscription.messageLimit || 10} msgs)`
                             : `${u.subscription.daysLeft}d`
                           : '—'}
                       </td>
