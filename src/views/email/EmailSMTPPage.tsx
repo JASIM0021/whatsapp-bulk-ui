@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Settings2, Wifi, WifiOff, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, HelpCircle, FileText, Upload, X, Code2, KeyRound } from 'lucide-react';
+import {
+  Settings2, Wifi, WifiOff, Eye, EyeOff, Loader2, CheckCircle2,
+  AlertCircle, HelpCircle, FileText, Upload, X, Code2, KeyRound,
+  Zap, Mail, ArrowRight
+} from 'lucide-react';
 import { apiFetch, API_ENDPOINTS } from '@/config/api';
 import { EmailAPIPlayground } from './EmailAPIPlayground';
 
@@ -17,15 +21,27 @@ interface SMTPConfig {
   deckName: string;
   autoAttachSignature: boolean;
   autoAttachDeck: boolean;
+  provider?: string;
+}
+
+interface InhouseMailbox {
+  id: string;
+  domainId: string;
+  domain: string;
+  email: string;
+  username: string;
+  status: string;
+  createdAt: string;
 }
 
 const PRESETS: Record<string, { host: string; port: number; useTLS: boolean; label: string }> = {
-  gmail:   { host: 'smtp.gmail.com',       port: 587, useTLS: false, label: 'Gmail (App Password)' },
-  outlook: { host: 'smtp.office365.com',   port: 587, useTLS: false, label: 'Outlook / Office 365' },
-  yahoo:   { host: 'smtp.mail.yahoo.com',  port: 587, useTLS: false, label: 'Yahoo Mail' },
-  zoho:    { host: 'smtp.zoho.com',        port: 465, useTLS: true,  label: 'Zoho Mail' },
+  nexbotix: { host: 'mail.gurumentra.com', port: 465, useTLS: true,  label: '⚡ Nexbotix In-House Email' },
+  gmail:    { host: 'smtp.gmail.com',       port: 587, useTLS: false, label: 'Gmail (App Password)' },
+  outlook:  { host: 'smtp.office365.com',   port: 587, useTLS: false, label: 'Outlook / Office 365' },
+  yahoo:    { host: 'smtp.mail.yahoo.com',  port: 587, useTLS: false, label: 'Yahoo Mail' },
+  zoho:     { host: 'smtp.zoho.com',        port: 465, useTLS: true,  label: 'Zoho Mail' },
   hostinger: { host: 'hostinger-api',      port: 0,   useTLS: false, label: 'Hostinger API' },
-  custom:  { host: '',                     port: 587, useTLS: false, label: 'Custom SMTP' },
+  custom:   { host: '',                     port: 587, useTLS: false, label: 'Custom SMTP' },
 };
 
 export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
@@ -37,6 +53,9 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
   const [sigView, setSigView] = useState<'code' | 'preview'>('code');
   const [preset, setPreset] = useState('gmail');
   const [saved, setSaved] = useState<SMTPConfig | null>(null);
+  const [inhouseMailboxes, setInhouseMailboxes] = useState<InhouseMailbox[]>([]);
+  const [connectingMailboxId, setConnectingMailboxId] = useState<string | null>(null);
+  const [selectedInhouseMailbox, setSelectedInhouseMailbox] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [uploadingDeck, setUploadingDeck] = useState(false);
@@ -46,21 +65,57 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
 
   const load = async () => {
     try {
-      const r = await apiFetch(API_ENDPOINTS.email.smtp);
-      const d = await r.json();
-      if (d.success && d.data) {
-        setSaved(d.data);
-        setForm(f => ({
-          ...f, host: d.data.host, port: d.data.port, username: d.data.username, senderName: d.data.senderName, senderEmail: d.data.senderEmail, useTLS: d.data.useTLS,
-          signature: d.data.signature || '', deckURL: d.data.deckURL || '', deckName: d.data.deckName || '',
-          autoAttachSignature: !!d.data.autoAttachSignature, autoAttachDeck: !!d.data.autoAttachDeck,
-        }));
-        if (d.data.host === 'hostinger-api') {
-          setPreset('hostinger');
-        } else {
-          const matching = Object.entries(PRESETS).find(([_, p]) => p.host === d.data.host && p.port === d.data.port);
-          if (matching) setPreset(matching[0]);
-          else setPreset('custom');
+      const [rSmtp, rMb] = await Promise.allSettled([
+        apiFetch(API_ENDPOINTS.email.smtp),
+        apiFetch(API_ENDPOINTS.email.mailboxes),
+      ]);
+
+      let mailboxesList: InhouseMailbox[] = [];
+      if (rMb.status === 'fulfilled') {
+        const mbData = await rMb.value.json();
+        if (mbData.success && Array.isArray(mbData.data)) {
+          mailboxesList = mbData.data;
+          setInhouseMailboxes(mbData.data);
+          if (mbData.data.length > 0) {
+            setSelectedInhouseMailbox(mbData.data[0].email);
+          }
+        }
+      }
+
+      if (rSmtp.status === 'fulfilled') {
+        const d = await rSmtp.value.json();
+        if (d.success && d.data) {
+          setSaved(d.data);
+          setForm(f => ({
+            ...f,
+            host: d.data.host,
+            port: d.data.port,
+            username: d.data.username,
+            senderName: d.data.senderName,
+            senderEmail: d.data.senderEmail,
+            useTLS: d.data.useTLS,
+            signature: d.data.signature || '',
+            deckURL: d.data.deckURL || '',
+            deckName: d.data.deckName || '',
+            autoAttachSignature: !!d.data.autoAttachSignature,
+            autoAttachDeck: !!d.data.autoAttachDeck,
+          }));
+
+          const isInhouse = (d.data.provider === 'nexbotix') ||
+            mailboxesList.some(m => m.email.toLowerCase() === (d.data.username || '').toLowerCase() || m.email.toLowerCase() === (d.data.senderEmail || '').toLowerCase());
+
+          if (isInhouse) {
+            setPreset('nexbotix');
+            setSelectedInhouseMailbox(d.data.username || d.data.senderEmail);
+          } else if (d.data.host === 'hostinger-api') {
+            setPreset('hostinger');
+          } else {
+            const matching = Object.entries(PRESETS).find(([k, p]) => k !== 'nexbotix' && p.host === d.data.host && p.port === d.data.port);
+            if (matching) setPreset(matching[0]);
+            else setPreset('custom');
+          }
+        } else if (mailboxesList.length > 0) {
+          setPreset('nexbotix');
         }
       }
     } catch { /* ignore */ }
@@ -68,8 +123,48 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
 
   const applyPreset = (key: string) => {
     setPreset(key);
+    if (key === 'nexbotix') {
+      const mb = inhouseMailboxes.find(m => m.email === selectedInhouseMailbox) || inhouseMailboxes[0];
+      setForm(f => ({
+        ...f,
+        host: 'mail.gurumentra.com',
+        port: 465,
+        useTLS: true,
+        username: mb ? mb.email : f.username,
+        senderEmail: mb ? mb.email : f.senderEmail,
+        senderName: f.senderName || (mb ? mb.username : ''),
+      }));
+      return;
+    }
     const p = PRESETS[key];
-    setForm(f => ({ ...f, host: p.host, port: p.port, useTLS: p.useTLS }));
+    if (p) {
+      setForm(f => ({ ...f, host: p.host, port: p.port, useTLS: p.useTLS }));
+    }
+  };
+
+  const handleConnectInhouse = async (mailboxId: string, email: string) => {
+    setConnectingMailboxId(mailboxId);
+    setMsg(null);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.email.mailboxConnectSMTP(mailboxId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg({
+          text: `🎉 Success! ${email} is now connected as your active Nexbotix Sender.`,
+          type: 'success',
+        });
+        await load();
+      } else {
+        setMsg({ text: data.error || 'Failed to connect in-house mailbox to SMTP.', type: 'error' });
+      }
+    } catch {
+      setMsg({ text: 'Error connecting in-house mailbox to SMTP.', type: 'error' });
+    } finally {
+      setConnectingMailboxId(null);
+    }
   };
 
   const uploadDeck = async (file: File) => {
@@ -91,7 +186,16 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
 
   const save = async () => {
     let checkForm = { ...form };
-    if (preset === 'hostinger') {
+    if (preset === 'nexbotix') {
+      checkForm.host = checkForm.host || 'mail.gurumentra.com';
+      checkForm.port = 465;
+      checkForm.useTLS = true;
+      if (!checkForm.username) {
+        setMsg({ text: 'Mailbox username/email is required', type: 'error' });
+        return;
+      }
+      checkForm.senderEmail = checkForm.username;
+    } else if (preset === 'hostinger') {
       checkForm.host = 'hostinger-api';
       checkForm.port = 0;
       checkForm.useTLS = false;
@@ -123,7 +227,16 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
 
   const test = async () => {
     let checkForm = { ...form };
-    if (preset === 'hostinger') {
+    if (preset === 'nexbotix') {
+      checkForm.host = checkForm.host || 'mail.gurumentra.com';
+      checkForm.port = 465;
+      checkForm.useTLS = true;
+      if (!checkForm.username) {
+        setMsg({ text: 'Mailbox email is required to test connection', type: 'error' });
+        return;
+      }
+      checkForm.senderEmail = checkForm.username;
+    } else if (preset === 'hostinger') {
       checkForm.host = 'hostinger-api';
       checkForm.port = 0;
       checkForm.useTLS = false;
@@ -146,7 +259,16 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
         body: JSON.stringify(checkForm)
       });
       const d = await r.json();
-      setMsg({ text: d.success ? (preset === 'hostinger' ? '✅ Connection successful! Hostinger API is working.' : '✅ Connection successful! SMTP is working.') : d.error, type: d.success ? 'success' : 'error' });
+      setMsg({
+        text: d.success
+          ? (preset === 'hostinger'
+              ? '✅ Connection successful! Hostinger API is working.'
+              : preset === 'nexbotix'
+              ? '✅ Connection successful! Nexbotix In-House Email is connected and verified.'
+              : '✅ Connection successful! SMTP is working.')
+          : d.error,
+        type: d.success ? 'success' : 'error'
+      });
       if (d.success && saved) setSaved({ ...saved, isVerified: true });
     } catch { setMsg({ text: 'Network error', type: 'error' }); }
     setTesting(false);
@@ -175,6 +297,114 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
         )}
       </div>
 
+      {/* In-House Business Email 1-Click Banner */}
+      {inhouseMailboxes.length > 0 ? (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-purple-50/90 border border-indigo-200 shadow-sm space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <Zap size={18} className="text-amber-300 fill-amber-300" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                  <span>In-House Business Email</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full">
+                    {inhouseMailboxes.length} {inhouseMailboxes.length === 1 ? 'Mailbox' : 'Mailboxes'} Ready
+                  </span>
+                </h3>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Send high-deliverability campaigns from your domain with DKIM &amp; SPF security.
+                </p>
+              </div>
+            </div>
+            <a
+              href="/email/domains"
+              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline self-start sm:self-auto"
+            >
+              <span>Manage Domains &amp; Inboxes</span>
+              <ArrowRight size={13} />
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {inhouseMailboxes.map((mb) => {
+              const isActive = (saved?.username?.toLowerCase() === mb.email.toLowerCase()) || 
+                               (saved?.senderEmail?.toLowerCase() === mb.email.toLowerCase());
+              const isConnecting = connectingMailboxId === mb.id;
+              return (
+                <div
+                  key={mb.id}
+                  className={`flex flex-col justify-between p-3.5 rounded-xl border transition-all ${
+                    isActive
+                      ? 'bg-emerald-50/90 border-emerald-300 shadow-sm ring-1 ring-emerald-300/80'
+                      : 'bg-white border-gray-200 hover:border-indigo-300 shadow-xs'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2.5">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Mail size={14} className={isActive ? 'text-emerald-600' : 'text-indigo-600'} />
+                        <span className="text-xs font-bold text-gray-900 truncate" title={mb.email}>
+                          {mb.email}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-gray-500 font-medium">{mb.domain}</span>
+                    </div>
+                    {isActive && (
+                      <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">
+                        <CheckCircle2 size={10} /> Active
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="pt-2.5 border-t border-gray-100 flex items-center gap-2">
+                    {isActive ? (
+                      <div className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-emerald-100/80 text-emerald-800 text-xs font-bold">
+                        <CheckCircle2 size={12} className="text-emerald-600" />
+                        <span>Connected as Sender</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isConnecting}
+                        onClick={() => handleConnectInhouse(mb.id, mb.email)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+                      >
+                        {isConnecting ? (
+                          <>
+                            <Loader2 size={12} className="animate-spin text-amber-300" />
+                            <span>Connecting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Zap size={12} className="text-amber-300 fill-amber-300" />
+                            <span>1-Click Connect</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-gray-600">
+          <div className="flex items-center gap-2.5">
+            <Mail size={16} className="text-gray-400 shrink-0" />
+            <span>Want to send campaigns from your branded domain (e.g. <code>info@yourdomain.com</code>)?</span>
+          </div>
+          <a
+            href="/email/domains"
+            className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 shrink-0"
+          >
+            <span>Setup In-House Domain Email</span>
+            <ArrowRight size={12} />
+          </a>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
         {/* Provider Presets */}
         <div>
@@ -182,11 +412,91 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
           <div className="flex flex-wrap gap-2">
             {Object.entries(PRESETS).map(([k, v]) => (
               <button key={k} onClick={() => applyPreset(k)}
-                className={`px-3 py-1.5 text-sm rounded-lg border-2 font-medium transition-colors ${preset === k ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                className={`px-3 py-1.5 text-sm rounded-lg border-2 font-medium transition-colors ${preset === k ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                 {v.label}
               </button>
             ))}
           </div>
+
+          {preset === 'nexbotix' && (
+            <div className="mt-3 p-3.5 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="flex items-start gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <Zap size={14} className="text-amber-300" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-indigo-950">Nexbotix High-Deliverability Custom Domain Mail Server</h4>
+                  <p className="text-xs text-indigo-700 mt-0.5">
+                    Pre-configured with DKIM cryptographic signing, SPF authorization, and port 465 SSL encryption.
+                  </p>
+                </div>
+              </div>
+
+              {inhouseMailboxes.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1 border-t border-indigo-100">
+                  <span className="text-xs font-semibold text-indigo-950 shrink-0">Selected Mailbox:</span>
+                  <select
+                    value={selectedInhouseMailbox}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedInhouseMailbox(val);
+                      const found = inhouseMailboxes.find(m => m.email === val);
+                      if (found) {
+                        setForm(f => ({
+                          ...f,
+                          host: 'mail.gurumentra.com',
+                          port: 465,
+                          useTLS: true,
+                          username: found.email,
+                          senderEmail: found.email,
+                          senderName: f.senderName || found.username,
+                        }));
+                      }
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs bg-white border border-indigo-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    {inhouseMailboxes.map(mb => (
+                      <option key={mb.id} value={mb.email}>{mb.email} ({mb.domain})</option>
+                    ))}
+                  </select>
+
+                  {(() => {
+                    const found = inhouseMailboxes.find(m => m.email === selectedInhouseMailbox) || inhouseMailboxes[0];
+                    const isConnected = (saved?.username?.toLowerCase() === found?.email?.toLowerCase());
+                    if (isConnected) {
+                      return (
+                        <div className="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 shrink-0">
+                          <CheckCircle2 size={13} className="text-emerald-600" />
+                          <span>Active Sender</span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <button
+                        type="button"
+                        disabled={connectingMailboxId === found?.id}
+                        onClick={() => found && handleConnectInhouse(found.id, found.email)}
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center justify-center gap-1.5 shrink-0 transition-all disabled:opacity-50"
+                      >
+                        {connectingMailboxId === found?.id ? (
+                          <>
+                            <Loader2 size={12} className="animate-spin text-amber-300" />
+                            <span>Connecting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Zap size={12} className="text-amber-300 fill-amber-300" />
+                            <span>1-Click Connect</span>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
           {preset === 'gmail' && (
             <div className="mt-3 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg animate-in fade-in slide-in-from-top-1 duration-150">
               <HelpCircle size={15} className="text-blue-600 mt-0.5 shrink-0" />
@@ -218,7 +528,7 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
           )}
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              {preset === 'hostinger' ? 'Mailbox Address (Username)' : 'Username / Email'}
+              {preset === 'hostinger' ? 'Mailbox Address (Username)' : preset === 'nexbotix' ? 'In-House Mailbox Email' : 'Username / Email'}
             </label>
             <input value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
               autoComplete="off" name="botx_smtp_username"
@@ -237,7 +547,13 @@ export function EmailSMTPPage({ isPaid }: { isPaid: boolean }) {
                 {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            {saved && (
+            {preset === 'nexbotix' && (
+              <p className="flex items-center gap-1 mt-1 text-[11px] text-indigo-600">
+                <CheckCircle2 size={11} className="text-indigo-600 shrink-0" />
+                Password is automatically managed from your Nexbotix custom mailbox.
+              </p>
+            )}
+            {saved && preset !== 'nexbotix' && (
               <p className="flex items-center gap-1 mt-1 text-[11px] text-gray-400">
                 <KeyRound size={11} className="text-green-500 shrink-0" />
                 A {preset === 'hostinger' ? 'token' : 'password'} is already saved (encrypted). Only fill this to replace it.
