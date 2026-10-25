@@ -9,6 +9,9 @@ const publicEnv = (name: string) =>
   process.env[`NEXT_PUBLIC_${name}`] ?? process.env[`VITE_${name}`] ?? '';
 
 const nextConfig: NextConfig = {
+  experimental: {
+    agentUpgrade: 'security',
+  },
   env: {
     NEXT_PUBLIC_BACKEND_URL: publicEnv('BACKEND_URL'),
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: publicEnv('GOOGLE_CLIENT_ID'),
